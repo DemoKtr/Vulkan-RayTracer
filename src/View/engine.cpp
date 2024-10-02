@@ -6,6 +6,7 @@
 #include <View/vkInit/logging.h>
 #include "settings.h"
 #include <View/vkInit/device.h>
+#include <View/vkInit/swapchain.h>
 
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
@@ -79,4 +80,24 @@ void GraphicsEngine::choice_device() {
 
 void GraphicsEngine::create_swapchain()
 {
+	vkInit::SwapChainBundle bundle = vkInit::create_swapchain(physicalDevice, device, surface, screenSize, debugMode);
+	this->swapchain = bundle.swapchain;
+	this->swapchainFrames = bundle.frames;
+	this->swapchainFormat = bundle.format;
+	this->swapchainExtent = bundle.extent;
+
+	vkInit::query_swapchain_support(physicalDevice, surface, debugMode);
+	maxFramesInFlight = static_cast<int>(swapchainFrames.size());
+
+	for (vkUtil::SwapChainFrame& frame : swapchainFrames) {
+		frame.logicalDevice = device;
+		frame.physicalDevice = physicalDevice;
+		frame.width = swapchainExtent.width;
+		frame.height = swapchainExtent.height;
+		
+	}
+}
+
+void GraphicsEngine::cleanup_swapchain() {
+	device.destroySwapchainKHR(swapchain);
 }

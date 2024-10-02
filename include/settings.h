@@ -8,8 +8,6 @@ struct resourceManager {
     std::vector<vk::DescriptorSet> descriptorSets = {};
     std::vector<vk::DescriptorSetLayout> descriptorSetLayouts = {};
     std::vector<vk::DescriptorPool> descriptorPools = {};
-    std::vector<vk::SurfaceKHR> surfaces = {};
-    std::vector<vk::SwapchainKHR> swapchains = {};
     std::vector<vk::ImageView> imageViews = {};
     std::vector<vk::Image> images = {};
     std::vector<vk::Framebuffer> framebuffers = {};
@@ -45,14 +43,6 @@ struct resourceManager {
 
     void add(vk::DescriptorPool descriptorPool) {
         descriptorPools.push_back(descriptorPool);
-    }
-
-    void add(vk::SurfaceKHR surface) {
-        surfaces.push_back(surface);
-    }
-
-    void add(vk::SwapchainKHR swapchain) {
-        swapchains.push_back(swapchain);
     }
 
     void add(vk::ImageView imageView) {
@@ -115,9 +105,6 @@ struct resourceManager {
         }
         for (vk::Buffer buffer : buffers) {
             device.destroyBuffer(buffer);
-        }
-        for (vk::SwapchainKHR swapchain : swapchains) {
-            device.destroySwapchainKHR(swapchain);
         }
         for (vk::DescriptorPool descriptorPool : descriptorPools) {
             device.destroyDescriptorPool(descriptorPool);

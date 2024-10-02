@@ -4,7 +4,7 @@
 #include "config.h"
 #include <Scene/scene.h>
 #include <Player/camera.h>
-
+#include "View/vkUtil/frame.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -20,7 +20,6 @@ class GraphicsEngine {
 	vk::DispatchLoaderDynamic dldi;
 	//surface
 	vk::SurfaceKHR surface;
-
 	//physical device
 	vk::PhysicalDevice physicalDevice{ nullptr };
 	//logical device
@@ -34,7 +33,7 @@ class GraphicsEngine {
 	//swapchain
 	vk::SwapchainKHR swapchain;
 	//frames
-	//std::vector<vkUtil::SwapChainFrame> swapchainFrames;
+	std::vector<vkUtil::SwapChainFrame> swapchainFrames;
 	//swapchainFormat
 	vk::Format swapchainFormat;
 	//swapchainExtent
@@ -44,7 +43,7 @@ class GraphicsEngine {
 	void choice_device();
 	void create_swapchain();
 	void recreate_swapchain(Scene* scene);
-
+	void cleanup_swapchain();
 
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);

@@ -48,7 +48,10 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/sceneObject.cpp" 
     "src/View/vkInit/instance.cpp" 
     "src/View/vkInit/logging.cpp"
- "src/View/vkInit/device.cpp" "src/View/vkUtil/queues.cpp")
+    "src/View/vkInit/descriptors.cpp"
+    "src/View/vkUtil/singleTimeCommands.cpp"
+    "src/View/vkUtil/memory.cpp"
+ "src/View/vkInit/device.cpp" "src/View/vkUtil/queues.cpp" "src/View/vkUtil/frame.cpp" "src/View/vkInit/swapchain.cpp" "src/View/vkImage/image.cpp")
 
 # Dodanie bibliotek do aplikacji
 target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan glfw glm)
