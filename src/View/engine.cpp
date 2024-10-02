@@ -1,7 +1,12 @@
+#define GLFW_INCLUDE_VULKAN
+#include "GLFW/glfw3.h"
+
 #include "View/egnine.h"
 #include "View/vkInit/instance.h"
 #include <View/vkInit/logging.h>
-#include "GLFW/glfw3.h"
+#include "settings.h"
+#include <View/vkInit/device.h>
+
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -13,6 +18,27 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 
 
 	make_instance();
+	choice_device();
+}
+
+GraphicsEngine::~GraphicsEngine() {
+	
+	device.waitIdle();
+	if (debugMode) {
+		std::cout << "End!\n";
+	}
+
+	vkSettings::resourcesManager.clean(device);
+	device.destroy();
+
+	instance.destroySurfaceKHR(surface);
+
+	if (debugMode) {
+		instance.destroyDebugUtilsMessengerEXT(debugMessenger, nullptr, dldi);
+	}
+
+	instance.destroy();
+	glfwTerminate();
 }
 
 void GraphicsEngine::make_instance() {
@@ -31,4 +57,26 @@ void GraphicsEngine::make_instance() {
 		std::cout << "Successfully abstracted glfw surface for Vulkan\n";
 	}
 	surface = c_style_surface;
+	
+}
+
+void GraphicsEngine::choice_device() {
+	this->physicalDevice = vkInit::choose_physical_device(instance, debugMode);
+	this->device = vkInit::create_logical_device(physicalDevice, surface, debugMode);
+
+	std::array<vk::Queue, 3> queues = vkInit::get_Queues(physicalDevice, device, surface, debugMode);
+
+	this->graphicsQueue = queues[0];
+
+	this->presentQueue = queues[1];
+
+	this->computeQueue = queues[2];
+
+	this->create_swapchain();
+
+	frameNumber = 0;
+}
+
+void GraphicsEngine::create_swapchain()
+{
 }

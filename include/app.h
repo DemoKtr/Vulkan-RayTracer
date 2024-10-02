@@ -5,10 +5,10 @@
 #include "config.h"
 #include "Player/camera.h"
 #include <Scene/scene.h>
-
+#include "View/egnine.h"
 class App
 {
-	//GraphicsEngine* graphicsEngine;
+	GraphicsEngine* graphicsEngine;
 	GLFWwindow* window;
 	Scene* scene;
 	float lastFrame = 0.0f;

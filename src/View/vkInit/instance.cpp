@@ -1,6 +1,5 @@
 #include "View/vkInit/instance.h"
-#include <GLFW/glfw3.h>
-
+#include "GLFW/glfw3.h"
 bool vkInit::supported(std::vector<const char*>& extensions, std::vector<const char*>& layers, bool debug)
 {
 	//check extension support
@@ -62,6 +61,8 @@ bool vkInit::supported(std::vector<const char*>& extensions, std::vector<const c
 
 	return true;
 }
+
+
 vk::Instance vkInit::make_instance(bool debugMode, const char* appName) {
 	if (debugMode) {
 		std::cout << "Making Instance" << std::endl;

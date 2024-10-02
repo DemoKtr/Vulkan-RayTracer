@@ -52,18 +52,19 @@ void App::calculateFrameRate()
 
 App::App(glm::ivec2 screenSize, bool debugMode)
 {
-
+	vkSettings::lastX = screenSize.x / 2.0f;
+	vkSettings::lastY = screenSize.y / 2.0f;
 	build_glfw_window(screenSize, debugMode);
 
 	scene = new Scene();
-
-	//graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
+	
+	graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
 
 }
 
 App::~App()
 {
-	//delete graphicsEngine;
+	delete graphicsEngine;
 	delete scene;
 }
 
@@ -76,7 +77,7 @@ void App::run()
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 		processInput(window);
-
+		glfwPollEvents();
 		scene->updateScene(deltaTime);
 		//graphicsEngine->render(scene, verticesCounter, deltaTime, camera);
 		calculateFrameRate();

@@ -9,8 +9,10 @@
 class GraphicsEngine {
 	glm::ivec2 screenSize;
 	const char* appName{ "RayTracer" };
+	//synchronizers 
+	int maxFramesInFlight, frameNumber;
 	GLFWwindow* mainWindow;
-	bool debugMode{false};
+	bool debugMode{true};
 	vk::Instance instance{ nullptr }; //instancja
 	//debug callback
 	vk::DebugUtilsMessengerEXT debugMessenger{ nullptr };
@@ -39,7 +41,6 @@ class GraphicsEngine {
 	vk::Extent2D swapchainExtent;
 
 	void make_instance(); //instance Setup
-	void make_debug_messenger();
 	void choice_device();
 	void create_swapchain();
 	void recreate_swapchain(Scene* scene);

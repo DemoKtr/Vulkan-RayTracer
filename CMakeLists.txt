@@ -12,12 +12,17 @@ find_package(Vulkan REQUIRED)
 
 # FetchContent to sposób na automatyczne pobieranie zależności
 include(FetchContent)
-set(GLFW_VULKAN_STATIC ON)
+
+# Ustawienia dla GLFW
+set(GLFW_VULKAN_STATIC ON)  # Włącz obsługę Vulkan w GLFW
+set(GLFW_BUILD_EXAMPLES OFF) # Wyłącz przykłady GLFW, nie są potrzebne
+set(GLFW_BUILD_TESTS OFF)    # Wyłącz testy GLFW, nie są potrzebne
+
 # Pobieranie GLFW
 FetchContent_Declare(
   glfw
   GIT_REPOSITORY https://github.com/glfw/glfw.git
-  GIT_TAG latest
+  GIT_TAG 3.4   # Użyj stabilnej wersji GLFW zamiast latest
 )
 FetchContent_MakeAvailable(glfw)
 
@@ -36,7 +41,14 @@ set(SOURCES
 )
 
 # Tworzenie aplikacji
-add_executable(${PROJECT_NAME} ${SOURCES} "src/View/engine.cpp" "src/Player/camera.cpp" "src/Scene/scene.cpp" "src/Scene/sceneObject.cpp" "src/View/vkInit/instance.cpp" "src/View/vkInit/logging.cpp")
+add_executable(${PROJECT_NAME} ${SOURCES} 
+    "src/View/engine.cpp" 
+    "src/Player/camera.cpp" 
+    "src/Scene/scene.cpp" 
+    "src/Scene/sceneObject.cpp" 
+    "src/View/vkInit/instance.cpp" 
+    "src/View/vkInit/logging.cpp"
+ "src/View/vkInit/device.cpp" "src/View/vkUtil/queues.cpp")
 
 # Dodanie bibliotek do aplikacji
 target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan glfw glm)
@@ -48,10 +60,9 @@ endif()
 
 # Ustawienie katalogu z plikami nagłówkowymi
 target_include_directories(${PROJECT_NAME} PRIVATE 
-    ${GLFW_INCLUDE_DIRS} 
     ${Vulkan_INCLUDE_DIRS}
-    ${GLM_INCLUDE_DIRS}
 PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
 # Opcjonalne: Ustawienia kompilatora (dodatkowe flagi)
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4)
