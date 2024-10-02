@@ -5,6 +5,7 @@
 #include <Scene/scene.h>
 #include <Player/camera.h>
 #include "View/vkUtil/frame.h"
+#include "settings.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -39,12 +40,17 @@ class GraphicsEngine {
 	//swapchainExtent
 	vk::Extent2D swapchainExtent;
 
+	resourceManager resourcesManager{};
+
 	void make_instance(); //instance Setup
 	void choice_device();
 	void create_swapchain();
 	void recreate_swapchain(Scene* scene);
 	void cleanup_swapchain();
-
+	void create_descriptor_set_layouts();
+	void create_pipeline();
+	void finalize_setup(Scene* scene);
+	void make_assets(Scene* scene);
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);
 	void render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera);

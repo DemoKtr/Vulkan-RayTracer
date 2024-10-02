@@ -47,10 +47,12 @@ struct resourceManager {
 
     void add(vk::ImageView imageView) {
         imageViews.push_back(imageView);
+        std::cout << imageViews.size() << std::endl;
     }
 
     void add(vk::Image image) {
         images.push_back(image);
+        std::cout << images.size() << std::endl;
     }
 
     void add(vk::Framebuffer framebuffer) {
@@ -80,6 +82,7 @@ struct resourceManager {
 
     void clean(vk::Device device) {
 
+        
 
         for (vk::Sampler sampler : samplers) {
             device.destroySampler(sampler);
@@ -124,9 +127,7 @@ struct resourceManager {
         for (vk::DescriptorSetLayout descriptorSetLayout : descriptorSetLayouts) {
             device.destroyDescriptorSetLayout(descriptorSetLayout);
         }
-        for (vk::RenderPass renderPass : renderpasses) {
-            device.destroyRenderPass(renderPass);
-        }
+
 
 
     }
@@ -138,7 +139,7 @@ namespace vkSettings {
 	static bool firstMouse = true;
 	static float lastX = { 0.0f };
 	static float lastY = { 0.0f };
-    static resourceManager resourcesManager{};
+    
 
     
 

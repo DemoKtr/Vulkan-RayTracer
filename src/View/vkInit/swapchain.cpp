@@ -2,9 +2,10 @@
 #include <View/vkInit/logging.h>
 #include <View/vkUtil/queues.h>
 #include <View/vkImage/image.h>
+#include <settings.h>
 
 vkInit::SwapChainSupportDetails vkInit::query_swapchain_support(vk::PhysicalDevice device, vk::SurfaceKHR surface, bool debugMode) {
-	SwapChainSupportDetails support;
+SwapChainSupportDetails support;
 	/*
 * typedef struct VkSurfaceCapabilitiesKHR {
 	uint32_t                         minImageCount;
@@ -133,6 +134,9 @@ vk::Extent2D vkInit::choose_swapchain_exten(uint32_t width, uint32_t height, vk:
 }
 
 vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevice, vk::Device logicalDevice, vk::SurfaceKHR surface, glm::ivec2 screenSize, bool debugMode) {
+
+	SwapChainBundle bundle{};
+	/**/
 	SwapChainSupportDetails support = query_swapchain_support(physicalDevice, surface, debugMode);
 	vk::SurfaceFormatKHR format = choose_swapchain_surface_format(support.formats);
 	vk::PresentModeKHR presentMode = choose_swapchain_present_mode(support.presentModes);
@@ -147,7 +151,7 @@ vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevi
 		extent, 1, vk::ImageUsageFlagBits::eColorAttachment
 	);
 	vkUtil::QueueFamilyIndices indices = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode);
-	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value()};
 
 	if (indices.graphicsFamily != indices.presentFamily) {
 		createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
@@ -157,12 +161,12 @@ vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevi
 	else {
 		createInfo.imageSharingMode = vk::SharingMode::eExclusive;
 	}
+
 	createInfo.preTransform = support.capabilities.currentTransform;
 	createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = vk::SwapchainKHR(nullptr);
-	SwapChainBundle bundle{};
 	try {
 		bundle.swapchain = logicalDevice.createSwapchainKHR(createInfo);
 
@@ -172,16 +176,14 @@ vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevi
 	}
 
 	std::vector<vk::Image> images = logicalDevice.getSwapchainImagesKHR(bundle.swapchain);
-
+	
 	bundle.frames.resize(images.size());
 
 	for (size_t i = 0; i < images.size(); i++) {
-
-
-
 		bundle.frames[i].mainimage = images[i];
+
 		bundle.frames[i].mainimageView = vkImage::make_image_view(logicalDevice, images[i], format.format, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, 1);
-		
+
 
 	}
 	bundle.format = format.format;

@@ -24,7 +24,7 @@ namespace vkUtil {
 
 		vk::CommandBuffer commandBuffer;
 
-		
+		void destroy();
 
 	};
 }

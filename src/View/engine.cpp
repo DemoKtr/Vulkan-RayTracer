@@ -4,7 +4,7 @@
 #include "View/egnine.h"
 #include "View/vkInit/instance.h"
 #include <View/vkInit/logging.h>
-#include "settings.h"
+
 #include <View/vkInit/device.h>
 #include <View/vkInit/swapchain.h>
 
@@ -29,7 +29,12 @@ GraphicsEngine::~GraphicsEngine() {
 		std::cout << "End!\n";
 	}
 
-	vkSettings::resourcesManager.clean(device);
+	resourcesManager.clean(device);
+	cleanup_swapchain();
+	for (vkUtil::SwapChainFrame& frame : swapchainFrames) {
+		frame.destroy();
+
+	}
 	device.destroy();
 
 	instance.destroySurfaceKHR(surface);
@@ -98,6 +103,28 @@ void GraphicsEngine::create_swapchain()
 	}
 }
 
+void GraphicsEngine::recreate_swapchain(Scene* scene){
+	this->screenSize.x = 0;
+	this->screenSize.y = 0;
+	while (this->screenSize.x == 0 || this->screenSize.y == 0) {
+		glfwGetFramebufferSize(mainWindow, &this->screenSize.x, &this->screenSize.y);
+		glfwWaitEvents();
+	}
+
+	device.waitIdle();
+
+	cleanup_swapchain();
+	create_swapchain();
+	//create_framebuffers();
+	//create_frame_resources(scene);
+	//vkInit::commandBufferInputChunk commandBufferInput = { device, commandPool,computeCommandPool ,swapchainFrames };
+	//vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
+}
+
 void GraphicsEngine::cleanup_swapchain() {
+
+	for (vkUtil::SwapChainFrame& frame : swapchainFrames) {
+		frame.destroy();
+	}
 	device.destroySwapchainKHR(swapchain);
 }
