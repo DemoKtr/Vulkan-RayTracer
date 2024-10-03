@@ -139,7 +139,8 @@ namespace vkSettings {
 	static bool firstMouse = true;
 	static float lastX = { 0.0f };
 	static float lastY = { 0.0f };
-    
+    static int MIN_TRIANGLES = 2; // Minimalna liczba trójk¹tów w wêŸle BVH
+    static int MAX_DEPTH = 32;     // Maksymalna g³êbokoœæ drzewa BVH
 
     
 
