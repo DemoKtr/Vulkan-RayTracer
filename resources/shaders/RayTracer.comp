@@ -1,0 +1,169 @@
+#version 450
+
+
+// Struktura AABB (Axis-Aligned Bounding Box)
+struct AABB {
+    vec3 minBounds;
+    vec3 maxBounds;
+};
+
+// Struktura GPU_BVHNode (węzeł BVH)
+struct GPU_BVHNode {
+    AABB boundingBox;   // Ograniczający AABB
+    int leftChildIndex; // Indeks lewego dziecka, -1 jeśli liść
+    int rightChildIndex;// Indeks prawego dziecka, -1 jeśli liść
+    int firstTriangleIndex;  // Indeks pierwszego trójkąta (dla liści)
+    int triangleCount;       // Ilość trójkątów w liściu (0 dla węzłów wewnętrznych)
+    int nextNodeIndex;       // Indeks węzła po przetworzeniu liści (dzięki temu unikam stosu)
+};
+
+// Struktura Triangle (trójkąt)
+struct Triangle {
+    vec3 v0; // Wierzchołek 0
+    vec3 v1; // Wierzchołek 1
+    vec3 v2; // Wierzchołek 2
+	
+	vec2 uv0; // Współrzędne teksturowe dla wierzchołka 0
+    vec2 uv1; // Współrzędne teksturowe dla wierzchołka 1
+    vec2 uv2; // Współrzędne teksturowe dla wierzchołka 2
+	
+	int materialIndex;
+};
+
+// Bufory BVH i trójkątów
+
+layout(binding = 0) buffer BVHBuffer {
+   GPU_BVHNode bvhNodes[];
+};
+
+
+layout(binding = 1) buffer TriangleBuffer {
+   Triangle triangles[];
+};
+layout(binding = 2, rgba8) uniform writeonly image2D resultImage;
+
+layout(binding = 3) uniform sampler2DArray objectTexture; // Tekstura dla obiektu
+
+// Funkcja sprawdzająca przecięcie promienia z AABB
+bool RayIntersectsAABB(vec3 rayOrigin, vec3 rayDir, AABB aabb) {
+    // Implementacja przecięcia promienia z AABB
+    return true;
+}
+
+// Funkcja sprawdzająca przecięcie promienia z trójkątem
+bool RayIntersectsTriangle(vec3 rayOrigin, vec3 rayDir, Triangle triangle, out vec2 interpolatedUV) {
+    const float EPSILON = 0.0000001;
+
+    vec3 v0 = triangle.v0;
+    vec3 v1 = triangle.v1;
+    vec3 v2 = triangle.v2;
+
+    vec3 edge1 = v1 - v0;
+    vec3 edge2 = v2 - v0;
+
+    vec3 h = cross(rayDir, edge2);
+    float a = dot(edge1, h);
+
+    if (a > -EPSILON && a < EPSILON)
+        return false; // Brak przecięcia
+
+    float f = 1.0 / a;
+    vec3 s = rayOrigin - v0;
+    float u = f * dot(s, h);
+
+    if (u < 0.0 || u > 1.0)
+        return false;
+
+    vec3 q = cross(s, edge1);
+    float v = f * dot(rayDir, q);
+
+    if (v < 0.0 || u + v > 1.0)
+        return false;
+
+    float t = f * dot(edge2, q);
+
+    if (t > EPSILON) {
+        // Interpolacja współrzędnych UV
+        interpolatedUV = (1.0 - u - v) * triangle.uv0 + u * triangle.uv1 + v * triangle.uv2;
+        return true; // Promień przecina trójkąt
+    }
+
+    return false; // Brak przecięcia
+}
+
+
+// Funkcja pomocnicza, która znajduje "następny" węzeł
+int GetNextNode(int currentIndex) {
+    // Zakładamy, że mamy precomputed informację, który węzeł jest następny
+    return bvhNodes[currentIndex].nextNodeIndex;
+}
+
+
+// Funkcja przemierzająca BVH
+// Funkcja przemierzająca BVH
+bool TraverseBVH(vec3 rayOrigin, vec3 rayDir, out vec4 outColor) {
+    int nodeIndex = 0; // Start od korzenia (nodeIndex = 0)
+
+    while (nodeIndex >= 0) {
+        GPU_BVHNode node = bvhNodes[nodeIndex];
+
+        if (RayIntersectsAABB(rayOrigin, rayDir, node.boundingBox)) {
+            if (node.leftChildIndex == -1 && node.rightChildIndex == -1) {
+                // To jest liść, sprawdź przecięcia z trójkątami
+                for (int i = 0; i < node.triangleCount; ++i) {
+                    vec2 uv;
+                    Triangle tri = triangles[node.firstTriangleIndex + i];
+
+                    if (RayIntersectsTriangle(rayOrigin, rayDir, tri, uv)) {
+                        // Użyj `materialIndex` jako warstwy w sampler2DArray
+                        int materialIndex = tri.materialIndex;
+                        outColor = texture(objectTexture, vec3(uv, materialIndex));  // Używamy vec3, gdzie z to warstwa tekstury
+                        return true; // Przecięcie
+                    }
+                }
+                nodeIndex = GetNextNode(nodeIndex);
+            } else {
+                if (RayIntersectsAABB(rayOrigin, rayDir, bvhNodes[node.leftChildIndex].boundingBox)) {
+                    nodeIndex = node.leftChildIndex;
+                } else {
+                    nodeIndex = node.rightChildIndex;
+                }
+            }
+        } else {
+            nodeIndex = GetNextNode(nodeIndex);
+        }
+    }
+
+    return false; // Brak przecięcia
+}
+
+
+
+
+void main() {
+    // Współrzędne bieżącego piksela na obrazie
+    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
+    
+    // Rozmiar obrazu (możemy to pobrać z `imageSize(resultImage)`)
+    ivec2 imageSize = imageSize(resultImage);
+    
+    // Konwersja współrzędnych piksela na współrzędne normalizowane (z przedziału [-1, 1])
+    vec2 normalizedCoords = (vec2(pixelCoords) / vec2(imageSize)) * 2.0 - 1.0;
+    
+    // Obliczenie położenia kamery i kierunku promienia (tu zakładamy prostą kamerę)
+    vec3 rayOrigin = vec3(0.0, 0.0, 0.0); // Pozycja kamery w (0, 0, 0)
+    vec3 rayDir = normalize(vec3(normalizedCoords.x, normalizedCoords.y, -1.0)); // Kierunek promienia w stronę sceny
+    
+    // Wynikowy kolor promienia
+    vec4 finalColor = vec4(0.0); // Domyślnie czarny, jeśli promień nie trafi w żaden obiekt
+
+    // Sprawdzamy przecięcie promienia z obiektami w BVH
+    if (TraverseBVH(rayOrigin, rayDir, finalColor)) {
+        // Jeśli promień trafił w trójkąt, ustawiamy odpowiedni kolor (z tekstury)
+        imageStore(resultImage, pixelCoords, finalColor);
+    } else {
+        // Jeśli promień nie trafił w żaden obiekt, ustawiamy kolor tła (np. niebo)
+        imageStore(resultImage, pixelCoords, vec4(0.0, 0.0, 0.0, 1.0)); // Czarny kolor tła
+    }
+}
+

@@ -21,6 +21,7 @@ namespace vkGeometry {
         int rightChildIndex; // -1 if leaf
         int firstTriangleIndex;
         int triangleCount;
+        int nextNodeIndex;
     };
 
     float CalculateSAH(const AABB& leftBox, const AABB& rightBox, int leftCount, int rightCount) {
@@ -105,11 +106,12 @@ namespace vkGeometry {
         return node;
     }
 
-    int FlattenBVH(BVHNode* node, std::vector<GPU_BVHNode>& flatNodes, std::vector<Triangle>& flatTriangles) {
+    int FlattenBVH(BVHNode* node, std::vector<GPU_BVHNode>& flatNodes, std::vector<Triangle>& flatTriangles, int& nextNodeIndex) {
         // Tworzymy nowy wêze³ dla struktury liniowej
         GPU_BVHNode gpuNode;
         gpuNode.boundingBox = node->boundingBox;
-
+        // Zapisujemy indeks tego wêz³a
+        int currentIndex = flatNodes.size();
         if (node->isLeaf()) {
             // To jest liœæ, ustaw indeksy trójk¹tów
             gpuNode.leftChildIndex = -1;
@@ -119,31 +121,45 @@ namespace vkGeometry {
 
             // Dodaj trójk¹ty z liœcia do p³askiej tablicy trójk¹tów
             flatTriangles.insert(flatTriangles.end(), node->triangles.begin(), node->triangles.end());
+
+           
+
+            // Dodajemy bie¿¹cy wêze³ do p³askiej tablicy wêz³ów
+            flatNodes.push_back(gpuNode);
+
+            // Ustawiamy nextNodeIndex, poniewa¿ to jest liœæ
+            flatNodes[currentIndex].nextNodeIndex = nextNodeIndex;  // Nastêpny wêze³ do odwiedzenia po przetworzeniu liœcia
+
+            // Zwracamy indeks bie¿¹cego wêz³a
+            return currentIndex;
         }
         else {
             // To jest wêze³ wewnêtrzny, rekurencyjnie sp³aszczamy lewe i prawe poddrzewo
             gpuNode.firstTriangleIndex = -1;  // Niepotrzebne w wêz³ach wewnêtrznych
             gpuNode.triangleCount = 0;        // Niepotrzebne w wêz³ach wewnêtrznych
 
+            int savedNextNodeIndex = nextNodeIndex;
             // Zapisujemy indeks tego wêz³a
-            int currentIndex = flatNodes.size();
+            nextNodeIndex = currentIndex + 1;
 
-            // Rezerwujemy miejsce dla lewego i prawego dziecka
-            flatNodes.push_back(gpuNode); // Dodajemy bie¿¹cy wêze³, zostanie uzupe³niony póŸniej
+            // Rezerwujemy miejsce dla bie¿¹cego wêz³a
+            flatNodes.push_back(gpuNode);  // Dodajemy bie¿¹cy wêze³, zostanie uzupe³niony póŸniej
 
             // Przetwarzamy lewe dziecko
-            int leftChildIndex = FlattenBVH(node->left, flatNodes, flatTriangles);
-            // Przetwarzamy prawe dziecko
-            int rightChildIndex = FlattenBVH(node->right, flatNodes, flatTriangles);
+            int leftChildIndex = FlattenBVH(node->left, flatNodes, flatTriangles, nextNodeIndex);
+
+            // Ustawiamy nextNodeIndex dla prawego dziecka, czyli na bie¿¹cy wêze³ (przetworzenie prawego poddrzewa powinno nas wróciæ tu)
+            int rightChildIndex = FlattenBVH(node->right, flatNodes, flatTriangles, nextNodeIndex);
 
             // Uzupe³niamy indeksy dzieci
             flatNodes[currentIndex].leftChildIndex = leftChildIndex;
             flatNodes[currentIndex].rightChildIndex = rightChildIndex;
 
+            // Po przetworzeniu prawego dziecka, ustawiamy nextNodeIndex na nastêpny wêze³ po ca³ym poddrzewie
+            flatNodes[currentIndex].nextNodeIndex = nextNodeIndex;
+
+            // Zwracamy indeks bie¿¹cego wêz³a
             return currentIndex;
         }
-
-        // Zwracamy indeks aktualnego wêz³a
-        return flatNodes.size() - 1;
     }
 }
