@@ -34,6 +34,21 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(glm)
 
+# Assimp
+FetchContent_Declare(
+  assimp
+  GIT_REPOSITORY https://github.com/assimp/assimp.git
+  GIT_TAG master # Ostatnia stabilna wersja
+)
+FetchContent_MakeAvailable(assimp)
+# ImGui
+FetchContent_Declare(
+  imgui
+  GIT_REPOSITORY https://github.com/ocornut/imgui.git
+  GIT_TAG master  # Ostatnia stabilna wersja
+)
+FetchContent_MakeAvailable(imgui)
+
 # Źródła projektu
 set(SOURCES
     src/main.cpp
@@ -63,11 +78,26 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/ECS/component.cpp"
     "src/Scene/ECS/entity.cpp"
     "src/Scene/ECS/system.cpp"
-    "src/Scene/ECS/ecs.cpp")
+    "src/Scene/ECS/ecs.cpp"
+    # Dodaj pliki ImGui
+    ${imgui_SOURCE_DIR}/imgui.cpp
+    ${imgui_SOURCE_DIR}/imgui_draw.cpp
+    ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+    ${imgui_SOURCE_DIR}/imgui_tables.cpp
+    ${imgui_SOURCE_DIR}/imgui_demo.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+    ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
+ "src/View/vkUtil/renderpass.cpp" "src/View/vkInit/commands.cpp" "src/View/vkInit/synchronizer.cpp" "src/View/vkInit/framebuffer.cpp")
 
 # Dodanie bibliotek do aplikacji
-target_link_libraries(${PROJECT_NAME} Vulkan::Vulkan glfw glm)
-
+# Dodaj biblioteki do kompilacji
+target_link_libraries(${PROJECT_NAME}
+  Vulkan::Vulkan
+  glfw
+  glm
+  assimp
+  imgui
+)
 # Ustawienia dla kompilacji w systemie Linux
 if(UNIX)
     target_link_libraries(${PROJECT_NAME} dl pthread)
@@ -76,7 +106,10 @@ endif()
 # Ustawienie katalogu z plikami nagłówkowymi
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${Vulkan_INCLUDE_DIRS}
-PUBLIC ${CMAKE_SOURCE_DIR}/include)
+    ${CMAKE_SOURCE_DIR}/include
+    PRIVATE ${imgui_SOURCE_DIR})
+
+
 
 # Opcjonalne: Ustawienia kompilatora (dodatkowe flagi)
 if(MSVC)

@@ -6,6 +6,7 @@
 #include "Player/camera.h"
 #include <Scene/scene.h>
 #include "View/egnine.h"
+
 class App
 {
 	GraphicsEngine* graphicsEngine;
@@ -18,6 +19,7 @@ class App
 	void build_glfw_window(glm::ivec2 screenSize, bool debugMode);
 	void calculateFrameRate();
 	int verticesCounter = {};
+	void build_imgui_context();
 
 public:
 	App(glm::ivec2 screenSize, bool debugMode);

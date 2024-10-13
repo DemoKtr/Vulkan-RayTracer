@@ -10,24 +10,25 @@ vkUtil::QueueFamilyIndices vkUtil::findQueueFamilies(vk::PhysicalDevice device, 
 	int i{ 0 };
 	for (vk::QueueFamilyProperties queueFamily : queueFamilies) {
 		if (queueFamily.queueFlags & vk::QueueFlagBits::eGraphics) {
-			indices.graphicsFamily = i;
+				indices.graphicsFamily = i;
+				if (debugMode) {
+					std::cout << "Queue Family " << i << " is suitable for graphics and have"<<queueFamilies[i].queueCount <<"queues " << std::endl;
 
 
-			if (debugMode) {
-				std::cout << "Queue Family " << i << "is suitable for graphic" << std::endl;
-			}
+				}
 		}
 
+		
 		if (device.getSurfaceSupportKHR(i, surface)) {
 			indices.presentFamily = i;
 			if (debugMode) {
-				std::cout << "Queue Family " << i << "is suitable for present" << std::endl;
+				std::cout << "Queue Family " << i << "is suitable for present and have" << queueFamilies[i].queueCount << "queues " << std::endl;
 			}
 		}
 		if (queueFamily.queueFlags & vk::QueueFlagBits::eCompute) {
 			indices.computeFamily = i;
 			if (debugMode) {
-				std::cout << "Queue Family " << i << "is suitable for compute" << std::endl;
+				std::cout << "Queue Family " << i << "is suitable for compute and have" << queueFamilies[i].queueCount << "queues " << std::endl;
 			}
 		}
 

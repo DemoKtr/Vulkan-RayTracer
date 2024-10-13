@@ -1,6 +1,9 @@
 #include "app.h"
 #include <sstream>
 #include <settings.h>
+#include "imgui.h"
+#include <backends/imgui_impl_vulkan.h>
+
 
 
 void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode)
@@ -27,7 +30,7 @@ void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode)
 	glfwSetWindowUserPointer(window, this);
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 }
 
 void App::calculateFrameRate()
@@ -50,6 +53,16 @@ void App::calculateFrameRate()
 	++numFrames;
 }
 
+void App::build_imgui_context() {
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+	// Ustaw styl
+	ImGui::StyleColorsDark();
+	ImGui_ImplVulkan_InitInfo init_info = {};
+}
+
 App::App(glm::ivec2 screenSize, bool debugMode)
 {
 	vkSettings::lastX = screenSize.x / 2.0f;
@@ -59,6 +72,7 @@ App::App(glm::ivec2 screenSize, bool debugMode)
 	scene = new Scene();
 	
 	graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
+	graphicsEngine->InitImGui(window);
 
 }
 
@@ -79,7 +93,7 @@ void App::run()
 		processInput(window);
 		glfwPollEvents();
 		scene->updateScene(deltaTime);
-		//graphicsEngine->render(scene, verticesCounter, deltaTime, camera);
+		graphicsEngine->render(scene, verticesCounter, deltaTime, camera);
 		calculateFrameRate();
 
 	}

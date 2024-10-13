@@ -117,6 +117,36 @@ vk::DescriptorPool vkInit::make_descriptor_pool(
 	}
 }
 
+vk::DescriptorPool vkInit::make_imgui_descriptor_pool(vk::Device device) {
+	vk::DescriptorPoolSize poolSizes[] = {
+		{ vk::DescriptorType::eCombinedImageSampler, 1000 }
+	};
+	vk::DescriptorPoolCreateInfo poolInfo;
+	/*
+		typedef struct VkDescriptorPoolCreateInfo {
+			VkStructureType                sType;
+			const void*                    pNext;
+			VkDescriptorPoolCreateFlags    flags;
+			uint32_t                       maxSets;
+			uint32_t                       poolSizeCount;
+			const VkDescriptorPoolSize*    pPoolSizes;
+		} VkDescriptorPoolCreateInfo;
+	*/
+
+	poolInfo.flags = vk::DescriptorPoolCreateFlags();
+	poolInfo.maxSets = 1000;
+	poolInfo.poolSizeCount = 1;
+	poolInfo.pPoolSizes = poolSizes;
+
+	try {
+		return device.createDescriptorPool(poolInfo);
+	}
+	catch (vk::SystemError err) {
+		std::cout << ("Failed to make descriptor pool") << std::endl;
+		return nullptr;
+	}
+}
+
 vk::DescriptorSet vkInit::allocate_descriptor_set(vk::Device device, vk::DescriptorPool descriptorPool, vk::DescriptorSetLayout layout)
 {
 	vk::DescriptorSetAllocateInfo allocationInfo;

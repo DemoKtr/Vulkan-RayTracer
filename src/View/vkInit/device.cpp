@@ -104,13 +104,24 @@ vk::Device vkInit::create_logical_device(vk::PhysicalDevice physicalDevice, vk::
 	vkUtil::QueueFamilyIndices indices = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode);
 	std::vector<uint32_t> uniqueIndices;
 	uniqueIndices.push_back(indices.graphicsFamily.value());
-	if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
+	if (indices.graphicsFamily.value() != indices.computeFamily.value()) {
 		uniqueIndices.push_back(indices.presentFamily.value());
 	}
-	float queuePriority = 1.0f;
+	std::vector<float> queuePriorities = { 1.0f, 1.0f };
 	std::vector<vk::DeviceQueueCreateInfo> queueCreateInfo;
 	for (uint32_t queueFamilyIndex : uniqueIndices) {
-		queueCreateInfo.push_back(vk::DeviceQueueCreateInfo(vk::DeviceQueueCreateFlags(), indices.graphicsFamily.value(), 1, &queuePriority));
+		if (queueFamilyIndex == indices.graphicsFamily.value()) {
+			// SprawdŸ, czy chcesz utworzyæ wiêcej ni¿ jedn¹ kolejkê w tej rodzinie
+			uint32_t queueCount = (physicalDevice.getQueueFamilyProperties()[queueFamilyIndex].queueCount > 1) ?
+				2 : 1;
+			vk::DeviceQueueCreateInfo info = {};
+			info.sType = vk::StructureType::eDeviceQueueCreateInfo;
+			info.queueFamilyIndex = queueFamilyIndex;
+			info.queueCount = queueCount;
+			info.pQueuePriorities = queuePriorities.data();
+			queueCreateInfo.push_back(info);
+		}
+
 	}
 
 	std::vector<const char*> deviceExtensions = {
@@ -150,7 +161,7 @@ vk::Device vkInit::create_logical_device(vk::PhysicalDevice physicalDevice, vk::
 	return nullptr;
 }
 
-std::array<vk::Queue, 3> vkInit::get_Queues(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode)
+std::array<vk::Queue,3> vkInit::get_Queues(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode)
 {
 	vkUtil::QueueFamilyIndices indices = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode);
 	return { { device.getQueue(indices.graphicsFamily.value(),0), device.getQueue(indices.presentFamily.value(),0), device.getQueue(indices.computeFamily.value(),0)} };

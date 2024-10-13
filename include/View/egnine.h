@@ -40,6 +40,14 @@ class GraphicsEngine {
 	//swapchainExtent
 	vk::Extent2D swapchainExtent;
 
+	vk::DescriptorPool imguiDescriptorPool;
+	vk::RenderPass imguiRenderPass;
+	vk::CommandBuffer maincommandBuffer;
+	vk::CommandPool imguiCommandPool;
+	vk::CommandPool CommandPool;
+
+	
+
 	resourceManager resourcesManager{};
 
 	void make_instance(); //instance Setup
@@ -51,8 +59,16 @@ class GraphicsEngine {
 	void create_pipeline();
 	void finalize_setup(Scene* scene);
 	void make_assets(Scene* scene);
+	void create_imgui_resources();
+	void create_imgui_descriptor_pool();
+	void create_frame_command_buffer();
+	void create_frame_resources(Scene* scene);
+	void create_framebuffers();
+	void render_imgui(vk::CommandBuffer commandBuffer, int numberOfFrame, bool debugMode);
+	
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);
 	void render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera);
+	void InitImGui(GLFWwindow* window);
 	~GraphicsEngine();
 };

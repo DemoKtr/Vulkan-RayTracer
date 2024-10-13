@@ -23,6 +23,12 @@ namespace vkUtil {
 
 
 		vk::CommandBuffer commandBuffer;
+		vk::CommandBuffer imguiCommandBuffer;
+		vk::Framebuffer imguiFrameBuffer;
+
+		//Sync objects
+		vk::Semaphore imageAvailable, renderFinished, computeFinished;
+		vk::Fence inFlight;
 
 		void destroy();
 

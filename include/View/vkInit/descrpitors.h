@@ -33,7 +33,8 @@ namespace vkInit
 	*/
 	vk::DescriptorPool make_descriptor_pool(
 		vk::Device device, uint32_t size, const descriptorSetLayoutData& bindings);
-
+	vk::DescriptorPool make_imgui_descriptor_pool(
+		vk::Device device);
 	/**
 		Allocate a descriptor set from a pool.
 
