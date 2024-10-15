@@ -14,6 +14,7 @@ namespace ecs {
     class ECSSystem;
     class ECS {
     public:
+        ECS();
         Entity createEntity();
 
         template <typename T>

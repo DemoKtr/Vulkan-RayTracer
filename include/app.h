@@ -21,12 +21,15 @@ class App
 	int verticesCounter = {};
 	void build_imgui_context();
 
+	
+
 public:
 	App(glm::ivec2 screenSize, bool debugMode);
 	~App();
 	void run();
 	Camera::Camera camera;
 	float deltaTime = 0.0f;
+	bool f12_button[2] = { {false }, { false } };
 };
 
 

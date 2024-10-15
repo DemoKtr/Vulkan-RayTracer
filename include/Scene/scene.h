@@ -2,13 +2,12 @@
 
 #include "SceneObject.h"
 
-class Scene
-{
-
-
+class Scene {
+	ecs::ECS* ecs;
+	bool b = false;
 public:
 	Scene();
 	~Scene();
-	std::vector<SceneObject*> sceneObjects;
+	SceneObject* root;
 	void updateScene(float deltaTime);
 };

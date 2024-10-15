@@ -2,7 +2,8 @@
 #include "config.h"
 #include <glm/fwd.hpp>
 #include "Scene/Transform.h"
-
+#include "Scene/ECS/ecs.h"
+#include <string>
 struct objectMaterial {
 	meshTypes meshType;
 	char* model{};
@@ -41,40 +42,26 @@ struct objectMaterial {
 
 
 
-class SceneObject
-{
-protected:
-	Transform transform;
-public:
-	virtual void draw() = 0;
-	virtual void update(float deltaTime) = 0;
-	Transform& getTransform();
-	objectMaterial objMaterial;
-};
+class SceneObject{
+
+	std::string name;
+	protected:
+		Transform transform;
+	
+	public:
+
+		ecs::Entity id;
+		std::vector<SceneObject*> children;
+		SceneObject* parent = nullptr;
+
+		SceneObject(ecs::ECS* ecs, SceneObject* parent);
+		SceneObject(ecs::ECS* ecs);
+		void draw();
+		void addChild(SceneObject* obj);
+		void update(float deltaTime);
+		Transform& getTransform();
+		objectMaterial objMaterial;
 
 
-
-
-
-
-class Box : public SceneObject {
-	// Inherited via StaticSceneObject
-public:
-	void draw() override;
-	void update(float deltaTime) override;
-	float angle = { 0 };
-	int index = 0;
-	Box();
-	~Box();
-};
-
-
-class Floor : public SceneObject {
-	// Inherited via StaticSceneObject
-public:
-	void draw() override;
-	void update(float deltaTime) override;
-
-	Floor();
-	~Floor();
+		std::string getName();
 };

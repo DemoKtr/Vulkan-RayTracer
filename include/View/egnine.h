@@ -6,6 +6,7 @@
 #include <Player/camera.h>
 #include "View/vkUtil/frame.h"
 #include "settings.h"
+#include "View/Interface/interface.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -50,6 +51,8 @@ class GraphicsEngine {
 
 	resourceManager resourcesManager{};
 
+	editor* sceneEditor;
+
 	void make_instance(); //instance Setup
 	void choice_device();
 	void create_swapchain();
@@ -64,11 +67,11 @@ class GraphicsEngine {
 	void create_frame_command_buffer();
 	void create_frame_resources(Scene* scene);
 	void create_framebuffers();
-	void render_imgui(vk::CommandBuffer commandBuffer, int numberOfFrame, bool debugMode);
+
 	
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);
-	void render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera);
+	void render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera, bool renderIMGUI);
 	void InitImGui(GLFWwindow* window);
 	~GraphicsEngine();
 };

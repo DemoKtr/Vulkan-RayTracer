@@ -32,6 +32,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	//create descriptor set layout
 	//create pipeline
 	finalize_setup(scene);
+	make_assets(scene);
 
 }
 
@@ -58,6 +59,7 @@ GraphicsEngine::~GraphicsEngine() {
 
 	instance.destroy();
 	glfwTerminate();
+	delete sceneEditor;
 }
 
 void GraphicsEngine::create_frame_resources(Scene* scene) {
@@ -227,8 +229,9 @@ void GraphicsEngine::create_framebuffers(){
 	vkInit::make_framebuffers(frameBufferInput, swapchainFrames, debugMode);
 }
 
-void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera) {
-
+void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera,bool renderIMGUI) {
+	if (renderIMGUI) {
+		
 	device.waitForFences(1, &swapchainFrames[frameNumber].inFlight, VK_TRUE, UINT64_MAX);
 	device.resetFences(1, &swapchainFrames[frameNumber].inFlight);
 
@@ -256,12 +259,14 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 	}
 
 
-
+	
 	vk::CommandBuffer imgcommandBuffer = swapchainFrames[frameNumber].imguiCommandBuffer;
 
 	imgcommandBuffer.reset();
 
-	render_imgui(imgcommandBuffer,frameNumber,debugMode);
+	
+	//render_imgui(imgcommandBuffer,frameNumber,debugMode);
+	sceneEditor->render_editor(imgcommandBuffer,imguiRenderPass,swapchainFrames,swapchainExtent,frameNumber,debugMode);
 
 	vk::SubmitInfo submitInfo = {};
 
@@ -311,62 +316,10 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 	}
 
 	frameNumber = (frameNumber + 1) % maxFramesInFlight;
-}
-
-void GraphicsEngine::render_imgui(vk::CommandBuffer commandBuffer, int numberOfFrame, bool debugMode) {
-	vk::CommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
-	beginInfo.pInheritanceInfo = nullptr;  // Opcjonalnie
-
-
-	try {
-		commandBuffer.begin(beginInfo);
-	}
-	catch (vk::SystemError err) {
-		if (debugMode) {
-			std::cout << "Failed to begin recording command buffer!" << std::endl;
-		}
-	}
-
-	// Renderowanie ImGui
-	ImGui_ImplGlfw_NewFrame();
-	ImGui_ImplVulkan_NewFrame();
-	ImGui::NewFrame();
-	if (ImGui::Button("Click Me")) {
-		// Kod do wykonania po naciœniêciu przycisku
-		std::cout << "Button was clicked!" << std::endl;
-	}
-
-	// Twoje GUI
-	ImGui::Begin("Hello, ImGui!");
-	ImGui::Text("This is a Vulkan window with ImGui!");
-
-	ImGui::End();
-	vk::RenderPassBeginInfo imguiRenderpassInfo = {};
-	imguiRenderpassInfo.renderPass = imguiRenderPass;
-	imguiRenderpassInfo.framebuffer = swapchainFrames[frameNumber].imguiFrameBuffer;
-	imguiRenderpassInfo.renderArea.offset.x = 0;
-	imguiRenderpassInfo.renderArea.offset.y = 0;
-	imguiRenderpassInfo.renderArea.extent = swapchainExtent;
-	vk::ClearValue clearColor = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-	imguiRenderpassInfo.clearValueCount = 1;
-	imguiRenderpassInfo.pClearValues = &clearColor;
-
-	// Rozpocznij render pass
-	commandBuffer.beginRenderPass(imguiRenderpassInfo, vk::SubpassContents::eInline);
-
-	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-	// Zakoñcz render pass
-	commandBuffer.endRenderPass();
-
-	try {
-		commandBuffer.end();
-	}
-	catch (vk::SystemError err) {
-
-		if (debugMode) {
-			std::cout << "failed to record command buffer!" << std::endl;
-		}
 	}
 }
+
+void GraphicsEngine::make_assets(Scene* scene) {
+	sceneEditor = new editor(scene);
+}
+

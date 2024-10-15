@@ -93,8 +93,9 @@ void App::run()
 		processInput(window);
 		glfwPollEvents();
 		scene->updateScene(deltaTime);
-		graphicsEngine->render(scene, verticesCounter, deltaTime, camera);
+		graphicsEngine->render(scene, verticesCounter, deltaTime, camera,f12_button[1]);
 		calculateFrameRate();
+		
 
 	}
 }
@@ -113,6 +114,16 @@ void processInput(GLFWwindow* window)
 		referenceApp->camera.ProcessKeyboard(Camera::Camera_Movement::LEFT, referenceApp->deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		referenceApp->camera.ProcessKeyboard(Camera::Camera_Movement::RIGHT, referenceApp->deltaTime);
+
+	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS && !referenceApp->f12_button[0]){
+		referenceApp->f12_button[0] = true;
+		referenceApp->f12_button[1] = !referenceApp->f12_button[1];
+	}
+	if (glfwGetKey(window, GLFW_KEY_P) == GLFW_RELEASE) {
+		referenceApp->f12_button[0] = false;
+	}
+
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes

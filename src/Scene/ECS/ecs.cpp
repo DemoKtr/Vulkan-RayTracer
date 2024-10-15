@@ -1,5 +1,8 @@
 #include "Scene/ECS/ecs.h"
 
+ecs::ECS::ECS() {
+}
+
 ecs::Entity ecs::ECS::createEntity() {
     Entity entity = nextEntityId++;
     entityMasks[entity].reset();
