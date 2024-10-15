@@ -3,9 +3,10 @@
 #include "SceneObject.h"
 
 class Scene {
-	ecs::ECS* ecs;
+	
 	bool b = false;
 public:
+	ecs::ECS* ecs;
 	Scene();
 	~Scene();
 	SceneObject* root;

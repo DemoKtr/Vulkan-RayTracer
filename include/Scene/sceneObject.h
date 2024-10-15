@@ -45,8 +45,6 @@ struct objectMaterial {
 class SceneObject{
 
 	std::string name;
-	protected:
-		Transform transform;
 	
 	public:
 
@@ -59,7 +57,6 @@ class SceneObject{
 		void draw();
 		void addChild(SceneObject* obj);
 		void update(float deltaTime);
-		Transform& getTransform();
 		objectMaterial objMaterial;
 
 

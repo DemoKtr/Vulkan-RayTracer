@@ -1,6 +1,7 @@
 #include "View/Interface/interface.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+#include <Scene/ECS/components/transformComponent.h>
 
 
 
@@ -41,7 +42,29 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	if (selectedObject != nullptr) {
 		ImGui::Begin("Selected Object Properties");
 		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());
+		ImGui::Separator();
+		ImGui::Text("Components:");
+		auto components = scene->ecs->getAllComponents(selectedObject->id);
+		
+		for (const auto& componentPtr : components) {
+			Component* comp = componentPtr.get();  // Surowy wskaŸnik
 
+			if (ImGui::TreeNode(comp->getType() == ComponentType::Transform ? "Transform" : "Mesh")) {
+				// Wyœwietlanie specyficznych pól dla komponentów
+				if (comp->getType() == ComponentType::Transform) {
+					TransformComponent* transform = dynamic_cast<TransformComponent*>(comp);
+					if (transform != nullptr) {
+						// Wyœwietlanie i edytowanie transformacji
+						Transform& transformData = transform->getModifyableTransform();
+						ImGui::DragFloat3("Position", &transformData.getModifyableLocalPosition().x, 0.1f);
+						ImGui::DragFloat3("Rotation", &transformData.getModifyableLocalRotation().x, 0.1f);
+						ImGui::DragFloat3("Scale", &transformData.getModifyableLocalScale().x, 0.1f);
+					}
+				}
+				// Zakoñcz wêze³ drzewa
+				ImGui::TreePop();
+			}
+		}
 		
 
 		ImGui::End();
@@ -77,9 +100,17 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 }
 
 void editor::DisplaySceneObject(SceneObject* obj) {
+
+	//ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]); // Przyk³adowo, wiêksza czcionka
 	if (ImGui::TreeNode(obj->getName().c_str())) {
 		if (ImGui::IsItemClicked()) {
 			selectedObject = obj;
+		}
+
+
+		ImGui::SameLine();
+		if (ImGui::Button("Add Child")) {
+			AddSceneObject(obj);
 		}
 
 		if (obj->parent != nullptr) {
@@ -88,6 +119,7 @@ void editor::DisplaySceneObject(SceneObject* obj) {
 
 				RemoveSceneObject(obj);
 				ImGui::TreePop();
+				//ImGui::PopFont(); // Przywróæ domyœlny rozmiar czcionki
 				return;
 			}
 		}
@@ -100,6 +132,7 @@ void editor::DisplaySceneObject(SceneObject* obj) {
 
 		ImGui::TreePop();
 	}
+	//ImGui::PopFont(); // Przywróæ domyœlny rozmiar czcionki (jeœli zmienia³eœ)
 }
 
 
@@ -130,4 +163,9 @@ void editor::RemoveSceneObject(SceneObject* obj) {
 	// Zwolnij pamiêæ obiektu
 	delete obj;
 	selectedObject = nullptr;
+}
+
+void editor::AddSceneObject(SceneObject* obj) {
+	SceneObject* newChild = new SceneObject(scene->ecs);
+	obj->addChild(newChild); // Dodaj nowy obiekt do dzieci
 }

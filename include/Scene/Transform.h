@@ -76,6 +76,21 @@ public:
 		return m_scale;
 	}
 
+	glm::vec3& getModifyableLocalPosition()
+	{
+		return m_pos;
+	}
+
+	glm::quat& getModifyableLocalRotation()
+	{
+		return m_rotation;
+	}
+
+	glm::vec3& getModifyableLocalScale()
+	{
+		return m_scale;
+	}
+
 	const glm::mat4& getModelMatrix() const
 	{
 		return m_modelMatrix;

@@ -87,7 +87,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
- "src/View/vkUtil/renderpass.cpp" "src/View/vkInit/commands.cpp" "src/View/vkInit/synchronizer.cpp" "src/View/vkInit/framebuffer.cpp" "src/View/Interface/interface.cpp")
+ "src/View/vkUtil/renderpass.cpp" "src/View/vkInit/commands.cpp" "src/View/vkInit/synchronizer.cpp" "src/View/vkInit/framebuffer.cpp" "src/View/Interface/interface.cpp" "src/Scene/ECS/components/transformComponent.cpp" "src/Scene/ECS/components/scriptComponent.cpp" "src/Scene/ECS/components/meshComponent.cpp" "src/Scene/ECS/components/renderComponent.cpp" "src/Scene/ECS/components/physicsComponent.cpp")
 
 # Dodanie bibliotek do aplikacji
 # Dodaj biblioteki do kompilacji

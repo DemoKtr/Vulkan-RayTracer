@@ -12,5 +12,6 @@ class editor {
 		editor(Scene* scene);
 		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		void DisplaySceneObject(SceneObject* obj);
-		void editor::RemoveSceneObject(SceneObject* obj);
+		void RemoveSceneObject(SceneObject* obj);
+		void AddSceneObject(SceneObject* obj);
 };
