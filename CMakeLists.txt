@@ -55,6 +55,9 @@ set(SOURCES
     src/app.cpp
 )
 
+
+
+
 # Tworzenie aplikacji
 add_executable(${PROJECT_NAME} ${SOURCES} 
     "src/View/engine.cpp" 
@@ -87,7 +90,26 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     ${imgui_SOURCE_DIR}/imgui_demo.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
     ${imgui_SOURCE_DIR}/backends/imgui_impl_vulkan.cpp
- "src/View/vkUtil/renderpass.cpp" "src/View/vkInit/commands.cpp" "src/View/vkInit/synchronizer.cpp" "src/View/vkInit/framebuffer.cpp" "src/View/Interface/interface.cpp" "src/Scene/ECS/components/transformComponent.cpp" "src/Scene/ECS/components/scriptComponent.cpp" "src/Scene/ECS/components/meshComponent.cpp" "src/Scene/ECS/components/renderComponent.cpp" "src/Scene/ECS/components/physicsComponent.cpp")
+    "src/View/vkUtil/renderpass.cpp"
+    "src/View/vkInit/commands.cpp"
+    "src/View/vkInit/synchronizer.cpp"
+    "src/View/vkInit/framebuffer.cpp"
+    "src/View/Interface/interface.cpp"
+    "src/Scene/ECS/components/transformComponent.cpp"
+    "src/Scene/ECS/components/scriptComponent.cpp"
+    "src/Scene/ECS/components/meshComponent.cpp"
+    "src/Scene/ECS/components/renderComponent.cpp"
+    "src/Scene/ECS/components/physicsComponent.cpp"
+    "src/View/vkVertexData/vertexMenagerie.cpp"
+    "src/MultithreatedSystems/ThumbnailTask.cpp"
+    "src/View/vkMesh/meshTypes.cpp"
+    "src/View/Interface/Thumbs/thumbRenderer.cpp"
+    "src/View/vkInit/vkPipeline/pipelineBuilder.cpp"
+    "src/View/vkInit/vkPipeline/shaders.cpp"
+    "src/View/vkMesh/vertexMenagerie.cpp"
+    "src/View/vkMesh/mesh.cpp"
+    "src/View/vkMesh/meshLoader.cpp"
+    "src/Converters/assimpConverter.cpp")
 
 # Dodanie bibliotek do aplikacji
 # Dodaj biblioteki do kompilacji
@@ -109,7 +131,18 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     PRIVATE ${imgui_SOURCE_DIR})
 
+# Zdefiniuj ścieżki do folderów 'resource' i 'core'
+set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
+set(CORE_DIR "${CMAKE_SOURCE_DIR}/core")
 
+# Skopiuj folder 'resource' do folderu build w czasie konfiguracji
+file(COPY ${RESOURCE_DIR} DESTINATION ${CMAKE_BINARY_DIR})
+
+# Skopiuj folder 'core' do folderu build w czasie konfiguracji
+file(COPY ${CORE_DIR} DESTINATION ${CMAKE_BINARY_DIR})
+
+# Używamy CMAKE_SOURCE_DIR, aby uzyskać katalog główny projektu
+add_definitions(-DPROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
 # Opcjonalne: Ustawienia kompilatora (dodatkowe flagi)
 if(MSVC)

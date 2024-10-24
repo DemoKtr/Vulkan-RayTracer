@@ -7,6 +7,7 @@
 #include "View/vkUtil/frame.h"
 #include "settings.h"
 #include "View/Interface/interface.h"
+#include "View/vkMesh/meshTypes.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -52,6 +53,8 @@ class GraphicsEngine {
 	resourceManager resourcesManager{};
 
 	editor* sceneEditor;
+
+	modelNames  meshes;
 
 	void make_instance(); //instance Setup
 	void choice_device();

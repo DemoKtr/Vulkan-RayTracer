@@ -230,6 +230,7 @@ void GraphicsEngine::create_framebuffers(){
 }
 
 void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera,bool renderIMGUI) {
+	
 	if (renderIMGUI) {
 		
 	device.waitForFences(1, &swapchainFrames[frameNumber].inFlight, VK_TRUE, UINT64_MAX);
@@ -321,5 +322,8 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 void GraphicsEngine::make_assets(Scene* scene) {
 	sceneEditor = new editor(scene);
+	listMeshesFilesInDirectory("\\core", meshes);
+
+	
 }
 

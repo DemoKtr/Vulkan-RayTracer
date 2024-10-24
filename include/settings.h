@@ -1,5 +1,5 @@
 #pragma once
-
+#include "config.h"
 struct resourceManager {
     std::vector<vk::CommandPool> commandPools = {};
     std::vector<vk::Pipeline> pipelines = {};
