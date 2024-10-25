@@ -24,13 +24,13 @@ namespace vkMesh {
 	public:
 		VertexMenagerie();
 		~VertexMenagerie();
-		void consume(meshTypes meshType, std::vector<vkGeometry::Vertex> data, std::vector<uint32_t> indices);
+		void consume(int meshType, std::vector<vkGeometry::Vertex> data, std::vector<uint32_t> indices);
 
 
 		void finalize(FinalizationChunk finalizationChunk);
 		Buffer vertexBuffer, indexBuffer;
-		std::unordered_map<meshTypes, int> firstIndices;
-		std::unordered_map<meshTypes, int> indexCounts;
+		std::unordered_map<int, int> firstIndices;
+		std::unordered_map<int, int> indexCounts;
 
 
 	};

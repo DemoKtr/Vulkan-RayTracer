@@ -268,7 +268,7 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 	
 	//render_imgui(imgcommandBuffer,frameNumber,debugMode);
-	sceneEditor->render_editor(imgcommandBuffer,imguiRenderPass,swapchainFrames,swapchainExtent,frameNumber,debugMode);
+	sceneEditor->render_editor(imgcommandBuffer,imguiRenderPass,swapchainFrames,meshesNames,swapchainExtent,frameNumber,debugMode);
 
 	vk::SubmitInfo submitInfo = {};
 
@@ -322,18 +322,18 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 }
 
 void GraphicsEngine::make_assets(Scene* scene) {
+	meshes = new vkMesh::VertexMenagerie();
 	sceneEditor = new editor(scene);
-	listMeshesFilesInDirectory("\\core", meshes);
+	listMeshesFilesInDirectory("\\core", meshesNames);
 	std::vector<vkMesh::MeshLoader> test;
-	for (std::string path : meshes.fullPaths) {
+	for (std::string path : meshesNames.fullPaths) {
 		vkMesh::MeshLoader m(path.c_str());
 		test.push_back(m);
 	}
-
+	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
-		for (vkMesh::Mesh mes : m.meshes) {
-			mes.printVertices();
-		}
+		vkMesh::VertexBuffers buffer = m.getData();
+		meshes->consume(index++,buffer.vertices,buffer.indicies);
 	}
 	
 }

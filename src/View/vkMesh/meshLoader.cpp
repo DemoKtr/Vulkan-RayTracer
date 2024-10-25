@@ -82,7 +82,7 @@ vkMesh::Mesh vkMesh::MeshLoader::processMesh(aiMesh* mesh, const aiScene* scene)
 }
 
 vkMesh::VertexBuffers vkMesh::MeshLoader::getData() {
-	int offset = 0;
+	uint32_t offset = 0;
 
 	VertexBuffers buffer;
 
@@ -92,7 +92,7 @@ vkMesh::VertexBuffers vkMesh::MeshLoader::getData() {
 			buffer.vertices.push_back(vert);
 		}
 
-		for (int index : mesh.indices) {
+		for (uint32_t index : mesh.indices) {
 			buffer.indicies.push_back(index + offset);
 		}
 		offset += mesh.vertices.size();

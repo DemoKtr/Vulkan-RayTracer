@@ -1,5 +1,7 @@
 #include "Scene/sceneObject.h"
 #include "Scene/ECS/components/transformComponent.h"
+#include <Scene/ECS/components/meshComponent.h>
+#include <thread>
 SceneObject::SceneObject(ecs::ECS* ecs, SceneObject* parent) {
 	id = ecs->createEntity();
 	
@@ -9,9 +11,15 @@ SceneObject::SceneObject(ecs::ECS* ecs, SceneObject* parent) {
 }
 
 SceneObject::SceneObject(ecs::ECS* ecs){
+
 	id = ecs->createEntity();
 	std::shared_ptr<TransformComponent> transformComponent = std::make_shared<TransformComponent>();
+	std::shared_ptr<meshComponent> meshcomponent = std::make_shared<meshComponent>();
+
 	ecs->addComponent(id, transformComponent);
+
+	ecs->addComponent(id, meshcomponent);
+
 	name = "SceneObject " + std::to_string(id);
 }
 

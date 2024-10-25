@@ -43,6 +43,10 @@ namespace ecs {
 
         std::vector<std::shared_ptr<Component>> getAllComponents(Entity entity) const;
 
+        void removeComponent(Component* component, Entity entity);
+        void printNumberOfComponents(Entity entity);
+
+
     private:
         Entity nextEntityId = 1;
         std::unordered_map<Entity, std::bitset<MAX_COMPONENTS>> entityMasks;

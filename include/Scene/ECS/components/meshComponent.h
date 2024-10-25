@@ -8,6 +8,7 @@ class meshComponent : public Component {
 
 public:
     meshComponent();
-
+    void setIndex(int index);
+    int getIndex();
 
 };

@@ -4,7 +4,7 @@ namespace vkMesh {
 
 	struct VertexBuffers {
 		std::vector<vkGeometry::Vertex> vertices;
-		std::vector<int> indicies;
+		std::vector<uint32_t> indicies;
 	};
 
 	class Mesh {

@@ -9,7 +9,7 @@ namespace vkMesh {
 		std::vector<Mesh> meshes;
 		// constructor, expects a filepath to a 3D model.
 		MeshLoader(const char* path);
-
+		vkMesh::VertexBuffers getData();
 	private:
 		int m_BoneCounter = 0;
 
@@ -21,7 +21,7 @@ namespace vkMesh {
 
 		vkMesh::Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 
-		vkMesh::VertexBuffers getData();
+		
 
 	};
 }

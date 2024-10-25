@@ -1,4 +1,5 @@
 #include "Scene/ECS/ecs.h"
+#include <iostream>
 
 ecs::ECS::ECS() {
 }
@@ -33,4 +34,41 @@ std::vector<std::shared_ptr<Component>> ecs::ECS::getAllComponents(Entity entity
     }
 
     return result;
+}
+
+void ecs::ECS::removeComponent(Component* component, Entity entity) {
+
+    std::type_index typeIndex = std::type_index(typeid(*component));
+
+
+    auto typeIt = components.find(typeIndex);
+    if (typeIt != components.end()) {
+        auto& entityMap = typeIt->second;
+       // std::cout << entityMap.size() << std::endl;
+        printNumberOfComponents(entity);
+        auto entityIt = entityMap.find(entity);
+        if (entityIt != entityMap.end()) {
+
+            entityMap.erase(entity);
+            printNumberOfComponents(entity);
+           // std::cout << entityMap.size() << std::endl;
+            if (entityMap.empty()) {
+                components.erase(typeIt);
+            }
+            
+        }
+    }
+    
+}
+
+void ecs::ECS::printNumberOfComponents(Entity entity) {
+    std::cout << "Entity: " << entity << ":" << std::endl;
+
+    for (const auto& [typeIndex, entityMap] : components) {
+        auto entityIt = entityMap.find(entity);
+        if (entityIt != entityMap.end()) {
+            // Liczba komponentów przypisanych do tego typu
+            std::cout << "Type: " << typeIndex.name()  << std::endl;
+        }
+    }
 }

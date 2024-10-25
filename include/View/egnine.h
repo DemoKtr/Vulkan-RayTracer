@@ -8,6 +8,7 @@
 #include "settings.h"
 #include "View/Interface/interface.h"
 #include "View/vkMesh/meshTypes.h"
+#include "View/vkMesh/vertexMenagerie.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -54,7 +55,9 @@ class GraphicsEngine {
 
 	editor* sceneEditor;
 
-	modelNames  meshes;
+	modelNames  meshesNames;
+
+	vkMesh::VertexMenagerie* meshes;
 
 	void make_instance(); //instance Setup
 	void choice_device();
