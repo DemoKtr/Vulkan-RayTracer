@@ -21,5 +21,7 @@ namespace vkMesh {
 
 		vkMesh::Mesh processMesh(aiMesh* mesh, const aiScene* scene);
 
+		vkMesh::VertexBuffers getData();
+
 	};
 }

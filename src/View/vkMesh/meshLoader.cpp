@@ -80,3 +80,23 @@ vkMesh::Mesh vkMesh::MeshLoader::processMesh(aiMesh* mesh, const aiScene* scene)
 
 	return vkMesh::Mesh(vertices, indices);
 }
+
+vkMesh::VertexBuffers vkMesh::MeshLoader::getData() {
+	int offset = 0;
+
+	VertexBuffers buffer;
+
+	for (vkMesh::Mesh mesh : meshes) {
+
+		for (vkGeometry::Vertex vert : mesh.vertices) {
+			buffer.vertices.push_back(vert);
+		}
+
+		for (int index : mesh.indices) {
+			buffer.indicies.push_back(index + offset);
+		}
+		offset += mesh.vertices.size();
+	}
+	return buffer;
+}
+

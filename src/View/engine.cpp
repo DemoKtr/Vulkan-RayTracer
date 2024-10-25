@@ -17,6 +17,7 @@
 #include <View/vkInit/synchronizer.h>
 #include <View/vkInit/framebuffer.h>
 
+#include "View/vkMesh/meshLoader.h"
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -323,7 +324,17 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 void GraphicsEngine::make_assets(Scene* scene) {
 	sceneEditor = new editor(scene);
 	listMeshesFilesInDirectory("\\core", meshes);
+	std::vector<vkMesh::MeshLoader> test;
+	for (std::string path : meshes.fullPaths) {
+		vkMesh::MeshLoader m(path.c_str());
+		test.push_back(m);
+	}
 
+	for (vkMesh::MeshLoader m : test) {
+		for (vkMesh::Mesh mes : m.meshes) {
+			mes.printVertices();
+		}
+	}
 	
 }
 
