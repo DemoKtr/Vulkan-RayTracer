@@ -109,7 +109,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkMesh/vertexMenagerie.cpp"
     "src/View/vkMesh/mesh.cpp"
     "src/View/vkMesh/meshLoader.cpp"
-    "src/Converters/assimpConverter.cpp" "src/Scene/ECS/components/componentFabric.cpp")
+    "src/Converters/assimpConverter.cpp" "src/Scene/ECS/components/componentFabric.cpp" "src/View/vkImage/texture.cpp")
 
 # Dodanie bibliotek do aplikacji
 # Dodaj biblioteki do kompilacji

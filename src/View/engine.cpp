@@ -322,8 +322,31 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 }
 
 void GraphicsEngine::make_assets(Scene* scene) {
+
+	vkInit::descriptorSetLayoutData bindingsy;
+	bindingsy.count = 1;
+	bindingsy.indices.push_back(0);
+	bindingsy.types.push_back(vk::DescriptorType::eCombinedImageSampler);
+	bindingsy.counts.push_back(1);
+	bindingsy.stages.push_back(vk::ShaderStageFlagBits::eFragment);
+	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindingsy);
+
 	meshes = new vkMesh::VertexMenagerie();
-	sceneEditor = new editor(scene);
+	vkInit::descriptorSetLayoutData bindings;
+	bindings.count = 1;
+	bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
+
+	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	vkImage::TextureInputChunk info;
+	std::string str = std::string(PROJECT_DIR) + "\\core\\u.png";
+	info.filenames = str.c_str();
+	info.descriptorPool = iconDescriptorPool;
+	info.layout = iconDescriptorSetLayout;
+	info.queue = graphicsQueue;
+	info.commandBuffer = maincommandBuffer;
+	info.logicalDevice = device;
+	info.physicalDevice = physicalDevice;
+	sceneEditor = new editor(scene, std::string(PROJECT_DIR),info);
 	listMeshesFilesInDirectory("\\core", meshesNames);
 	std::vector<vkMesh::MeshLoader> test;
 	for (std::string path : meshesNames.fullPaths) {

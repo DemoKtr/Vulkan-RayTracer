@@ -8,8 +8,13 @@
 
 
 
-editor::editor(Scene* scene){
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info){
 	this->scene = scene;
+	
+	baseFolder = path;
+	currentFolder = baseFolder;
+	
+	texture = new vkImage::Texture(info);
 }
 
 void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models ,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
@@ -35,6 +40,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 		// Kod do wykonania po naciœniêciu przycisku
 		std::cout << "Button was clicked!" << std::endl;
 	}
+	render_file_explorer();
 
 	// Twoje GUI
 	ImGui::Begin("Hello, ImGui!");
@@ -74,8 +80,8 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 
 					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
 					std::string currentModel;
-					if (mesh->getIndex() >= 0)
-						currentModel = models.fileNames[mesh->getIndex()];
+					if(mesh->getIndex()>=0)
+					currentModel = models.fileNames[mesh->getIndex()];
 					else currentModel = "";
 
 					if (ImGui::BeginCombo("##modelSelector", currentModel.c_str())) { // Combo bez etykiety z lewej strony
@@ -105,10 +111,10 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 					}
 
 					// Przycisk do usuwania komponentu obok selektora
-					ImGui::SameLine();
-					if (ImGui::Button("Remove")) {
+					
+					
 						this->RemoveComponent(scene->ecs, selectedObject->id, mesh);
-					}
+					
 				}
 				// Zakoñcz wêze³ drzewa
 				ImGui::TreePop();
@@ -186,6 +192,166 @@ void editor::DisplaySceneObject(SceneObject* obj) {
 	//ImGui::PopFont(); // Przywróæ domyœlny rozmiar czcionki (jeœli zmienia³eœ)
 }
 
+void editor::rmb_click_render(std::filesystem::path path){
+	
+	
+	if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+		ImGui::OpenPopup("ContextMenu");
+		std::cout << "1" << std::endl;
+	}
+
+
+		if (ImGui::BeginPopup("ContextMenu")) {
+			std::cout << "2" << std::endl;
+			if (ImGui::MenuItem("Copy")) {
+				clipboard = path.string();
+				isCut = false; // Ustaw flagê na kopiowanie
+			}
+			if (ImGui::MenuItem("Cut")) {
+				clipboard = path.string();
+				isCut = true; // Ustaw flagê na wycinanie
+			}
+			if (ImGui::MenuItem("Delete")) {
+				std::filesystem::remove(path);
+			}
+			if (ImGui::MenuItem("Paste")) {
+				if (!clipboard.empty()) {
+					std::filesystem::path destination = currentFolder / std::filesystem::path(clipboard).filename();
+
+					try {
+						if (isCut) {
+							std::filesystem::rename(clipboard, destination); // Przenieœ plik
+						}
+						else {
+							std::filesystem::copy(clipboard, destination, std::filesystem::copy_options::overwrite_existing); // Skopiuj plik
+						}
+					}
+					catch (const std::filesystem::filesystem_error& e) {
+						std::cerr << "B³¹d operacji: " << e.what() << std::endl;
+					}
+
+					if (isCut) {
+						clipboard.clear(); // Wyczyœæ schowek po wyciêciu
+					}
+				}
+			}
+			ImGui::EndPopup();
+		}
+
+	
+
+}
+
+void editor::render_file_explorer() {
+	if (ImGui::Begin("File Browser")) {
+		if (currentFolder != baseFolder) {
+			if (ImGui::Button("..")) {
+				auto parentFolder = currentFolder.parent_path();
+				if (parentFolder.string().find(baseFolder.string()) == 0) {
+					currentFolder = parentFolder;
+				}
+			}
+		}
+
+		for (const auto& entry : std::filesystem::directory_iterator(currentFolder)) {
+
+			const auto& path = entry.path();
+			std::string name = path.filename().string();
+
+			
+			
+			VkDescriptorSet qqq = texture->getDescriptorSet();
+			ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
+			ImVec2 imageSize(64, 64);
+			ImVec2 selectableSize(imageSize.x + 100, imageSize.y);
+			
+			ImGui::PushID(name.c_str());
+			ImGui::Image(imguiTextureId, imageSize);
+			if (ImGui::Selectable((name + "/").c_str(), false, ImGuiSelectableFlags_DontClosePopups)) {
+				if (entry.is_directory()) {
+					currentFolder = path;
+					ImGui::SameLine();
+					ImGui::Text(name.c_str());
+
+				}
+				else {
+					std::string command;
+#ifdef _WIN32
+					command = "start \"\" \"" + path.string() + "\"";
+#elif __APPLE__
+					command = "open \"" + path.string() + "\"";
+#else
+					command = "xdg-open \"" + path.string() + "\"";
+#endif
+					std::system(command.c_str());
+					ImGui::SameLine();
+					ImGui::Text(name.c_str());
+
+				}
+			}
+			
+			
+
+			rmb_click_render(path);
+
+			
+			
+
+			// Obs³uga przeci¹gania
+			if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+				DragDropData data;
+				strncpy(data.fullPath, path.string().c_str(), sizeof(data.fullPath) - 1);
+				strncpy(data.name, name.c_str(), sizeof(data.name) - 1);
+
+				ImGui::SetDragDropPayload("FILE_PATH", &data, sizeof(data));
+				ImGui::Text("Move: %s", data.name);
+				ImGui::EndDragDropSource();
+			}
+
+			// Obs³uga upuszczania
+			if (ImGui::BeginDragDropTarget()) {
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("FILE_PATH")) {
+					const DragDropData* droppedData = static_cast<const DragDropData*>(payload->Data);
+
+					std::string fullPath(droppedData->fullPath);
+					std::string droppedName(droppedData->name);
+
+					std::cout << "Przenoszenie pliku: " << fullPath << std::endl;
+
+					if (!fullPath.empty()) {
+						try {
+							std::filesystem::path sourcePath(fullPath);
+							std::string filename = sourcePath.filename().string();
+							std::filesystem::path destination = currentFolder / name / droppedName;
+
+
+
+							std::filesystem::create_directories(destination );
+							std::cout << "Destination: " << destination << "!!!" << droppedName << std::endl;
+							// Kopiowanie pliku do folderu docelowego
+							std::filesystem::copy(fullPath, destination, std::filesystem::copy_options::overwrite_existing | std::filesystem::copy_options::recursive);
+							std::filesystem::remove_all(fullPath);
+						}
+						catch (const std::filesystem::filesystem_error& e) {
+							std::cerr << "B³¹d przenoszenia pliku: " << e.what() << std::endl;
+						}
+					}
+					else {
+						std::cerr << "B³¹d: Œcie¿ka pliku jest pusta." << std::endl;
+					}
+					
+				}
+				ImGui::EndDragDropTarget(); // Upewnij siê, ¿e to jest pox
+			}
+
+
+			ImGui::PopID();
+		}
+	}
+	ImGui::End(); // Upewnij siê, ¿e ten kod jest odpowiednio umiejscowiony
+}
+
+
 
 void editor::RemoveSceneObject(SceneObject* obj) {
 	// Usuwanie dzieci rekurencyjnie
@@ -260,6 +426,7 @@ void editor::AddComponent(ecs::ECS* ecs,ecs::Entity entity) {
 
 }
 void editor::RemoveComponent(ecs::ECS* ecs, ecs::Entity entity, Component* component) {
+	
 	if (ImGui::Button("Remove this Component")) {
 		// Kod do wykonania po naciœniêciu przycisku
 		ecs->removeComponent(component, entity);

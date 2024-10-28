@@ -49,7 +49,8 @@ class GraphicsEngine {
 	vk::CommandPool imguiCommandPool;
 	vk::CommandPool CommandPool;
 
-	
+	vk::DescriptorPool iconDescriptorPool;
+	vk::DescriptorSetLayout iconDescriptorSetLayout;
 
 	resourceManager resourcesManager{};
 
