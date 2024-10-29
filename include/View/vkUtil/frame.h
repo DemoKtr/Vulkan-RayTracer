@@ -12,7 +12,7 @@ namespace vkUtil {
 		//Swapchain-type stuff
 		vk::Image mainimage;
 		vk::ImageView mainimageView;
-		vk::Framebuffer mainframebuffer;
+		//vk::Framebuffer mainframebuffer;
 
 		//zBuffer
 		vk::Image depthBuffer;

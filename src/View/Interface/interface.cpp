@@ -16,7 +16,9 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info){
 	
 	texture = new vkImage::Texture(info);
 }
-
+editor::~editor() {
+	delete texture;
+}
 void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models ,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 	vk::CommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
@@ -356,28 +358,7 @@ void editor::render_file_explorer() {
 void editor::RemoveSceneObject(SceneObject* obj) {
 	// Usuwanie dzieci rekurencyjnie
 
-	while (!obj->children.empty()) {
-		std::cout << obj->children.size() << std::endl;
-		SceneObject* child = obj->children.back();
-		obj->children.pop_back();  // Usuñ wskaŸnik z listy dzieci
-		RemoveSceneObject(child);  // Usuñ dziecko rekurencyjnie
-	}
-
-	// Usuñ obiekt z rodzica, jeœli istnieje
-	if (obj->parent != nullptr) {
-		auto& siblings = obj->parent->children;
-		std::cout << siblings.size()<<std::endl;
-		// ZnajdŸ i usuñ wskaŸnik z listy dzieci rodzica
-		auto it = std::find(siblings.begin(), siblings.end(), obj);
-		if (it != siblings.end()) {
-			// Usuñ wskaŸnik z wektora dzieci rodzica
-			siblings.erase(it);
-			std::cout << siblings.size() << std::endl;
-		}
-	}
-
-	// Zwolnij pamiêæ obiektu
-	delete obj;
+	obj->removeObject();
 	selectedObject = nullptr;
 }
 

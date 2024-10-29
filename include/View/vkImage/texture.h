@@ -3,20 +3,14 @@
 
 namespace vkImage {
 
-	struct TextureInput {
-		std::vector<std::string> texture_name;
-		std::vector<std::string> texture_path;
-	};
-
-
 
 	class Texture {
 		int width, height, channels;
 		vk::Device logicalDevice;
 		vk::PhysicalDevice physicalDevice;
 
-		stbi_uc* pixels;
-		
+		std::vector<stbi_uc*> pixels;
+		TexturesNames texturesNames;
 		//res
 		vk::Image image;
 		vk::DeviceMemory imageMemory;
@@ -45,9 +39,10 @@ namespace vkImage {
 		vk::Sampler getSampler();
 
 		Texture(TextureInputChunk info);
+		~Texture();
 
 		void useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout);
-		~Texture();
+		
 
 	};
 }

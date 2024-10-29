@@ -44,12 +44,16 @@ GraphicsEngine::~GraphicsEngine() {
 		std::cout << "End!\n";
 	}
 
-	resourcesManager.clean(device);
-	cleanup_swapchain();
-	for (vkUtil::SwapChainFrame& frame : swapchainFrames) {
-		frame.destroy();
 
-	}
+
+	device.destroyCommandPool(CommandPool);
+	device.destroyCommandPool(imguiCommandPool);
+	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
+	device.destroyDescriptorPool(iconDescriptorPool);
+	delete sceneEditor;
+	delete meshes;
+	cleanup_swapchain();
+	
 	device.destroy();
 
 	instance.destroySurfaceKHR(surface);
@@ -60,7 +64,7 @@ GraphicsEngine::~GraphicsEngine() {
 
 	instance.destroy();
 	glfwTerminate();
-	delete sceneEditor;
+	
 }
 
 void GraphicsEngine::create_frame_resources(Scene* scene) {
@@ -339,7 +343,10 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	vkImage::TextureInputChunk info;
 	std::string str = std::string(PROJECT_DIR) + "\\core\\u.png";
-	info.filenames = str.c_str();
+	vkImage::TexturesNames tNames;
+	vkImage::listTexturesFilesInDirectory("\\core",tNames);
+	info.texturesNames = tNames;
+	info.filenames = nullptr;
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
 	info.queue = graphicsQueue;

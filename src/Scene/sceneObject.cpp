@@ -23,6 +23,10 @@ SceneObject::SceneObject(ecs::ECS* ecs){
 	name = "SceneObject " + std::to_string(id);
 }
 
+SceneObject::~SceneObject() {
+
+}
+
 void SceneObject::addChild(SceneObject* obj){
 	obj->parent = this;
 	children.push_back(obj);
@@ -30,4 +34,30 @@ void SceneObject::addChild(SceneObject* obj){
 
 std::string SceneObject::getName() {
 	return name;
+}
+
+void SceneObject::removeObject() {
+	
+	while (!this->children.empty()) {
+
+		SceneObject* child = this->children.back();
+		this->children.pop_back();  // Usuñ wskaŸnik z listy dzieci
+		child->removeObject();  // Usuñ dziecko rekurencyjnie
+	}
+
+	// Usuñ obiekt z rodzica, jeœli istnieje
+	if (this->parent != nullptr) {
+		auto& siblings = this->parent->children;
+
+		// ZnajdŸ i usuñ wskaŸnik z listy dzieci rodzica
+		auto it = std::find(siblings.begin(), siblings.end(), this);
+		if (it != siblings.end()) {
+			// Usuñ wskaŸnik z wektora dzieci rodzica
+			siblings.erase(it);
+		}
+	}
+
+	// Zwolnij pamiêæ obiektu
+	delete this;
+	
 }

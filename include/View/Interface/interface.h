@@ -34,6 +34,7 @@ class editor {
 
 	public:
 		editor(Scene* scene,std::string path, vkImage::TextureInputChunk info);
+		~editor();
 		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, modelNames models, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		void DisplaySceneObject(SceneObject* obj);
 		void RemoveSceneObject(SceneObject* obj);

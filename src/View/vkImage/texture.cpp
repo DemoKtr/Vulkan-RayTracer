@@ -3,10 +3,23 @@
 #include <View/vkInit/descrpitors.h>
 
 void vkImage::Texture::load() {
-	pixels = stbi_load(filename, &width, &height, &channels, STBI_rgb_alpha);
-	if (!pixels) {
-		std::cout << "Unable to load: " << filename << std::endl;
+	size_t i = 0;
+	if (filename == nullptr) {
+		for (std::string f : texturesNames.fileNames) {
+			pixels.push_back(stbi_load(texturesNames.fullPaths[i].c_str(), &width, &height, &channels, STBI_rgb_alpha));
+			if (!pixels[i++]) {
+				std::cout << "Unable to load: " << f << std::endl;
+			}
+		}
 	}
+	else {
+		pixels.push_back(stbi_load(filename, &width, &height, &channels, STBI_rgb_alpha));
+		if (!pixels[i++]) {
+			std::cout << "Unable to load: " << filename << std::endl;
+		}
+	}
+	
+	
 }
 
 
@@ -19,14 +32,30 @@ void vkImage::Texture::populate() {
 	input.physicalDevice = physicalDevice;
 	input.memoryProperties = vk::MemoryPropertyFlagBits::eHostCoherent | vk::MemoryPropertyFlagBits::eHostVisible;
 	input.usage = vk::BufferUsageFlagBits::eTransferSrc;
-	input.size = width * height * 4;
-	
+	size_t totalSize = 0;
+	for (const auto& image : pixels) {
+		totalSize += width * height * 4; // assuming 4 bytes per pixel (e.g., RGBA format)
+	}
+	std::vector<stbi_uc> mergedPixels;
+	mergedPixels.reserve(totalSize);
+	input.size = totalSize;
+
+	// 3. Skopiuj wszystkie dane z pixels do mergedPixels
+	for (const auto& image : pixels) {
+		mergedPixels.insert(mergedPixels.end(), image, image + width * height * 4);
+	}
+
 	Buffer stagingBuffer = vkUtil::createBuffer(input);
 
 	//...then fill it,
 	void* writeLocation = logicalDevice.mapMemory(stagingBuffer.bufferMemory, 0, input.size);
-	memcpy(writeLocation, pixels, input.size);
-	logicalDevice.unmapMemory(stagingBuffer.bufferMemory);
+	if (writeLocation) {
+		memcpy(writeLocation, mergedPixels.data(), totalSize);
+		logicalDevice.unmapMemory(stagingBuffer.bufferMemory);
+	}
+	else {
+		std::cerr << "Memory mapping failed!" << std::endl;
+	}
 
 	//then transfer it to image memory
 	ImageLayoutTransitionJob transitionJob;
@@ -35,7 +64,7 @@ void vkImage::Texture::populate() {
 	transitionJob.image = image;
 	transitionJob.oldLayout = vk::ImageLayout::eUndefined;
 	transitionJob.newLayout = vk::ImageLayout::eTransferDstOptimal;
-	transitionJob.arrayCount = 1;
+	transitionJob.arrayCount = pixels.size();
 
 	transition_image_layout(transitionJob);
 
@@ -46,7 +75,7 @@ void vkImage::Texture::populate() {
 	copyJob.dstImage = image;
 	copyJob.width = width;
 	copyJob.height = height;
-	copyJob.arrayCount = 1;
+	copyJob.arrayCount = pixels.size();
 	copy_buffer_to_image(copyJob);
 
 	transitionJob.oldLayout = vk::ImageLayout::eTransferDstOptimal;
@@ -60,7 +89,7 @@ void vkImage::Texture::populate() {
 }
 
 void vkImage::Texture::make_view(){
-	imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, 1);
+	imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, pixels.size());
 }
 
 void vkImage::Texture::make_sampler() {	/*
@@ -147,6 +176,7 @@ vkImage::Texture::Texture(TextureInputChunk info) {
 
 	logicalDevice = info.logicalDevice;
 	physicalDevice = info.physicalDevice;
+	texturesNames = info.texturesNames;
 	filename = info.filenames;
 	commandBuffer = info.commandBuffer;
 	queue = info.queue;
@@ -161,16 +191,19 @@ vkImage::Texture::Texture(TextureInputChunk info) {
 	imageInput.width = width;
 	imageInput.height = height;
 	imageInput.format = vk::Format::eR8G8B8A8Unorm;
-	imageInput.arrayCount = 1;
+	imageInput.arrayCount =pixels.size();
 	imageInput.tiling = vk::ImageTiling::eOptimal;
 	imageInput.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 	imageInput.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 	image = make_image(imageInput);
 	imageMemory = make_image_memory(imageInput, image);
-
+	
 	populate();
 
-	free(pixels);
+	for (stbi_uc* pix : pixels) {
+		free(pix);
+	}
+	
 
 	make_view();
 
@@ -178,4 +211,11 @@ vkImage::Texture::Texture(TextureInputChunk info) {
 
 	make_descriptor_set();
 
+}
+
+vkImage::Texture::~Texture() {
+	logicalDevice.freeMemory(imageMemory);
+	logicalDevice.destroyImage(image);
+	logicalDevice.destroyImageView(imageView);
+	logicalDevice.destroySampler(sampler);
 }

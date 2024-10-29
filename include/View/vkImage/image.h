@@ -1,12 +1,14 @@
 #pragma once
 #include "config.h"
 #include "View/vkImage/stb_image.h"
+#include "textureTypes.h"
 
 namespace vkImage {
 
 	struct TextureInputChunk {
 		vk::Device logicalDevice;
 		vk::PhysicalDevice physicalDevice;
+		TexturesNames texturesNames;
 		const char* filenames;
 		vk::CommandBuffer commandBuffer;
 		vk::Queue queue;
