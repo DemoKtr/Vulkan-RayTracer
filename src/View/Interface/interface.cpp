@@ -18,6 +18,11 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info){
 }
 editor::~editor() {
 	delete texture;
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+
 }
 void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models ,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 	vk::CommandBufferBeginInfo beginInfo{};

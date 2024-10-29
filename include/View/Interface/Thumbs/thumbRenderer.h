@@ -1,6 +1,6 @@
 #pragma once
 #include "config.h"
-
+/*
 class Thumb {
 
 	vk::Device device;
@@ -23,3 +23,4 @@ public:
 	void create_framebuffers(bool debug);
 	void render();
 };
+*/

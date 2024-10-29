@@ -2,7 +2,7 @@
 #include "View/vkUtil/renderpass.h"
 #include <View/vkInit/framebuffer.h>
 #include <View/vkInit/vkPipeline/pipelineBuilder.h>
-
+/*
 Thumb::Thumb(vk::Device device, int width, int heigh, int n, int buffor, bool debugMode) {
 	this->device = device;
 	number_of_images = n;
@@ -25,7 +25,7 @@ void Thumb::create_pipeline() {
 	pipelineBuilder.specify_swapchain_extent(extent);
 	
 
-	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build();
+	//vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build();
 
 
 	pipelineBuilder.reset();
@@ -61,3 +61,4 @@ void Thumb::create_framebuffers(bool debug){
 void Thumb::render(){
 
 }
+*/

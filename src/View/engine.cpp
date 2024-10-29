@@ -50,6 +50,8 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyCommandPool(imguiCommandPool);
 	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
 	device.destroyDescriptorPool(iconDescriptorPool);
+	device.destroyDescriptorPool(imguiDescriptorPool);
+	device.destroyRenderPass(imguiRenderPass);
 	delete sceneEditor;
 	delete meshes;
 	cleanup_swapchain();
@@ -77,7 +79,9 @@ void GraphicsEngine::create_frame_resources(Scene* scene) {
 		frame.inFlight = vkInit::make_fence(device, debugMode);
 	}
 }
+void GraphicsEngine::create_pipeline() {
 
+}
 void GraphicsEngine::make_instance() {
 	this->instance = vkInit::make_instance(this->debugMode, this->appName);
 	this->dldi = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);

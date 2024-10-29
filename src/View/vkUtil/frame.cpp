@@ -4,7 +4,7 @@ void vkUtil::SwapChainFrame::destroy(){
 
 	//logicalDevice.destroyImage(mainimage);
 	//logicalDevice.destroyImage(depthBuffer);
-	//logicalDevice.destroyImageView(mainimageView);
+	logicalDevice.destroyImageView(mainimageView);
 	//logicalDevice.destroyImageView(depthBufferView);
 
 	logicalDevice.destroySemaphore(imageAvailable);
