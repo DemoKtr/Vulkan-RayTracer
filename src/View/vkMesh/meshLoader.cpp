@@ -53,7 +53,6 @@ vkMesh::Mesh vkMesh::MeshLoader::processMesh(aiMesh* mesh, const aiScene* scene)
 	{
 		vkGeometry::Vertex vertex;
 		vertex.Position = glm::vec4(Converter::AssimpGLMHelpers::GetGLMVec(mesh->mVertices[i]), 1.0f);
-		vertex.Normal = glm::vec4(Converter::AssimpGLMHelpers::GetGLMVec(mesh->mNormals[i]), 1.0f);
 
 		if (mesh->mTextureCoords[0])
 		{
@@ -89,7 +88,14 @@ vkMesh::VertexBuffers vkMesh::MeshLoader::getData() {
 	for (vkMesh::Mesh mesh : meshes) {
 
 		for (vkGeometry::Vertex vert : mesh.vertices) {
-			buffer.vertices.push_back(vert);
+			buffer.vertices.push_back(vert.Position.x);
+			buffer.vertices.push_back(vert.Position.y);
+			buffer.vertices.push_back(vert.Position.z);
+			buffer.vertices.push_back(1.0f);
+			buffer.vertices.push_back(vert.TexCoords.x);
+			buffer.vertices.push_back(vert.TexCoords.y);
+			buffer.vertices.push_back(1.0f);
+			buffer.vertices.push_back(1.0f);
 		}
 
 		for (uint32_t index : mesh.indices) {

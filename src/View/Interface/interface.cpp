@@ -4,6 +4,8 @@
 #include <Scene/ECS/components/transformComponent.h>
 #include <Scene/ECS/components/meshComponent.h>
 #include <Scene/ECS/components/componentFabric.h>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/euler_angles.hpp>
 
 
 
@@ -25,6 +27,7 @@ editor::~editor() {
 
 }
 void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models ,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+	/*
 	vk::CommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
 	beginInfo.pInheritanceInfo = nullptr;  // Opcjonalnie
@@ -38,7 +41,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 			std::cout << "Failed to begin recording command buffer!" << std::endl;
 		}
 	}
-
+	*/
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
 	ImGui_ImplVulkan_NewFrame();
@@ -74,16 +77,24 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 					if (transform != nullptr) {
 						// Wyœwietlanie i edytowanie transformacji
 						Transform& transformData = transform->getModifyableTransform();
+						glm::vec3 eulerAngles = glm::eulerAngles(transformData.getModifyableLocalRotation());
 						ImGui::DragFloat3("Position", &transformData.getModifyableLocalPosition().x, 0.1f);
-						ImGui::DragFloat3("Rotation", &transformData.getModifyableLocalRotation().x, 0.1f);
+						if (ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f)) {
+							glm::quat newRotation = glm::yawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
+							transformData.setLocalRotation(newRotation);
+							// Przekszta³cenie k¹tów Eulerów do kwaternionu tylko po zmianie wartoœci
+							transformData.setLocalRotation(glm::quat(eulerAngles));
+						}
+
 						ImGui::DragFloat3("Scale", &transformData.getModifyableLocalScale().x, 0.1f);
+						transformData.computeModelMatrix();
 					}
 					ImGui::SameLine;
 					this->RemoveComponent(scene->ecs,selectedObject->id,transform);
 				}
 				else if (comp->getType() == ComponentType::Mesh) {
 					static char searchQuery[128] = "";
-					meshComponent* mesh = dynamic_cast<meshComponent*>(comp);
+					MeshComponent* mesh = dynamic_cast<MeshComponent*>(comp);
 
 					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
 					std::string currentModel;
@@ -140,9 +151,9 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	imguiRenderpassInfo.renderArea.offset.x = 0;
 	imguiRenderpassInfo.renderArea.offset.y = 0;
 	imguiRenderpassInfo.renderArea.extent = swapchainExtent;
-	vk::ClearValue clearColor = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-	imguiRenderpassInfo.clearValueCount = 1;
-	imguiRenderpassInfo.pClearValues = &clearColor;
+	//vk::ClearValue clearColor = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
+	//imguiRenderpassInfo.clearValueCount = 1;
+	//imguiRenderpassInfo.pClearValues = &clearColor;
 
 	// Rozpocznij render pass
 	commandBuffer.beginRenderPass(imguiRenderpassInfo, vk::SubpassContents::eInline);
@@ -151,7 +162,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 	// Zakoñcz render pass
 	commandBuffer.endRenderPass();
-
+	/*
 	try {
 		commandBuffer.end();
 	}
@@ -160,7 +171,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 		if (debugMode) {
 			std::cout << "failed to record command buffer!" << std::endl;
 		}
-	}
+	}*/
 }
 
 void editor::DisplaySceneObject(SceneObject* obj) {

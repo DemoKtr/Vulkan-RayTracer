@@ -36,14 +36,14 @@ vkInit::commandBufferOutput vkInit::make_command_buffer(commandBufferInputChunk 
 	}
 }
 
-void vkInit::make_frame_command_buffers(commandBufferInputChunk inputChunk, bool debugMode){
+void vkInit::make_imgui_frame_command_buffers(commandBufferInputChunk inputChunk, bool debugMode){
 	vk::CommandBufferAllocateInfo allocInfo = {};
 	allocInfo.commandPool = inputChunk.commandPool;
 	allocInfo.level = vk::CommandBufferLevel::ePrimary;
 	allocInfo.commandBufferCount = 1;
 
 	vk::CommandBufferAllocateInfo igallocInfo = {};
-	igallocInfo.commandPool = inputChunk.imguiCommandPool;
+	igallocInfo.commandPool = inputChunk.commandPool;
 	igallocInfo.level = vk::CommandBufferLevel::ePrimary;
 	igallocInfo.commandBufferCount = 1;
 
@@ -61,5 +61,12 @@ void vkInit::make_frame_command_buffers(commandBufferInputChunk inputChunk, bool
 			std::cout << "FAILED!!! Allocated command buffer for frame" << i << std::endl;
 		}
 	}
+}
+
+void vkInit::make_postprocess_frame_command_buffers(commandBufferInputChunk inputChunk, bool debugMode) {
+	vk::CommandBufferAllocateInfo allocInfo = {};
+	allocInfo.commandPool = inputChunk.commandPool;
+	allocInfo.level = vk::CommandBufferLevel::ePrimary;
+	allocInfo.commandBufferCount = 1;
 }
 

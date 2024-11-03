@@ -23,6 +23,11 @@ protected:
 		return glm::translate(glm::mat4(1.0f), m_pos) * glm::mat4(m_rotation) * glm::scale(glm::mat4(1.0f), m_scale);
 	}
 public:
+	
+	void setLocalRotation(const glm::quat& rotation) {
+		m_rotation = rotation;
+		m_isDirty = true;
+	}
 
 	void computeModelMatrix()
 	{
@@ -95,7 +100,9 @@ public:
 	{
 		return m_modelMatrix;
 	}
-
+	glm::mat4* getModelMatrixPionter() {
+		return &m_modelMatrix;
+	}
 	glm::vec3 getRight() const
 	{
 		return m_modelMatrix[0];
@@ -125,4 +132,6 @@ public:
 	{
 		return m_isDirty;
 	}
+
+	
 };

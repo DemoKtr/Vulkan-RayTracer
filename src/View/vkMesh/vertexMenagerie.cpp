@@ -5,20 +5,20 @@ vkMesh::VertexMenagerie::VertexMenagerie() {
 	indexOffset = 0;
 }
 vkMesh::VertexMenagerie::~VertexMenagerie() {
-	//logicalDevice.destroyBuffer(vertexBuffer.buffer);
-	//logicalDevice.destroyBuffer(indexBuffer.buffer);
-	//logicalDevice.freeMemory(vertexBuffer.bufferMemory);
-	//logicalDevice.freeMemory(indexBuffer.bufferMemory);
+	logicalDevice.destroyBuffer(vertexBuffer.buffer);
+	logicalDevice.destroyBuffer(indexBuffer.buffer);
+	logicalDevice.freeMemory(vertexBuffer.bufferMemory);
+	logicalDevice.freeMemory(indexBuffer.bufferMemory);
 }
-void vkMesh::VertexMenagerie::consume(int meshType, std::vector<vkGeometry::Vertex> data, std::vector<uint32_t> indices) {
+void vkMesh::VertexMenagerie::consume(int meshType, std::vector<float> data, std::vector<uint32_t> indices) {
 	int indexCount = static_cast<int>(indices.size());
-	int vertexCount = static_cast<int>(data.size());
+	int vertexCount = static_cast<int>(data.size()/8);
 	int lastIndex = static_cast<int>(indexLump.size());
 
 	firstIndices.insert(std::make_pair(meshType, lastIndex));
 	indexCounts.insert(std::make_pair(meshType, indexCount));
-	for (vkGeometry::Vertex attribute : data) {
-		vertices.push_back(attribute);
+	for (float attribute : data) {
+		vertexLump.push_back(attribute);
 	}
 	for (uint32_t index : indices) {
 		indexLump.push_back(index + indexOffset);
@@ -28,13 +28,18 @@ void vkMesh::VertexMenagerie::consume(int meshType, std::vector<vkGeometry::Vert
 }
 
 void vkMesh::VertexMenagerie::finalize(FinalizationChunk finalizationChunk) {
+
+
 	logicalDevice = finalizationChunk.logicalDevice;
+
+
+
 
 	//make a staging buffer for vertices
 	BufferInputChunk inputChunk;
 	inputChunk.logicalDevice = finalizationChunk.logicalDevice;
 	inputChunk.physicalDevice = finalizationChunk.physicalDevice;
-	inputChunk.size = sizeof(vkGeometry::Vertex) * vertices.size();
+	inputChunk.size = sizeof(float) * vertexLump.size();
 	inputChunk.usage = vk::BufferUsageFlagBits::eTransferSrc;
 	inputChunk.memoryProperties = vk::MemoryPropertyFlagBits::eHostVisible
 		| vk::MemoryPropertyFlagBits::eHostCoherent;
@@ -42,7 +47,7 @@ void vkMesh::VertexMenagerie::finalize(FinalizationChunk finalizationChunk) {
 
 	//fill it with vertex data
 	void* memoryLocation = logicalDevice.mapMemory(stagingBuffer.bufferMemory, 0, inputChunk.size);
-	memcpy(memoryLocation, vertices.data(), inputChunk.size);
+	memcpy(memoryLocation, vertexLump.data(), inputChunk.size);
 
 	logicalDevice.unmapMemory(stagingBuffer.bufferMemory);
 

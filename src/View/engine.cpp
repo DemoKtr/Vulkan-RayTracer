@@ -18,6 +18,10 @@
 #include <View/vkInit/framebuffer.h>
 
 #include "View/vkMesh/meshLoader.h"
+#include <View/vkInit/vkPipeline/pipelineBuilder.h>
+#include <View/vkMesh/vertexFormat.h>
+
+
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -30,10 +34,15 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 
 	make_instance();
 	choice_device();
-	//create descriptor set layout
-	//create pipeline
+
+	create_descriptor_set_layouts();
+
+	create_pipeline();
+
 	finalize_setup(scene);
+
 	make_assets(scene);
+
 
 }
 
@@ -49,11 +58,14 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyCommandPool(CommandPool);
 	device.destroyCommandPool(imguiCommandPool);
 	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(postprocessDescriptorSetLayout);
+	device.destroyDescriptorPool(postprocessDescriptorPool);
 	device.destroyDescriptorPool(iconDescriptorPool);
 	device.destroyDescriptorPool(imguiDescriptorPool);
 	device.destroyRenderPass(imguiRenderPass);
 	delete sceneEditor;
 	delete meshes;
+	delete meshesManager;
 	cleanup_swapchain();
 	
 	device.destroy();
@@ -70,18 +82,56 @@ GraphicsEngine::~GraphicsEngine() {
 }
 
 void GraphicsEngine::create_frame_resources(Scene* scene) {
+
+	vkInit::descriptorSetLayoutData bindings;
+	bindings.count = 2;
+	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
+	postprocessDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
+		
 
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.computeFinished = vkInit::make_semaphore(device, debugMode);
 		frame.inFlight = vkInit::make_fence(device, debugMode);
+		frame.make_descriptors_resources(scene->getSceneObjectNumber(scene->root));
+		frame.postprocessDescriptorSet = vkInit::allocate_descriptor_set(device, postprocessDescriptorPool, postprocessDescriptorSetLayout);
 	}
 }
+
 void GraphicsEngine::create_pipeline() {
 
+	postprocessRenderPass = vkUtil::create_postprocess_renderpass(device, swapchainFormat, swapchainFrames[0].depthFormat);
+
+	vkInit::PipelineBuilder pipelineBuilder(device);
+
+	//Sky
+	pipelineBuilder.set_overwrite_mode(true);
+	pipelineBuilder.specify_vertex_format(
+		vkMesh::getVertexInputBindingDescription(),
+		vkMesh::getVertexInputAttributeDescription());
+	pipelineBuilder.specify_vertex_shader("resources/shaders/vert.spv");
+	pipelineBuilder.specify_fragment_shader("resources/shaders/frag.spv");
+	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
+
+	pipelineBuilder.clear_depth_attachment();
+	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
+	//pipelineBuilder.add_descriptor_set_layout(meshSetLayout[pipelineType::SKY]);
+	pipelineBuilder.use_depth_test(true);
+	pipelineBuilder.use_projection_matrix(true);
+
+	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(swapchainFormat,swapchainFrames[0].depthFormat);
+
+	postprocessPipelineLayout = output.layout;
+	postprocessRenderPass = output.renderpass;
+	postprocessPipeline = output.pipeline;
+
+	pipelineBuilder.reset();
 }
+
 void GraphicsEngine::make_instance() {
 	this->instance = vkInit::make_instance(this->debugMode, this->appName);
 	this->dldi = vk::DispatchLoaderDynamic(instance, vkGetInstanceProcAddr);
@@ -135,6 +185,7 @@ void GraphicsEngine::create_swapchain()
 		frame.physicalDevice = physicalDevice;
 		frame.width = swapchainExtent.width;
 		frame.height = swapchainExtent.height;
+		frame.make_depth_resources();
 		
 	}
 	frameNumber = 0;
@@ -166,6 +217,22 @@ void GraphicsEngine::cleanup_swapchain() {
 	device.destroySwapchainKHR(swapchain);
 }
 
+void GraphicsEngine::create_descriptor_set_layouts() {
+	vkInit::descriptorSetLayoutData bindings;
+	bindings.count = 2;
+	bindings.indices.push_back(0);
+	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+	bindings.indices.push_back(1);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
+
+	postprocessDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+}
+
 
 void GraphicsEngine::create_imgui_resources(){
 	create_imgui_descriptor_pool();
@@ -184,10 +251,12 @@ void GraphicsEngine::create_frame_command_buffer() {
 	vkInit::commandBufferInputChunk commandBufferInput = { device,CommandPool ,imguiCommandPool, swapchainFrames };
 	vkInit::commandBufferOutput output = vkInit::make_command_buffer(commandBufferInput, debugMode);
 	maincommandBuffer = output.graphicCommandBuffer;
-	vkInit::make_frame_command_buffers(commandBufferInput, debugMode);
+	vkInit::make_imgui_frame_command_buffers(commandBufferInput, debugMode);
+	//vkInit::make_command_buffer(commandBufferInput, debugMode);
 }
 
 void GraphicsEngine::InitImGui(GLFWwindow* window){
+	
 	
 	create_imgui_resources();
 	
@@ -226,8 +295,8 @@ void GraphicsEngine::InitImGui(GLFWwindow* window){
 void GraphicsEngine::finalize_setup(Scene* scene){
 	imguiRenderPass = vkUtil::create_imgui_renderpass(device, swapchainFormat);
 	create_framebuffers();
-	create_frame_resources(scene);
 	create_frame_command_buffer();
+	create_frame_resources(scene);
 }
 
 void GraphicsEngine::create_framebuffers(){
@@ -236,7 +305,140 @@ void GraphicsEngine::create_framebuffers(){
 	frameBufferInput.renderpass = imguiRenderPass;
 	frameBufferInput.swapchainExtent = swapchainExtent;
 	vkInit::make_framebuffers(frameBufferInput, swapchainFrames, debugMode);
+	frameBufferInput.renderpass = postprocessRenderPass;
+	frameBufferInput.swapchainExtent = swapchainExtent;
+	vkInit::make_postprocess_framebuffer(frameBufferInput,swapchainFrames, debugMode);
 }
+
+void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32_t imageIndex) {
+	vk::CommandBufferBeginInfo beginInfo = {};
+
+	try {
+		commandBuffer.begin(beginInfo);
+	}
+	catch (vk::SystemError err) {
+		if (debugMode) {
+			std::cout << "Failed to begin recording command buffer!" << std::endl;
+		}
+	}
+
+	vk::ClearValue backgroundColor;
+	std::array<float, 4> color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	backgroundColor.color = vk::ClearColorValue(color);
+	vk::ClearValue depthColorValue;
+	depthColorValue.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
+	std::vector<vk::ClearValue> colorVector = { {backgroundColor,depthColorValue} };
+	vk::RenderPassBeginInfo postProcessGraphicRenderPass = {};
+	postProcessGraphicRenderPass.renderPass = postprocessRenderPass;
+	postProcessGraphicRenderPass.framebuffer = swapchainFrames[imageIndex].postProcessFrameBuffer;
+	postProcessGraphicRenderPass.renderArea.offset.x = 0;
+	postProcessGraphicRenderPass.renderArea.offset.y = 0;
+	postProcessGraphicRenderPass.renderArea.extent = swapchainExtent;
+	postProcessGraphicRenderPass.clearValueCount = colorVector.size();
+	postProcessGraphicRenderPass.pClearValues = colorVector.data();
+
+	commandBuffer.beginRenderPass(&postProcessGraphicRenderPass, vk::SubpassContents::eInline);
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, postprocessPipeline);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, postprocessPipelineLayout, 0, swapchainFrames[imageIndex].postprocessDescriptorSet, nullptr);
+	commandBuffer.pushConstants(postprocessPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ProjectionData), &projection);
+	
+	prepare_scene(commandBuffer);
+	
+	uint32_t startInstance = 0;
+	//Triangles
+
+
+	for (std::pair<int, std::vector<vkMesh::MeshManagerData>> pair : meshesManager->modelMatrices) {
+		render_objects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
+
+	}
+	commandBuffer.endRenderPass();
+
+	// Przygotowanie ImageMemoryBarrier do zmiany layoutu na VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	vk::ImageMemoryBarrier barrier = {};
+	barrier.oldLayout = vk::ImageLayout::eUndefined; // obecny layout obrazu, np. undefined po stworzeniu
+	barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal; // nowy layout
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = swapchainFrames[imageIndex].mainimage;
+		; // uchwyt do obrazu, ktÛry chcesz zaktualizowaÊ
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	// Okreúl dostÍp pamiÍci, aby przejúÊ z poprzedniego do nowego layoutu
+	barrier.srcAccessMask = {}; // Brak poprzednich operacji do synchronizacji
+	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite; // Docelowy dostÍp, np. pisanie do attachmentu koloru
+
+	// Uøyj vkCmdPipelineBarrier, aby zrealizowaÊ barierÍ w command buffer
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTopOfPipe, // srcStageMask: najwczeúniejszy etap, brak poprzedniego uøycia
+		vk::PipelineStageFlagBits::eColorAttachmentOutput, // dstStageMask: docelowy etap, w ktÛrym obraz bÍdzie uøywany
+		{}, // flagi bariery
+		nullptr, nullptr, // brak barier pamiÍciowych ani buforowych
+		barrier // wskaünik do bariery obrazu
+	);
+
+
+	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesNames, swapchainExtent, imageIndex, debugMode);
+
+	try {
+		commandBuffer.end();
+	}
+	catch (vk::SystemError err) {
+
+		if (debugMode) {
+			std::cout << "failed to record command buffer!" << std::endl;
+		}
+	}
+
+}
+
+void GraphicsEngine::prepare_scene(vk::CommandBuffer commandBuffer) {
+	vk::Buffer vertexBuffers[] = { meshes->vertexBuffer.buffer };
+	vk::DeviceSize offets[] = { 0 };
+	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offets);
+	commandBuffer.bindIndexBuffer(meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+	/*
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+	for (int i = 0; i < 192; i+=8) {
+		std::cout << "Vertex " << i/8 << std::endl;
+		std::cout <<"X: " << meshes->vertexLump[i] << std::endl;
+		std::cout <<"Y: " << meshes->vertexLump[i+1] << std::endl;
+		std::cout <<"Z: " << meshes->vertexLump[i+2] << std::endl;
+	}
+	std::cout << std::endl;
+	std::cout << std::endl;
+	std::cout << std::endl;
+	*/
+}
+
+void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, int objectType, uint32_t& startInstance, uint32_t instanceCount) {
+
+	int indexCount = meshes->indexCounts.find(objectType)->second;
+	int firstIndex = meshes->firstIndices.find(objectType)->second;
+	//materials[objectType]->useTexture(commandBuffer, layout);
+	/*
+	std::cout << "JestemNowym obiektem testowym" << std::endl;
+	for (int i = firstIndex; i < indexCount; ++i) {
+		std::cout << "Vertex " << i << " :" << std::endl;;
+		std::cout << "X: " << meshes->vertices[i].Position.x << "Y: " << meshes->vertices[i].Position.y << "Z: " << meshes->vertices[i].Position.z << std::endl;
+		std::cout << std::endl;
+	}
+	std::cout<<std::endl;
+	std::cout<<std::endl;
+	std::cout<<std::endl;*/
+	//std::cout<<indexCount<<std::endl;
+	
+	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
+
+	startInstance += instanceCount;
+}
+
 
 void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera,bool renderIMGUI) {
 	
@@ -271,12 +473,16 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 	
 	vk::CommandBuffer imgcommandBuffer = swapchainFrames[frameNumber].imguiCommandBuffer;
-
+	vk::CommandBuffer sceneRenderCommandBuffer = swapchainFrames[frameNumber].commandBuffer;
 	imgcommandBuffer.reset();
+	sceneRenderCommandBuffer.reset();
 
-	
+
+	prepare_frame(imageIndex, scene, deltaTime, camera);
 	//render_imgui(imgcommandBuffer,frameNumber,debugMode);
-	sceneEditor->render_editor(imgcommandBuffer,imguiRenderPass,swapchainFrames,meshesNames,swapchainExtent,frameNumber,debugMode);
+	record_draw_command(imgcommandBuffer, imageIndex);
+	
+	
 
 	vk::SubmitInfo submitInfo = {};
 
@@ -331,6 +537,10 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 void GraphicsEngine::make_assets(Scene* scene) {
 
+	//TO DO NAPRAW TO ZJEBIE
+	projection = vkRenderStructs::getProjectionMatrix(swapchainExtent);
+	meshesManager = new vkMesh::MeshesManager(scene->root,scene->ecs);
+
 	vkInit::descriptorSetLayoutData bindingsy;
 	bindingsy.count = 1;
 	bindingsy.indices.push_back(0);
@@ -364,11 +574,53 @@ void GraphicsEngine::make_assets(Scene* scene) {
 		vkMesh::MeshLoader m(path.c_str());
 		test.push_back(m);
 	}
+	
+	std::cout << test.size() << std::endl;
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
 		meshes->consume(index++,buffer.vertices,buffer.indicies);
+	
 	}
+
+
+	
+	vkMesh::FinalizationChunk finalizationInfo;
+	finalizationInfo.logicalDevice = device;
+	finalizationInfo.physicalDevice = physicalDevice;
+	finalizationInfo.queue = graphicsQueue;
+	finalizationInfo.commandBuffer = maincommandBuffer;
+	meshes->finalize(finalizationInfo);
 	
 }
 
+
+void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera) {
+	
+	
+
+	vkUtil::SwapChainFrame& _frame = swapchainFrames[imageIndex];
+	glm::vec3 eye = { 0.0f, 0.0f, -5.0f };
+	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
+	glm::vec3 up = { 0.0f, 1.0f, 0.0f };
+	glm::mat4 view = glm::lookAt(eye, center, up);
+	_frame.cameraData.view = view;//camera.GetViewMatrix();
+
+	_frame.cameraData.camPos = glm::vec4(camera.Position,1.0f);
+
+	size_t i = 0;
+	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
+		for (const auto& meshData : meshDataVector) {
+			if (meshData.modelMatrix) {  // Sprawdzamy, czy wskaünik jest waøny
+				_frame.modelsData[i].model = *meshData.modelMatrix;//*meshData.modelMatrix;
+				_frame.modelsData[i].textureID = 0;//*meshData.modelMatrix;
+				i++;
+			}
+		}
+	}
+	std::cout << i << std::endl;
+	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
+	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));
+	_frame.write_postprocess_descriptors();
+
+}

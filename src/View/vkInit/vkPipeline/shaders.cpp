@@ -1,5 +1,5 @@
 #include "View/vkInit/vkPipeline/shaders.h"
-
+#include <sstream>
 std::vector<char> vkUtil::readFile(std::string filename) {
 	std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
@@ -30,7 +30,7 @@ vk::ShaderModule vkUtil::createModule(std::string filename, vk::Device device) {
 		return device.createShaderModule(moduleInfo);
 	}
 	catch (vk::SystemError err) {
-		std::stringstream message;
+		std::stringstream message{};
 		std::cout << "Failed to create shader module for \"" << filename << "\""<<std::endl;
 		
 	}

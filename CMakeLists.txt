@@ -4,7 +4,7 @@
 project(VulkanApp)
 
 # Ustawienie standardu C++
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Znajdowanie pakietu Vulkan
@@ -114,7 +114,13 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkImage/texture.cpp"
     "src/View/Interface/Commands/command.cpp"
     "src/View/Interface/Commands/commandHistory.cpp"
-    "src/View/Interface/Commands/filesystemCommand.cpp" "src/View/Interface/Commands/sceneCommand.cpp" "src/View/vkImage/textureTypes.cpp")
+    "src/View/Interface/Commands/filesystemCommand.cpp"
+    "src/View/Interface/Commands/sceneCommand.cpp"
+    "src/View/vkImage/textureTypes.cpp"
+    "src/View/vkMesh/meshManager.cpp"
+    "src/View/vkMesh/vertexFormat.cpp"
+    "src/View/RenderStructs/projection.cpp"
+    "src/Scene/ECS/components/textureComponent.cpp")
 
 # Dodanie bibliotek do aplikacji
 # Dodaj biblioteki do kompilacji

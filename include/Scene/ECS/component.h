@@ -3,9 +3,11 @@
 #include "components/componentType.h"
 #include <string>
 constexpr std::size_t MAX_COMPONENTS = 32;
-struct Component {
-    virtual ~Component() = default;
+
+class Component {
+    
 public:
+	virtual ~Component() = default;
     ComponentType type;
     // Metoda get dla type
     ComponentType getType() const {
@@ -33,4 +35,6 @@ public:
 		}
 		return label;
 	}
+
+	//virtual std::vector<std::type_index> getRequiredComponents() const = 0;
 };

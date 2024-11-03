@@ -9,10 +9,14 @@
 #include "View/Interface/interface.h"
 #include "View/vkMesh/meshTypes.h"
 #include "View/vkMesh/vertexMenagerie.h"
+#include <View/vkMesh/meshesManager.h>
+#include "View/RenderStructs/projection.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
 	const char* appName{ "RayTracer" };
+
+	vkRenderStructs::ProjectionData projection;
 	//synchronizers 
 	int maxFramesInFlight, frameNumber;
 	GLFWwindow* mainWindow;
@@ -44,6 +48,11 @@ class GraphicsEngine {
 	vk::Extent2D swapchainExtent;
 
 	vk::DescriptorPool imguiDescriptorPool;
+	vk::DescriptorPool postprocessDescriptorPool;
+
+	//DESCRIPTOR SET LAYOUT
+	vk::DescriptorSetLayout postprocessDescriptorSetLayout;
+
 	vk::RenderPass imguiRenderPass;
 	vk::CommandBuffer maincommandBuffer;
 	vk::CommandPool imguiCommandPool;
@@ -55,10 +64,18 @@ class GraphicsEngine {
 	resourceManager resourcesManager{};
 
 	editor* sceneEditor;
-
+	vkMesh::MeshesManager* meshesManager;
 	modelNames  meshesNames;
 
 	vkMesh::VertexMenagerie* meshes;
+
+	/// <summary>
+	///  Pipelines
+	/// </summary>
+	vk::Pipeline postprocessPipeline;
+	vk::PipelineLayout postprocessPipelineLayout;
+	vk::RenderPass postprocessRenderPass;
+	
 
 	void make_instance(); //instance Setup
 	void choice_device();
@@ -75,6 +92,12 @@ class GraphicsEngine {
 	void create_frame_resources(Scene* scene);
 	void create_framebuffers();
 
+	void record_draw_command(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
+
+	void prepare_scene(vk::CommandBuffer commandBuffer);
+	void render_objects(vk::CommandBuffer commandBuffer, int objectType, uint32_t& startInstance, uint32_t instanceCount);
+
+	void prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera);
 	
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);

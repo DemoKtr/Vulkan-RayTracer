@@ -4,6 +4,7 @@
 namespace vkInit {
 	struct GraphicsPipelineOutBundle {
 		vk::PipelineLayout layout;
+		vk::RenderPass renderpass;
 		vk::Pipeline pipeline;
 	};
 
@@ -33,13 +34,19 @@ namespace vkInit {
 
 		void specify_swapchain_extent(vk::Extent2D screen_size);
 
+
+
 		void set_overwrite_mode(bool mode);
 
-		GraphicsPipelineOutBundle build();
+		GraphicsPipelineOutBundle build(vk::Format swapchainFormat, vk::Format depthFormat);
 
 		void add_descriptor_set_layout(vk::DescriptorSetLayout descriptorSetLayout);
 
 		void reset_descriptor_set_layouts();
+		void clear_depth_attachment();
+
+		void use_depth_test(bool is);
+		void use_projection_matrix(bool is);
 
 	private:
 		vk::Device device;
@@ -74,8 +81,8 @@ namespace vkInit {
 
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 
-		vk::RenderPass renderPass;
-		bool overwrite;
+
+		bool overwrite, useDepthTest, useProjectionMatrix;
 
 		void reset_vertex_format();
 
@@ -101,6 +108,9 @@ namespace vkInit {
 		void configure_input_assembly();
 		void configure_input_assembly(vk::PrimitiveTopology topology);
 
+
+		void set_depth();
+		
 		/**
 			Configure a programmable shader stage.
 

@@ -3,7 +3,7 @@
 namespace vkMesh {
 
 	struct VertexBuffers {
-		std::vector<vkGeometry::Vertex> vertices;
+		std::vector<float> vertices;
 		std::vector<uint32_t> indicies;
 	};
 

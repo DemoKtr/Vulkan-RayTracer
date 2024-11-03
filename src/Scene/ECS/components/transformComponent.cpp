@@ -3,3 +3,7 @@
 TransformComponent::TransformComponent(){
 	type = ComponentType::Transform;
 }
+
+TransformComponent::~TransformComponent()
+{
+}

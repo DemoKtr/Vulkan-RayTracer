@@ -29,7 +29,7 @@ public:
 	void run();
 	Camera::Camera camera;
 	float deltaTime = 0.0f;
-	bool f12_button[2] = { {false }, { false } };
+	bool f12_button[2] = { {false }, { true } };
 };
 
 

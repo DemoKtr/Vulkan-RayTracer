@@ -3,11 +3,11 @@
 
 
 
-class meshComponent : public Component {
+class MeshComponent : public Component {
     int modelIndex;
 
 public:
-    meshComponent();
+    MeshComponent();
     void setIndex(int index);
     int getIndex();
 

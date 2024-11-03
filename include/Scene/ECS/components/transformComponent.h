@@ -31,6 +31,7 @@ public:
         transform.setLocalScale(scale);
     }
 
+    ~TransformComponent();
    
 
 

@@ -10,5 +10,6 @@ public:
 	Scene();
 	~Scene();
 	SceneObject* root;
+	int getSceneObjectNumber(SceneObject* obj);
 	void updateScene(float deltaTime);
 };

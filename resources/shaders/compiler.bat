@@ -1,8 +1,9 @@
-glslangValidator -V RayTracer.vert -o RayTracerVert.spv
+glslangValidator -V VertexShader.vert -o vert.spv
 
-glslangValidator -V RayTracer.comp -o RayTracerComp.spv
 
-glslangValidator -V RayTracer.frag -o RayTracerFrag.spv
+
+
+glslangValidator -V FragmentShader.frag -o frag.spv
 
 
 pause

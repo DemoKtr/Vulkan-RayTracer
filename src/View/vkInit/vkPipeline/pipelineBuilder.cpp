@@ -1,5 +1,7 @@
 #include "View/vkInit/vkPipeline/pipelineBuilder.h"
 #include <View/vkInit/vkPipeline/shaders.h>
+#include "View/RenderStructs/projection.h"
+#include "View/vkUtil/renderpass.h"
 
 vkInit::PipelineBuilder::PipelineBuilder(vk::Device device) {
 	this->device = device;
@@ -24,6 +26,8 @@ void vkInit::PipelineBuilder::reset() {
 	reset_vertex_format();
 	reset_shader_modules();
 	reset_descriptor_set_layouts();
+	useDepthTest = false;
+	useProjectionMatrix = false;
 }
 
 void vkInit::PipelineBuilder::specify_vertex_format(
@@ -54,7 +58,7 @@ void vkInit::PipelineBuilder::set_overwrite_mode(bool mode) {
 	overwrite = mode;
 }
 
-vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(){
+vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swapchainFormat,vk::Format depthFormat){
 	//Vertex Input
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 
@@ -80,13 +84,15 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(){
 	//Color Blend
 	pipelineInfo.pColorBlendState = &colorBlending;
 
+	set_depth();
 	//Pipeline Layout
 	std::cout << "Create Pipeline Layout" << std::endl;
 	vk::PipelineLayout pipelineLayout = make_pipeline_layout();
 	pipelineInfo.layout = pipelineLayout;
 
 
-	pipelineInfo.renderPass = this->renderPass;
+	vk::RenderPass renderpass = vkUtil::create_postprocess_renderpass(device, swapchainFormat,depthFormat);
+	pipelineInfo.renderPass = renderpass;
 	pipelineInfo.subpass = 0;
 
 	//Make the Pipeline
@@ -102,6 +108,7 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(){
 	GraphicsPipelineOutBundle output;
 	output.layout = pipelineLayout;
 	output.pipeline = graphicsPipeline;
+	output.renderpass = renderpass;
 
 	return output;
 }
@@ -133,6 +140,26 @@ void vkInit::PipelineBuilder::configure_input_assembly() {
 void vkInit::PipelineBuilder::configure_input_assembly(vk::PrimitiveTopology topology) {
 	inputAssemblyInfo.flags = vk::PipelineInputAssemblyStateCreateFlags();
 	inputAssemblyInfo.topology = topology;
+}
+
+void vkInit::PipelineBuilder::set_depth() {
+	if (1==1) {
+		depthState.flags = vk::PipelineDepthStencilStateCreateFlags();
+		depthState.depthTestEnable = true;
+		depthState.depthWriteEnable = true;
+		depthState.depthCompareOp = vk::CompareOp::eLess;
+		depthState.depthBoundsTestEnable = false;
+		depthState.stencilTestEnable = false;
+		pipelineInfo.pDepthStencilState = &depthState;
+	}
+	else {
+		//depthState = nullptr;
+		pipelineInfo.pDepthStencilState = nullptr;
+	}
+}
+
+void vkInit::PipelineBuilder::use_projection_matrix(bool is) {
+	this->useProjectionMatrix = is;
 }
 
 vk::PipelineShaderStageCreateInfo vkInit::PipelineBuilder::make_shader_info(const vk::ShaderModule& shaderModule, const vk::ShaderStageFlagBits& stage) {
@@ -223,7 +250,20 @@ vk::PipelineLayout vkInit::PipelineBuilder::make_pipeline_layout() {
 	layoutInfo.setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size());
 	layoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
-	layoutInfo.pushConstantRangeCount = 0;
+
+	if (useProjectionMatrix) {
+		layoutInfo.pushConstantRangeCount = 1;
+		vk::PushConstantRange pushConstantInfo;
+		pushConstantInfo.offset = 0;
+		pushConstantInfo.size = sizeof(vkRenderStructs::ProjectionData);
+		pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		layoutInfo.pPushConstantRanges = &pushConstantInfo;
+
+	}
+	else {
+		layoutInfo.pushConstantRangeCount = 0;
+	}
+	
 
 	try {
 		return device.createPipelineLayout(layoutInfo);
@@ -265,3 +305,12 @@ void vkInit::PipelineBuilder::specify_swapchain_extent(vk::Extent2D screen_size)
 }
 
 
+
+
+void vkInit::PipelineBuilder::clear_depth_attachment() {
+	pipelineInfo.pDepthStencilState = nullptr;
+}
+
+void vkInit::PipelineBuilder::use_depth_test(bool is) {
+	this->useDepthTest = is;
+}

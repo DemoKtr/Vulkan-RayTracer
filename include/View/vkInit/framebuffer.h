@@ -23,4 +23,6 @@ namespace vkInit {
 		\param debug whether the system is running in debug mode.
 	*/
 	void make_framebuffers(framebufferInput inputChunk, std::vector<vkUtil::SwapChainFrame>& frames, bool debug);
+	void make_postprocess_framebuffer(framebufferInput inputChunk, std::vector<vkUtil::SwapChainFrame>& frames, bool debug);
+
 }

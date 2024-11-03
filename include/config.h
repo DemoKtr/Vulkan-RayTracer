@@ -18,7 +18,3 @@ struct BufferInputChunk {
 	vk::MemoryPropertyFlags memoryProperties;
 };
 
-enum class meshTypes {
-	KITTY,
-	DOG
-};

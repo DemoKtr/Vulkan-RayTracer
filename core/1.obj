@@ -1,6 +1,6 @@
-# Blender 3.6.5
+# Blender 4.2.3 LTS
 # www.blender.org
-mtllib box.mtl
+mtllib 1.mtl
 o Cube
 v 1.000000 1.000000 -1.000000
 v 1.000000 -1.000000 -1.000000

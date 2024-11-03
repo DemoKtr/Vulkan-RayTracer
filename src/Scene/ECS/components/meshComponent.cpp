@@ -1,15 +1,15 @@
 #include "Scene/ECS/components/meshComponent.h"
 #include "View/vkMesh/meshTypes.h"
 
-meshComponent::meshComponent(){
+MeshComponent::MeshComponent(){
 	modelIndex = -1;
 	type = ComponentType::Mesh;
 }
 
-void meshComponent::setIndex(int index) {
+void MeshComponent::setIndex(int index) {
 	modelIndex = index;
 }
 
-int meshComponent::getIndex() {
+int MeshComponent::getIndex() {
 	return modelIndex;
 }
