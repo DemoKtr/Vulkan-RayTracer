@@ -26,22 +26,8 @@ editor::~editor() {
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models ,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
-	/*
-	vk::CommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = vk::StructureType::eCommandBufferBeginInfo;
-	beginInfo.pInheritanceInfo = nullptr;  // Opcjonalnie
+void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models, vkImage::TexturesNames textures, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 
-
-	try {
-		commandBuffer.begin(beginInfo);
-	}
-	catch (vk::SystemError err) {
-		if (debugMode) {
-			std::cout << "Failed to begin recording command buffer!" << std::endl;
-		}
-	}
-	*/
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
 	ImGui_ImplVulkan_NewFrame();
@@ -57,93 +43,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	ImGui::Text("This is a Vulkan window with ImGui!");
 	size_t i = 0;
 	DisplaySceneObject(scene->root);
-	if (selectedObject != nullptr) {
-		ImGui::Begin("Selected Object Properties");
-		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());
-		ImGui::Separator();
-		ImGui::Text("Components:");
-		auto components = scene->ecs->getAllComponents(selectedObject->id);
-		
-		for (const auto& componentPtr : components) {
-			Component* comp = componentPtr.get();  // Surowy wskaŸnik
-
-			std::string label = comp->getLabel();
-			
-
-			if (ImGui::TreeNode(label.c_str())) {
-				// Wyœwietlanie specyficznych pól dla komponentów
-				if (comp->getType() == ComponentType::Transform) {
-					TransformComponent* transform = dynamic_cast<TransformComponent*>(comp);
-					if (transform != nullptr) {
-						// Wyœwietlanie i edytowanie transformacji
-						Transform& transformData = transform->getModifyableTransform();
-						glm::vec3 eulerAngles = glm::eulerAngles(transformData.getModifyableLocalRotation());
-						ImGui::DragFloat3("Position", &transformData.getModifyableLocalPosition().x, 0.1f);
-						if (ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f)) {
-							glm::quat newRotation = glm::yawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
-							transformData.setLocalRotation(newRotation);
-							// Przekszta³cenie k¹tów Eulerów do kwaternionu tylko po zmianie wartoœci
-							transformData.setLocalRotation(glm::quat(eulerAngles));
-						}
-
-						ImGui::DragFloat3("Scale", &transformData.getModifyableLocalScale().x, 0.1f);
-						transformData.computeModelMatrix();
-					}
-					ImGui::SameLine;
-					this->RemoveComponent(scene->ecs,selectedObject->id,transform);
-				}
-				else if (comp->getType() == ComponentType::Mesh) {
-					static char searchQuery[128] = "";
-					MeshComponent* mesh = dynamic_cast<MeshComponent*>(comp);
-
-					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
-					std::string currentModel;
-					if(mesh->getIndex()>=0)
-					currentModel = models.fileNames[mesh->getIndex()];
-					else currentModel = "";
-
-					if (ImGui::BeginCombo("##modelSelector", currentModel.c_str())) { // Combo bez etykiety z lewej strony
-						// Pole wyszukiwania w rozwijanej liœcie
-						ImGui::InputText("Search Models", searchQuery, IM_ARRAYSIZE(searchQuery));
-
-						// Pêtla do wyœwietlania wyników wyszukiwania
-						for (size_t i = 0; i < models.fileNames.size(); ++i) {
-							const std::string& modelName = models.fileNames[i];
-							if (modelName.find(searchQuery) != std::string::npos) {
-
-								ImGui::PushID(i);
-
-								// Po³¹czony tekst nazwy modelu i œcie¿ki
-								std::string displayText = modelName + "\nPath: " + models.fullPaths[i];
-
-								// Wybór modelu
-								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
-									mesh->setIndex(i);  // Zapisz wybrany indeks
-									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
-								}
-
-								ImGui::PopID();
-							}
-						}
-						ImGui::EndCombo();
-					}
-
-					// Przycisk do usuwania komponentu obok selektora
-					
-					
-						this->RemoveComponent(scene->ecs, selectedObject->id, mesh);
-					
-				}
-				// Zakoñcz wêze³ drzewa
-				ImGui::TreePop();
-			}
-		}
-		/////////////////////////////////////////////////////////ADD component
-		
-		AddComponent(scene->ecs, selectedObject->id);
-		
-		ImGui::End();
-	}
+	render_components_gui(models, textures);
 	ImGui::End();
 	vk::RenderPassBeginInfo imguiRenderpassInfo = {};
 	imguiRenderpassInfo.renderPass = imguiRenderPass;
@@ -258,6 +158,233 @@ void editor::rmb_click_render(std::filesystem::path path){
 
 	
 
+}
+
+void editor::render_components_gui(modelNames models, vkImage::TexturesNames textures) {
+	if (selectedObject != nullptr) {
+		ImGui::Begin("Selected Object Properties");
+		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());
+		ImGui::Separator();
+		ImGui::Text("Components:");
+		auto components = scene->ecs->getAllComponents(selectedObject->id);
+
+		for (const auto& componentPtr : components) {
+			Component* comp = componentPtr.get();  // Surowy wskaŸnik
+
+			std::string label = comp->getLabel();
+
+
+			if (ImGui::TreeNode(label.c_str())) {
+				// Wyœwietlanie specyficznych pól dla komponentów
+				if (comp->getType() == ComponentType::Transform) {
+					TransformComponent* transform = dynamic_cast<TransformComponent*>(comp);
+					if (transform != nullptr) {
+						// Wyœwietlanie i edytowanie transformacji
+						Transform& transformData = transform->getModifyableTransform();
+						glm::vec3 eulerAngles = glm::eulerAngles(transformData.getModifyableLocalRotation());
+						ImGui::DragFloat3("Position", &transformData.getModifyableLocalPosition().x, 0.1f);
+						if (ImGui::DragFloat3("Rotation", &eulerAngles.x, 0.1f)) {
+							glm::quat newRotation = glm::yawPitchRoll(eulerAngles.y, eulerAngles.x, eulerAngles.z);
+							transformData.setLocalRotation(newRotation);
+							// Przekszta³cenie k¹tów Eulerów do kwaternionu tylko po zmianie wartoœci
+							transformData.setLocalRotation(glm::quat(eulerAngles));
+						}
+
+						ImGui::DragFloat3("Scale", &transformData.getModifyableLocalScale().x, 0.1f);
+						transformData.computeModelMatrix();
+					}
+					ImGui::SameLine;
+					//this->RemoveComponent(scene->ecs, selectedObject->id, transform);
+				}
+				else if (comp->getType() == ComponentType::Mesh) {
+					static char searchQuery[128] = "";
+					MeshComponent* mesh = dynamic_cast<MeshComponent*>(comp);
+
+					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
+					std::string currentModel;
+					if (mesh->getIndex() >= 0)
+						currentModel = models.fileNames[mesh->getIndex()];
+					else currentModel = "";
+
+					if (ImGui::BeginCombo("##modelSelector", currentModel.c_str())) { // Combo bez etykiety z lewej strony
+						// Pole wyszukiwania w rozwijanej liœcie
+						ImGui::InputText("Search Models", searchQuery, IM_ARRAYSIZE(searchQuery));
+
+						// Pêtla do wyœwietlania wyników wyszukiwania
+						for (size_t i = 0; i < models.fileNames.size(); ++i) {
+							const std::string& modelName = models.fileNames[i];
+							if (modelName.find(searchQuery) != std::string::npos) {
+
+								ImGui::PushID(i);
+
+								// Po³¹czony tekst nazwy modelu i œcie¿ki
+								std::string displayText = modelName + "\nPath: " + models.fullPaths[i];
+
+								// Wybór modelu
+								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
+									mesh->setIndex(i);  // Zapisz wybrany indeks
+									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
+								}
+
+								ImGui::PopID();
+							}
+						}
+						ImGui::EndCombo();
+					}
+
+					// Przycisk do usuwania komponentu obok selektora
+
+
+					this->RemoveComponent(scene->ecs, selectedObject->id, mesh);
+
+				}
+				/**/
+				else if (comp->getType() == ComponentType::Texture) {
+					static char searchQuery[128] = "";
+					TextureComponent* textureComponent = dynamic_cast<TextureComponent*>(comp);
+
+					ImGui::Checkbox("Is PBR Texture", textureComponent->isPBRTexture());
+
+					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
+					std::string currentTexture;
+					if (textureComponent->getColorTextureIndex() >= 0)
+						currentTexture = textures.fileNames[textureComponent->getColorTextureIndex()];
+					else currentTexture = "";
+
+					if (ImGui::BeginCombo("##textureSelector", currentTexture.c_str())) { // Combo bez etykiety z lewej strony
+						// Pole wyszukiwania w rozwijanej liœcie
+						ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
+
+						// Pêtla do wyœwietlania wyników wyszukiwania
+						for (size_t i = 0; i < textures.fileNames.size(); ++i) {
+							const std::string& textureName = textures.fileNames[i];
+							if (textureName.find(searchQuery) != std::string::npos) {
+
+								ImGui::PushID(i);
+
+								// Po³¹czony tekst nazwy modelu i œcie¿ki
+								std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
+
+								// Wybór modelu
+								if (ImGui::Selectable(displayText.c_str(), textureComponent->getColorTextureIndex() == i)) {
+									textureComponent->setColorTextureIndex(i);  // Zapisz wybrany indeks
+									std::cout << "Wybrano indeks: " << textureComponent->getColorTextureIndex() << std::endl;
+								}
+
+								ImGui::PopID();
+							}
+						}
+						ImGui::EndCombo();
+					}
+					if (*textureComponent->isPBRTexture()) {
+						std::string currentNormalTexture;
+						if (textureComponent->getNormalTextureIndex() >= 0)
+							currentNormalTexture = textures.fileNames[textureComponent->getNormalTextureIndex()];
+						else currentNormalTexture = "";
+
+						if (ImGui::BeginCombo("##normalSelector", currentNormalTexture.c_str())) { // Combo bez etykiety z lewej strony
+							// Pole wyszukiwania w rozwijanej liœcie
+							ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
+
+							// Pêtla do wyœwietlania wyników wyszukiwania
+							for (size_t i = 0; i < textures.fileNames.size(); ++i) {
+								const std::string& textureName = textures.fileNames[i];
+								if (textureName.find(searchQuery) != std::string::npos) {
+
+									ImGui::PushID(i);
+
+									// Po³¹czony tekst nazwy modelu i œcie¿ki
+									std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
+
+									// Wybór modelu
+									if (ImGui::Selectable(displayText.c_str(), textureComponent->getNormalTextureIndex() == i)) {
+										textureComponent->setNormalTextureIndex(i);  // Zapisz wybrany indeks
+										std::cout << "Wybrano indeks: " << textureComponent->getNormalTextureIndex() << std::endl;
+									}
+
+									ImGui::PopID();
+								}
+							}
+							ImGui::EndCombo();
+						}
+							std::string currentARMTexture;
+							if (textureComponent->getARMTextureIndex() >= 0)
+								currentARMTexture = textures.fileNames[textureComponent->getARMTextureIndex()];
+							else currentARMTexture = "";
+
+							if (ImGui::BeginCombo("##ARMtextureSelector", currentARMTexture.c_str())) { // Combo bez etykiety z lewej strony
+								// Pole wyszukiwania w rozwijanej liœcie
+								ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
+
+								// Pêtla do wyœwietlania wyników wyszukiwania
+								for (size_t i = 0; i < textures.fileNames.size(); ++i) {
+									const std::string& textureName = textures.fileNames[i];
+									if (textureName.find(searchQuery) != std::string::npos) {
+
+										ImGui::PushID(i);
+
+										// Po³¹czony tekst nazwy modelu i œcie¿ki
+										std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
+
+										// Wybór modelu
+										if (ImGui::Selectable(displayText.c_str(), textureComponent->getARMTextureIndex() == i)) {
+											textureComponent->setARMTextureIndex(i);  // Zapisz wybrany indeks
+											std::cout << "Wybrano indeks: " << textureComponent->getARMTextureIndex() << std::endl;
+										}
+
+										ImGui::PopID();
+									}
+								}
+								ImGui::EndCombo();
+							}
+						std::string currentDepthTexture;
+						if (textureComponent->getDepthTextureIndex() >= 0)
+							currentDepthTexture = textures.fileNames[textureComponent->getDepthTextureIndex()];
+						else currentDepthTexture = "";
+
+						if (ImGui::BeginCombo("##DepthtextureSelector", currentDepthTexture.c_str())) { // Combo bez etykiety z lewej strony
+									// Pole wyszukiwania w rozwijanej liœcie
+							ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
+
+									// Pêtla do wyœwietlania wyników wyszukiwania
+							for (size_t i = 0; i < textures.fileNames.size(); ++i) {
+								const std::string& textureName = textures.fileNames[i];
+								if (textureName.find(searchQuery) != std::string::npos) {
+
+									ImGui::PushID(i);
+
+											// Po³¹czony tekst nazwy modelu i œcie¿ki
+									std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
+
+											// Wybór modelu
+									if (ImGui::Selectable(displayText.c_str(), textureComponent->getDepthTextureIndex() == i)) {
+										textureComponent->setDepthTextureIndex(i);  // Zapisz wybrany indeks
+										std::cout << "Wybrano indeks: " << textureComponent->getDepthTextureIndex() << std::endl;
+									}
+
+									ImGui::PopID();
+								}
+							}
+								ImGui::EndCombo();
+						}
+
+
+
+								
+
+					}
+							// Zakoñcz wêze³ drzewa
+					this->RemoveComponent(scene->ecs, selectedObject->id, textureComponent);
+				}
+				ImGui::TreePop();
+			}
+		
+		}
+	AddComponent(scene->ecs, selectedObject->id);
+	ImGui::End();
+	
+	}
+			
 }
 
 void editor::render_file_explorer() {
@@ -391,20 +518,14 @@ void editor::AddComponent(ecs::ECS* ecs,ecs::Entity entity) {
 		std::vector<const char*> componentNames = {
 			"Transform",
 			"Mesh",
-			"Render",
-			"Physics",
-			"Script"
-			// Dodaj inne typy komponentów
+			"Texture",
 		};
 
 		// Tworzymy rozwijane menu do wyboru komponentu
 		int currentIndex = static_cast<int>(selectedComponentType);
 		if (ImGui::Combo("Select Component", &currentIndex, componentNames.data(), componentNames.size())) {
 			selectedComponentType = static_cast<ComponentType>(currentIndex);
-			// Tutaj mo¿na dodaæ logikê do tworzenia nowego komponentu na podstawie selectedComponentType
-			// Na przyk³ad:
-			// auto component = CreateComponent(selectedComponentType);
-			std::cout << currentIndex << std::endl;
+
 		}
 
 		// Przycisk do zamkniêcia selektora
@@ -412,6 +533,7 @@ void editor::AddComponent(ecs::ECS* ecs,ecs::Entity entity) {
 
 			showComponentSelector = false; // Ukryj selektor po naciœniêciu
 			ecs->addComponent(entity, createComponent(static_cast<ComponentType>(currentIndex)));
+
 
 		}
 		ImGui::SameLine();

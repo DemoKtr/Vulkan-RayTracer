@@ -382,7 +382,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32
 	);
 
 
-	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesNames, swapchainExtent, imageIndex, debugMode);
+	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesNames,texturesNames ,swapchainExtent, imageIndex, debugMode);
 
 	try {
 		commandBuffer.end();
@@ -401,20 +401,7 @@ void GraphicsEngine::prepare_scene(vk::CommandBuffer commandBuffer) {
 	vk::DeviceSize offets[] = { 0 };
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offets);
 	commandBuffer.bindIndexBuffer(meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
-	/*
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-	for (int i = 0; i < 192; i+=8) {
-		std::cout << "Vertex " << i/8 << std::endl;
-		std::cout <<"X: " << meshes->vertexLump[i] << std::endl;
-		std::cout <<"Y: " << meshes->vertexLump[i+1] << std::endl;
-		std::cout <<"Z: " << meshes->vertexLump[i+2] << std::endl;
-	}
-	std::cout << std::endl;
-	std::cout << std::endl;
-	std::cout << std::endl;
-	*/
+
 }
 
 void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, int objectType, uint32_t& startInstance, uint32_t instanceCount) {
@@ -422,17 +409,7 @@ void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, int objectT
 	int indexCount = meshes->indexCounts.find(objectType)->second;
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
 	//materials[objectType]->useTexture(commandBuffer, layout);
-	/*
-	std::cout << "JestemNowym obiektem testowym" << std::endl;
-	for (int i = firstIndex; i < indexCount; ++i) {
-		std::cout << "Vertex " << i << " :" << std::endl;;
-		std::cout << "X: " << meshes->vertices[i].Position.x << "Y: " << meshes->vertices[i].Position.y << "Z: " << meshes->vertices[i].Position.z << std::endl;
-		std::cout << std::endl;
-	}
-	std::cout<<std::endl;
-	std::cout<<std::endl;
-	std::cout<<std::endl;*/
-	//std::cout<<indexCount<<std::endl;
+
 	
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 
@@ -557,9 +534,9 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	vkImage::TextureInputChunk info;
 	std::string str = std::string(PROJECT_DIR) + "\\core\\u.png";
-	vkImage::TexturesNames tNames;
-	vkImage::listTexturesFilesInDirectory("\\core",tNames);
-	info.texturesNames = tNames;
+	
+	vkImage::listTexturesFilesInDirectory("\\core",texturesNames);
+	info.texturesNames = texturesNames;
 	info.filenames = nullptr;
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
@@ -575,7 +552,6 @@ void GraphicsEngine::make_assets(Scene* scene) {
 		test.push_back(m);
 	}
 	
-	std::cout << test.size() << std::endl;
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
@@ -618,7 +594,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 			}
 		}
 	}
-	std::cout << i << std::endl;
+
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));
 	_frame.write_postprocess_descriptors();

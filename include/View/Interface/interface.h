@@ -35,7 +35,7 @@ class editor {
 	public:
 		editor(Scene* scene,std::string path, vkImage::TextureInputChunk info);
 		~editor();
-		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, modelNames models, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
+		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, modelNames models, vkImage::TexturesNames textures, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		void DisplaySceneObject(SceneObject* obj);
 		void RemoveSceneObject(SceneObject* obj);
 		void AddSceneObject(SceneObject* obj);
@@ -43,4 +43,6 @@ class editor {
 		void RemoveComponent(ecs::ECS* ecs, ecs::Entity entity, Component* component);
 		void render_file_explorer();
 		void rmb_click_render(std::filesystem::path path);
+
+		void render_components_gui(modelNames models, vkImage::TexturesNames textures);
 };

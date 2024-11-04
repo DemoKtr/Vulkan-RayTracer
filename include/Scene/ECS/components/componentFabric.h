@@ -5,8 +5,7 @@
 #include <typeindex>
 #include <iostream>
 #include "Scene/ECS/components/componentType.h"
-#include "transformComponent.h"
-#include "meshComponent.h"
+#include "Scene/ECS/components/components.h"
 
 
 // Definicja mapy fabryk jako zmiennej statycznej

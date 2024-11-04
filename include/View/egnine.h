@@ -66,6 +66,7 @@ class GraphicsEngine {
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
 	modelNames  meshesNames;
+	vkImage::TexturesNames texturesNames;
 
 	vkMesh::VertexMenagerie* meshes;
 

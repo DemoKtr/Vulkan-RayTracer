@@ -22,8 +22,8 @@ public:
 		case ComponentType::Mesh:
 			label = "Mesh";
 			break;
-		case ComponentType::Render:
-			label = "Light";
+		case ComponentType::Texture:
+			label = "Texture";
 			break;
 		case ComponentType::Script:
 			label = "Camera";
