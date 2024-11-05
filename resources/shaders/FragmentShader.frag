@@ -3,11 +3,13 @@
 layout (location = 0) in vec2 UV;
 layout (location = 1) flat in int textureId;
 
+layout(set=1,binding=0) uniform sampler2DArray textureAtlas;
 
 layout (location = 0) out vec4 outColor;
 
 
 void main() 
 {
-	outColor = vec4(1.0f,0.3f,0.95f,1.0f);
+	vec3 color = texture(textureAtlas, vec3(UV.st, 1)).rgb;
+	outColor = vec4(color,1.0f);
 }

@@ -20,8 +20,8 @@ SceneObject::SceneObject(ecs::ECS* ecs){
 	ecs->addComponent(id, transformComponent);
 	//ecs->addComponent(id, texturecomponent);
 
-	//ecs->addComponent(id, meshcomponent);
-	//ecs->getComponent<MeshComponent>(id).get()->setIndex(0);
+	ecs->addComponent(id, meshcomponent);
+	ecs->getComponent<MeshComponent>(id).get()->setIndex(0);
 	//ecs->getComponent<TransformComponent>(id).get()->getModifyableTransform().setLocalScale(glm::vec3(0.8f,.8f,.8f));
 	//ecs->getComponent<TransformComponent>(id).get()->getModifyableTransform().setLocalPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	//ecs->getComponent<TransformComponent>(id).get()->getModifyableTransform().computeModelMatrix();

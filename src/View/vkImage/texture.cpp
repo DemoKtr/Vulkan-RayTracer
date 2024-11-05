@@ -89,7 +89,13 @@ void vkImage::Texture::populate() {
 }
 
 void vkImage::Texture::make_view(){
+	if (filename == nullptr) {
+		imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2DArray, pixels.size());
+	}
+	else {
 	imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, pixels.size());
+	}
+	
 }
 
 void vkImage::Texture::make_sampler() {	/*
@@ -218,4 +224,8 @@ vkImage::Texture::~Texture() {
 	logicalDevice.destroyImage(image);
 	logicalDevice.destroyImageView(imageView);
 	logicalDevice.destroySampler(sampler);
+}
+
+void vkImage::Texture::useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout) {
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 1, descriptorSet, nullptr);
 }

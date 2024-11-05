@@ -61,6 +61,9 @@ class GraphicsEngine {
 	vk::DescriptorPool iconDescriptorPool;
 	vk::DescriptorSetLayout iconDescriptorSetLayout;
 
+	vk::DescriptorPool textureDescriptorPool;
+	vk::DescriptorSetLayout textureDescriptorSetLayout;
+
 	resourceManager resourcesManager{};
 
 	editor* sceneEditor;
@@ -70,6 +73,7 @@ class GraphicsEngine {
 
 	vkMesh::VertexMenagerie* meshes;
 
+	vkImage::Texture* atlasTextures;
 	/// <summary>
 	///  Pipelines
 	/// </summary>

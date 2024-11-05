@@ -59,13 +59,16 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyCommandPool(imguiCommandPool);
 	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
 	device.destroyDescriptorSetLayout(postprocessDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(textureDescriptorSetLayout);
 	device.destroyDescriptorPool(postprocessDescriptorPool);
 	device.destroyDescriptorPool(iconDescriptorPool);
 	device.destroyDescriptorPool(imguiDescriptorPool);
+	device.destroyDescriptorPool(textureDescriptorPool);
 	device.destroyRenderPass(imguiRenderPass);
 	delete sceneEditor;
 	delete meshes;
 	delete meshesManager;
+	delete atlasTextures;
 	cleanup_swapchain();
 	
 	device.destroy();
@@ -119,6 +122,7 @@ void GraphicsEngine::create_pipeline() {
 
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
+	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
 	//pipelineBuilder.add_descriptor_set_layout(meshSetLayout[pipelineType::SKY]);
 	pipelineBuilder.use_depth_test(true);
 	pipelineBuilder.use_projection_matrix(true);
@@ -231,6 +235,12 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eVertex);
 
 	postprocessDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
+	bindings.count = 1;
+	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
+	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 }
 
 
@@ -410,7 +420,7 @@ void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, int objectT
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
 	//materials[objectType]->useTexture(commandBuffer, layout);
 
-	
+	atlasTextures->useTexture(commandBuffer, postprocessPipelineLayout);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 
 	startInstance += instanceCount;
@@ -518,13 +528,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	projection = vkRenderStructs::getProjectionMatrix(swapchainExtent);
 	meshesManager = new vkMesh::MeshesManager(scene->root,scene->ecs);
 
-	vkInit::descriptorSetLayoutData bindingsy;
-	bindingsy.count = 1;
-	bindingsy.indices.push_back(0);
-	bindingsy.types.push_back(vk::DescriptorType::eCombinedImageSampler);
-	bindingsy.counts.push_back(1);
-	bindingsy.stages.push_back(vk::ShaderStageFlagBits::eFragment);
-	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindingsy);
+	
 
 	meshes = new vkMesh::VertexMenagerie();
 	vkInit::descriptorSetLayoutData bindings;
@@ -532,12 +536,13 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
 
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	vkImage::TextureInputChunk info;
 	std::string str = std::string(PROJECT_DIR) + "\\core\\u.png";
 	
 	vkImage::listTexturesFilesInDirectory("\\core",texturesNames);
-	info.texturesNames = texturesNames;
-	info.filenames = nullptr;
+	//info.texturesNames = texturesNames;
+	info.filenames = str.c_str();
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
 	info.queue = graphicsQueue;
@@ -545,6 +550,12 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR),info);
+	
+	info.descriptorPool = textureDescriptorPool;
+	info.layout = textureDescriptorSetLayout;
+	info.filenames = nullptr;
+	info.texturesNames = texturesNames;
+	atlasTextures = new vkImage::Texture(info);
 	listMeshesFilesInDirectory("\\core", meshesNames);
 	std::vector<vkMesh::MeshLoader> test;
 	for (std::string path : meshesNames.fullPaths) {
