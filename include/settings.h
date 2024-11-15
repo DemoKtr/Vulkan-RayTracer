@@ -141,7 +141,8 @@ namespace vkSettings {
 	static float lastY = { 0.0f };
     static int MIN_TRIANGLES = 2; // Minimalna liczba trójk¹tów w wêŸle BVH
     static int MAX_DEPTH = 32;     // Maksymalna g³êbokoœæ drzewa BVH
-
+    static int thumbWidth = 512;
+    static int thumbHeigh = 512;
     
 
 

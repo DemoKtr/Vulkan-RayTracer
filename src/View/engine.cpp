@@ -119,7 +119,7 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.specify_vertex_shader("resources/shaders/vert.spv");
 	pipelineBuilder.specify_fragment_shader("resources/shaders/frag.spv");
 	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
-
+	pipelineBuilder.set_renderpass(postprocessRenderPass);
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
@@ -130,7 +130,6 @@ void GraphicsEngine::create_pipeline() {
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(swapchainFormat,swapchainFrames[0].depthFormat);
 
 	postprocessPipelineLayout = output.layout;
-	postprocessRenderPass = output.renderpass;
 	postprocessPipeline = output.pipeline;
 
 	pipelineBuilder.reset();
@@ -539,17 +538,13 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	vkImage::TextureInputChunk info;
 	std::string str = std::string(PROJECT_DIR) + "\\core\\u.png";
-	
-	vkImage::listTexturesFilesInDirectory("\\core",texturesNames);
-	//info.texturesNames = texturesNames;
-	info.filenames = str.c_str();
-	info.descriptorPool = iconDescriptorPool;
-	info.layout = iconDescriptorSetLayout;
 	info.queue = graphicsQueue;
 	info.commandBuffer = maincommandBuffer;
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
-	sceneEditor = new editor(scene, std::string(PROJECT_DIR),info);
+	vkImage::listTexturesFilesInDirectory("\\core",texturesNames);
+	
+	
 	
 	info.descriptorPool = textureDescriptorPool;
 	info.layout = textureDescriptorSetLayout;
@@ -578,7 +573,13 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	finalizationInfo.queue = graphicsQueue;
 	finalizationInfo.commandBuffer = maincommandBuffer;
 	meshes->finalize(finalizationInfo);
+	//info.texturesNames = texturesNames;
+	info.filenames = str.c_str();
+	info.descriptorPool = iconDescriptorPool;
+	info.layout = iconDescriptorSetLayout;
 	
+	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
+
 }
 
 

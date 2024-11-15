@@ -1,26 +1,84 @@
 #pragma once
 #include "config.h"
-/*
-class Thumb {
+#include "View/vkMesh/vertexMenagerie.h"
+#include "View/vkImage/texture.h"
+#include <View/vkMesh/meshTypes.h>
+#include "View/RenderStructs/projection.h"
 
+struct ThumbRendererInput {
+	vk::PhysicalDevice physicalDevice;
 	vk::Device device;
-	vk::DescriptorPool descriptorPool;
-	vk::RenderPass renderPass;
+	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
-	vk::Framebuffer framebuffer;
-	vk::Image thumbsImage;
-	vk::ImageView thumbsImageView;
-	vk::DeviceMemory thumbsMemory;
+	vkMesh::VertexMenagerie* meshes;
+	vk::Format pictureFormat;
+	vk::Format depthFormat;
+	int width;
+	int heigh;
+	int number_of_models;
+};
 
+struct ThumbRendererOutput {
+	std::vector<vk::Image> image;
+	std::vector<vk::DeviceMemory> imageMemory;
+	std::vector<vk::ImageView>  imageView;
 
-	int witdth, height;
+};
+
+class ThumbRenderer {
+	
+	vk::PhysicalDevice physicalDevice;
+	vk::Device device;
+
+	vk::RenderPass renderPass;
+	vk::Pipeline pipeline;
+	vk::PipelineLayout pipelineLayout;
+	modelNames  meshesNames;
+	vkImage::Texture* universalTexture;
+	
+	std::vector<vk::Image> image;
+	std::vector<vk::DeviceMemory> imageMemory;
+	std::vector<vk::ImageView> imageView;
+
+	std::vector<vk::Image> depthImage;
+	std::vector<vk::DeviceMemory> depthImageMemory;
+	std::vector<vk::ImageView> depthImageView;
+
+	vk::Sampler sampler;
+
+	vk::Format imageFormat, depthFormat;
+
+	std::vector<vk::Framebuffer> framebuffers;
+	//Resource Descriptors
+	vk::DescriptorSetLayout descriptorLayout;
+	vk::DescriptorSet descriptorSet;
+	vk::DescriptorPool descriptorPool;
+
+	vk::Extent2D swapchainExten;
+
+	vk::CommandBuffer commandBuffer;
+	vk::Queue queue;
+
+	vkMesh::VertexMenagerie* meshes;
+
+	vkRenderStructs::ViewProjectionData vpData;
+
+	int width, height;
 	int number_of_images;
 	int number_of_images_buffer;
+
+	void render_objects(int objectType, uint32_t& startInstance);
+	void prepare_scene();
+
 public:
-	Thumb(vk::Device device, int width, int heigh, int n, int buffor,bool debugMode);
+	
+	ThumbRenderer(ThumbRendererInput input, bool debugMode);
 	void create_renderpass();
 	void create_pipeline();
 	void create_framebuffers(bool debug);
-	void render();
+	void render(bool debugMode);
+	void create_images();
+	void create_descriptors_set_layout();
+	void make_assets();
+	ThumbRendererOutput get_meshes_images();
 };
-*/

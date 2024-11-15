@@ -1,25 +1,65 @@
 #include "View/Interface/interface.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
-#include <Scene/ECS/components/transformComponent.h>
-#include <Scene/ECS/components/meshComponent.h>
+
 #include <Scene/ECS/components/componentFabric.h>
+
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/euler_angles.hpp>
 
 
 
 
-editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info){
+void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
+	vk::Device device,
+	vk::CommandBuffer commandBuffer,
+	vk::Queue queue, 
+	vkImage::TexturesNames textures,
+	vkMesh::VertexMenagerie* meshes,
+	vk::Format pictureFormat,
+	vk::Format depthFormat,
+	int modelsNumber
+	) {
+	//vk::Device logicalDevice;
+	//vk::PhysicalDevice physicalDevice;
+	//vk::CommandBuffer commandBuffer;
+	//vk::Queue queue;
+	//vkImage::TexturesNames textures;
+	//vkMesh::VertexMenagerie* meshes;
+	//vk::Format pictureFormat;
+	//vk::Format depthFormat;
+	//int number_of_models;
+
+	vkThumbs::ThumbsManagerInput input;
+	input.physicalDevice = physicalDevice;
+	input.logicalDevice = device;
+	input.commandBuffer = commandBuffer;
+	input.queue = queue;
+	input.textures = textures;
+	input.meshes = meshes;
+	input.pictureFormat = pictureFormat;
+	input.depthFormat = depthFormat;
+	input.number_of_models = modelsNumber;
+	miniatureManager = new vkThumbs::ThumbsManager(input);
+}
+
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, vkImage::TexturesNames textures, vkMesh::VertexMenagerie* meshes,
+	vk::Format pictureFormat,
+	vk::Format depthFormat,
+	int modelsNumber){
 	this->scene = scene;
 	
 	baseFolder = path;
 	currentFolder = baseFolder;
 	
 	texture = new vkImage::Texture(info);
+	
+	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, textures,meshes, pictureFormat, depthFormat,modelsNumber);
 }
 editor::~editor() {
 	delete texture;
+	delete miniatureManager;
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
@@ -219,8 +259,15 @@ void editor::render_components_gui(modelNames models, vkImage::TexturesNames tex
 
 								// Po³¹czony tekst nazwy modelu i œcie¿ki
 								std::string displayText = modelName + "\nPath: " + models.fullPaths[i];
-
+								VkDescriptorSet qqq = texture->getDescriptorSet();
+								ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
+								ImVec2 imageSize(64, 64);
+								ImVec2 selectableSize(imageSize.x + 100, imageSize.y);
 								// Wybór modelu
+								
+								ImGui::Image(miniatureManager->get_mesh_icon(i), imageSize);
+								
+								ImGui::SameLine;
 								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
 									mesh->setIndex(i);  // Zapisz wybrany indeks
 									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
@@ -265,7 +312,14 @@ void editor::render_components_gui(modelNames models, vkImage::TexturesNames tex
 								// Po³¹czony tekst nazwy modelu i œcie¿ki
 								std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
 
+
+								VkDescriptorSet qqq = texture->getDescriptorSet();
+								ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
+								ImVec2 imageSize(64, 64);
+								ImVec2 selectableSize(imageSize.x + 100, imageSize.y);
 								// Wybór modelu
+								ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
+								ImGui::SameLine;
 								if (ImGui::Selectable(displayText.c_str(), textureComponent->getColorTextureIndex() == i)) {
 									textureComponent->setColorTextureIndex(i);  // Zapisz wybrany indeks
 									std::cout << "Wybrano indeks: " << textureComponent->getColorTextureIndex() << std::endl;
@@ -296,7 +350,13 @@ void editor::render_components_gui(modelNames models, vkImage::TexturesNames tex
 									// Po³¹czony tekst nazwy modelu i œcie¿ki
 									std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
 
+									VkDescriptorSet qqq = texture->getDescriptorSet();
+									ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
+									ImVec2 imageSize(64, 64);
+									ImVec2 selectableSize(imageSize.x + 100, imageSize.y);
 									// Wybór modelu
+									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
+									ImGui::SameLine;
 									if (ImGui::Selectable(displayText.c_str(), textureComponent->getNormalTextureIndex() == i)) {
 										textureComponent->setNormalTextureIndex(i);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getNormalTextureIndex() << std::endl;
@@ -326,7 +386,13 @@ void editor::render_components_gui(modelNames models, vkImage::TexturesNames tex
 										// Po³¹czony tekst nazwy modelu i œcie¿ki
 										std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
 
+										VkDescriptorSet qqq = texture->getDescriptorSet();
+										ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
+										ImVec2 imageSize(64, 64);
+										ImVec2 selectableSize(imageSize.x + 100, imageSize.y);
 										// Wybór modelu
+										ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
+										ImGui::SameLine;
 										if (ImGui::Selectable(displayText.c_str(), textureComponent->getARMTextureIndex() == i)) {
 											textureComponent->setARMTextureIndex(i);  // Zapisz wybrany indeks
 											std::cout << "Wybrano indeks: " << textureComponent->getARMTextureIndex() << std::endl;
@@ -356,7 +422,13 @@ void editor::render_components_gui(modelNames models, vkImage::TexturesNames tex
 											// Po³¹czony tekst nazwy modelu i œcie¿ki
 									std::string displayText = textureName + "\nPath: " + textures.fullPaths[i];
 
-											// Wybór modelu
+									VkDescriptorSet qqq = texture->getDescriptorSet();
+									ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
+									ImVec2 imageSize(64, 64);
+									ImVec2 selectableSize(imageSize.x + 100, imageSize.y);
+									// Wybór modelu
+									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
+									ImGui::SameLine;
 									if (ImGui::Selectable(displayText.c_str(), textureComponent->getDepthTextureIndex() == i)) {
 										textureComponent->setDepthTextureIndex(i);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getDepthTextureIndex() << std::endl;

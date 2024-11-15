@@ -58,6 +58,10 @@ void vkInit::PipelineBuilder::set_overwrite_mode(bool mode) {
 	overwrite = mode;
 }
 
+void vkInit::PipelineBuilder::set_renderpass(vk::RenderPass renderpass) {
+	renderPass = renderpass;
+}
+
 vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swapchainFormat,vk::Format depthFormat){
 	//Vertex Input
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -91,8 +95,8 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swap
 	pipelineInfo.layout = pipelineLayout;
 
 
-	vk::RenderPass renderpass = vkUtil::create_postprocess_renderpass(device, swapchainFormat,depthFormat);
-	pipelineInfo.renderPass = renderpass;
+	
+	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 
 	//Make the Pipeline
@@ -108,7 +112,7 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swap
 	GraphicsPipelineOutBundle output;
 	output.layout = pipelineLayout;
 	output.pipeline = graphicsPipeline;
-	output.renderpass = renderpass;
+	
 
 	return output;
 }
@@ -159,6 +163,10 @@ void vkInit::PipelineBuilder::set_depth() {
 }
 
 void vkInit::PipelineBuilder::use_projection_matrix(bool is) {
+	this->useProjectionMatrix = is;
+}
+
+void vkInit::PipelineBuilder::use_view_matrix(bool is) {
 	this->useProjectionMatrix = is;
 }
 
@@ -251,14 +259,30 @@ vk::PipelineLayout vkInit::PipelineBuilder::make_pipeline_layout() {
 	layoutInfo.pSetLayouts = descriptorSetLayouts.data();
 
 
-	if (useProjectionMatrix) {
+	if (useProjectionMatrix && useViewMatrix) {
+		layoutInfo.pushConstantRangeCount = 1;
+		vk::PushConstantRange pushConstantInfo;
+		pushConstantInfo.offset = 0;
+		pushConstantInfo.size = sizeof(vkRenderStructs::ViewProjectionData);
+		pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		layoutInfo.pPushConstantRanges = &pushConstantInfo;
+
+	}
+	else if (useProjectionMatrix) {
 		layoutInfo.pushConstantRangeCount = 1;
 		vk::PushConstantRange pushConstantInfo;
 		pushConstantInfo.offset = 0;
 		pushConstantInfo.size = sizeof(vkRenderStructs::ProjectionData);
 		pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
 		layoutInfo.pPushConstantRanges = &pushConstantInfo;
-
+	}
+	else if (useViewMatrix) {
+		layoutInfo.pushConstantRangeCount = 1;
+		vk::PushConstantRange pushConstantInfo;
+		pushConstantInfo.offset = 0;
+		pushConstantInfo.size = sizeof(vkRenderStructs::ViewData);
+		pushConstantInfo.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		layoutInfo.pPushConstantRanges = &pushConstantInfo;
 	}
 	else {
 		layoutInfo.pushConstantRangeCount = 0;

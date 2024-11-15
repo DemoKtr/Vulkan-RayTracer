@@ -4,7 +4,6 @@
 namespace vkInit {
 	struct GraphicsPipelineOutBundle {
 		vk::PipelineLayout layout;
-		vk::RenderPass renderpass;
 		vk::Pipeline pipeline;
 	};
 
@@ -37,6 +36,7 @@ namespace vkInit {
 
 
 		void set_overwrite_mode(bool mode);
+		void set_renderpass(vk::RenderPass renderpass);
 
 		GraphicsPipelineOutBundle build(vk::Format swapchainFormat, vk::Format depthFormat);
 
@@ -47,6 +47,7 @@ namespace vkInit {
 
 		void use_depth_test(bool is);
 		void use_projection_matrix(bool is);
+		void use_view_matrix(bool is);
 
 	private:
 		vk::Device device;
@@ -81,8 +82,9 @@ namespace vkInit {
 
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 
+		vk::RenderPass renderPass;
 
-		bool overwrite, useDepthTest, useProjectionMatrix;
+		bool overwrite, useDepthTest, useProjectionMatrix, useViewMatrix;
 
 		void reset_vertex_format();
 

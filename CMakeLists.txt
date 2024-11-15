@@ -120,16 +120,21 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkMesh/meshManager.cpp"
     "src/View/vkMesh/vertexFormat.cpp"
     "src/View/RenderStructs/projection.cpp"
-    "src/Scene/ECS/components/textureComponent.cpp")
+    "src/Scene/ECS/components/textureComponent.cpp"
+    "src/View/Interface/Thumbs/thumbsManager.cpp"
+    "src/View/Interface/Thumbs/thumbs.cpp"
+    "src/View/Interface/Thumbs/texturesThumbs.cpp"
+    "src/View/Interface/Thumbs/iconsThumbs.cpp"
+    "src/View/Interface/Thumbs/meshesThumbs.cpp"
+    )
 
 # Dodanie bibliotek do aplikacji
 # Dodaj biblioteki do kompilacji
 target_link_libraries(${PROJECT_NAME}
-  Vulkan::Vulkan
+   Vulkan::Vulkan
   glfw
   glm
   assimp
-  imgui
 )
 # Ustawienia dla kompilacji w systemie Linux
 if(UNIX)
