@@ -42,6 +42,7 @@ namespace vkImage {
 		~Texture();
 
 		void useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout);
+		void useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout,int layoutIndex);
 		
 
 	};

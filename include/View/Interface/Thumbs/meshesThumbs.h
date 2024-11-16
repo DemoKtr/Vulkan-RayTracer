@@ -14,7 +14,7 @@ namespace vkThumbs {
 	};
 
 	class MeshesTumbs : public Thumb {
-
+		vk::Sampler sampler;
 		std::vector<vk::Image> image;
 		std::vector<vk::DeviceMemory> imageMemory;
 		std::vector<vk::ImageView>  imageView;

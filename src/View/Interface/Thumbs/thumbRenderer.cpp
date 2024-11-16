@@ -27,14 +27,23 @@ ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 	ext.height = height;
 	swapchainExten = ext;
 	vpData = vkRenderStructs::getViewProjectionMatrix(width,height);
+
 	create_descriptors_set_layout();
+
 	create_renderpass();
+
 	create_pipeline();
+
 	create_images();
+
 	
 	create_framebuffers(debugMode);
-	render(debugMode);
+
 	make_assets();
+
+	render(debugMode);
+	
+	
 }
 
 void ThumbRenderer::create_renderpass() {
@@ -42,7 +51,7 @@ void ThumbRenderer::create_renderpass() {
 
 	
 	attachments[0].flags = vk::AttachmentDescriptionFlags();
-	attachments[0].format = imageFormat;
+	attachments[0].format = vk::Format::eR8G8B8A8Unorm;
 	attachments[0].samples = vk::SampleCountFlagBits::e1;
 	attachments[0].loadOp = vk::AttachmentLoadOp::eClear;
 	attachments[0].storeOp = vk::AttachmentStoreOp::eStore;
@@ -143,7 +152,7 @@ void ThumbRenderer::create_pipeline(){
 
 void ThumbRenderer::create_framebuffers(bool debug) {
 		
-	for (uint32_t i = 0; i < meshesNames.fileNames.size(); ++i) {
+	for (uint32_t i = 0; i < number_of_images; ++i) {
 		std::vector<vk::ImageView> attachments = {
 			imageView[i], depthImageView[i]
 		};
@@ -201,30 +210,51 @@ void ThumbRenderer::render(bool debugMode) {
 	vk::ClearValue depthColorValue;
 	depthColorValue.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
 	std::vector<vk::ClearValue> colorVector = { {backgroundColor,depthColorValue} };
-	vk::RenderPassBeginInfo postProcessGraphicRenderPass = {};
-	postProcessGraphicRenderPass.renderPass = renderPass;
-	postProcessGraphicRenderPass.renderArea.offset.x = 0;
-	postProcessGraphicRenderPass.renderArea.offset.y = 0;
-	postProcessGraphicRenderPass.renderArea.extent.width = width;
-	postProcessGraphicRenderPass.renderArea.extent.height = height;
-	postProcessGraphicRenderPass.clearValueCount = colorVector.size();
-	postProcessGraphicRenderPass.pClearValues = colorVector.data();
-	for (int i = 0; i < meshesNames.fullPaths.size(); ++i) {
-		postProcessGraphicRenderPass.framebuffer = framebuffers[i];
-		commandBuffer.beginRenderPass(&postProcessGraphicRenderPass, vk::SubpassContents::eInline);
+	
+	
+	for (int i = 0; i < number_of_images; ++i) {
+		vk::RenderPassBeginInfo renderpassInfo = {};
+		renderpassInfo.renderPass = renderPass;
+		renderpassInfo.renderArea.offset.x = 0;
+		renderpassInfo.renderArea.offset.y = 0;
+		renderpassInfo.renderArea.extent.width = width;
+		renderpassInfo.renderArea.extent.height = height;
+		renderpassInfo.clearValueCount = colorVector.size();
+		renderpassInfo.pClearValues = colorVector.data();
+		renderpassInfo.framebuffer = framebuffers[i];
+		commandBuffer.beginRenderPass(&renderpassInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
-		commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 0, descriptorSet, nullptr);
 		commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ViewProjectionData), &vpData);
 		prepare_scene();
 		int indexCount = meshes->indexCounts.find(i)->second;
 		int firstIndex = meshes->firstIndices.find(i)->second;
-		universalTexture->useTexture(commandBuffer, pipelineLayout);
+		universalTexture->useTexture(commandBuffer, pipelineLayout,0);
 		commandBuffer.drawIndexed(indexCount, 1, firstIndex, 0, startInstance);
 		startInstance++;
 		commandBuffer.endRenderPass();
 
-	}
 	
+		
+	// Przyk³ad zmiany layout obrazu przed jego u¿yciem w shaderze:
+	vk::ImageMemoryBarrier barrier = {};
+	barrier.srcAccessMask = {};
+	barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image[i];  // Twoje Ÿród³o obrazu
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+	
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader,
+		vk::DependencyFlags(), {}, {}, barrier);
+	
+	}
 
 	try {
 		commandBuffer.end();
@@ -235,11 +265,17 @@ void ThumbRenderer::render(bool debugMode) {
 			std::cout << "failed to record command buffer!" << std::endl;
 		}
 	}
+	vk::SubmitInfo submitInfo;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+	queue.submit(1, &submitInfo, nullptr);
+	queue.waitIdle();
+
 }
 
 void ThumbRenderer::create_images() {
 
-	for (int i = 0; i < meshesNames.fullPaths.size(); ++i) {
+	for (int i = 0; i < number_of_images; ++i) {
 	
 		vkImage::ImageInputChunk imageInput;
 		imageInput.logicalDevice = device;
@@ -249,12 +285,18 @@ void ThumbRenderer::create_images() {
 		imageInput.format = vk::Format::eR8G8B8A8Unorm;
 		imageInput.arrayCount = 1;
 		imageInput.tiling = vk::ImageTiling::eOptimal;
-		imageInput.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+		imageInput.usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled;
 		imageInput.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 		image.push_back(make_image(imageInput));
 		imageMemory.push_back(make_image_memory(imageInput, image[i]));
 		imageView.push_back(vkImage::make_image_view(device, image[i], vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, 1));
 	
+		imageInput.format = depthFormat;
+		imageInput.usage = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+		depthImage.push_back(make_image(imageInput));
+		depthImageMemory.push_back(make_image_memory(imageInput, depthImage[i]));
+		depthImageView.push_back(vkImage::make_image_view(device, depthImage[i], depthFormat, vk::ImageAspectFlagBits::eDepth, vk::ImageViewType::e2D, 1));
+
 	}
 }
 
@@ -267,7 +309,7 @@ void ThumbRenderer::create_descriptors_set_layout() {
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 
 	descriptorLayout = vkInit::make_descriptor_set_layout(device, bindings);
-	descriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	descriptorPool = vkInit::make_descriptor_pool(device, number_of_images, bindings);
 
 }
 
@@ -282,25 +324,35 @@ void ThumbRenderer::make_assets() {
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
 	info.queue = queue;
+	
 	universalTexture = new vkImage::Texture(info);
+	
 }
 
 ThumbRendererOutput ThumbRenderer::get_meshes_images() {
-	/*
-	struct ThumbRendererOutput {
-	std::vector<vk::Image> image;
-	std::vector<vk::DeviceMemory> imageView;
-	std::vector<vk::ImageView> imageMemory;
-};
-	*/
+
+	
 	ThumbRendererOutput output;
 	output.image = image;
-	output.imageView = imageView;
 	output.imageMemory = imageMemory;
+	output.imageView = imageView;
+
+	
 	return output;
 }
 
 
+
+void ThumbRenderer::render_objects(int objectType, uint32_t& startInstance) {
+	int indexCount = meshes->indexCounts.find(objectType)->second;
+	int firstIndex = meshes->firstIndices.find(objectType)->second;
+	//materials[objectType]->useTexture(commandBuffer, layout);
+
+	universalTexture->useTexture(commandBuffer, pipelineLayout, 0);
+	commandBuffer.drawIndexed(indexCount, 1, firstIndex, 0, startInstance);
+
+	startInstance += 1;
+}
 
 void ThumbRenderer::prepare_scene() {
 	vk::Buffer vertexBuffers[] = { meshes->vertexBuffer.buffer };

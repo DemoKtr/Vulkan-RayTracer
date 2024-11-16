@@ -16,6 +16,7 @@ struct ThumbRendererInput {
 	int width;
 	int heigh;
 	int number_of_models;
+
 };
 
 struct ThumbRendererOutput {
@@ -69,7 +70,7 @@ class ThumbRenderer {
 
 	void render_objects(int objectType, uint32_t& startInstance);
 	void prepare_scene();
-
+	void render_objects(vk::CommandBuffer commandBuffer, int objectType, uint32_t& startInstance, uint32_t instanceCount);
 public:
 	
 	ThumbRenderer(ThumbRendererInput input, bool debugMode);

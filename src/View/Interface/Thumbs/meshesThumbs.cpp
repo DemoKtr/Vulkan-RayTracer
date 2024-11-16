@@ -18,10 +18,8 @@ ImTextureID vkThumbs::MeshesTumbs::get_texture_icon(int index)
 
 	VkDescriptorSet qqq = descriptorsSet[index];
 	ImTextureID imguiTextureId = reinterpret_cast<ImTextureID>(qqq);
-	std::cout << descriptorsSet.size()<<std::endl;
-	std::cout <<"Kurwa" << std::endl;
-	std::cout << "Kurwa" <<std::endl;
-	std::cout << "Kurwa" <<std::endl;
+
+
 	return imguiTextureId;
 }
 
@@ -50,40 +48,68 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 	input.width = meshesInput.width;
 	input.heigh = meshesInput.heigh;
 	input.number_of_models = meshesInput.number_of_models;
-	
+	int modelsCount = meshesInput.number_of_models;
+
 	ThumbRenderer* renderer = new ThumbRenderer(input, true);
 	ThumbRendererOutput images = renderer->get_meshes_images();
 	image = images.image;
-	imageView = imageView;
-	imageMemory = imageMemory;
+	imageView = images.imageView;
+	imageMemory = images.imageMemory;
 	delete renderer;
 
-	
 
 	for (uint32_t i = 0; i < imageView.size(); ++i) {
 		descriptorsSet.push_back(vkInit::allocate_descriptor_set(device, descriptorPool, layout));
 	}
 
-	std::vector<vk::WriteDescriptorSet> writeDescriptorSets;
+	
+	
+	vk::SamplerCreateInfo samplerInfo;
+	samplerInfo.flags = vk::SamplerCreateFlags();
+	samplerInfo.minFilter = vk::Filter::eNearest;
+	samplerInfo.magFilter = vk::Filter::eLinear;
+	samplerInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+	samplerInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+	samplerInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
 
-	for (uint32_t i = 0; i < descriptorsSet.size(); ++i) {
+	samplerInfo.anisotropyEnable = false;
+	samplerInfo.maxAnisotropy = 1.0f;
+
+	samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+	samplerInfo.unnormalizedCoordinates = false;
+	samplerInfo.compareEnable = false;
+	samplerInfo.compareOp = vk::CompareOp::eAlways;
+
+	samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+
+	try {
+		sampler = device.createSampler(samplerInfo);
+	}
+	catch (vk::SystemError err) {
+		std::cout << "Failed to make sampler." << std::endl;
+	}
+	
+	for (uint32_t i = 0; i < modelsCount; ++i) {
+
 		vk::DescriptorImageInfo imageDescriptorInfo;
 		imageDescriptorInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		imageDescriptorInfo.imageView = imageView[i];
-		imageDescriptorInfo.sampler = VK_NULL_HANDLE;
+		imageDescriptorInfo.sampler = sampler;
 
-		vk::WriteDescriptorSet descriptorWritePos;
-		descriptorWritePos.dstSet = descriptorsSet[i];
-		descriptorWritePos.dstBinding = 0;
-		descriptorWritePos.dstArrayElement = 0;
-		descriptorWritePos.descriptorType = vk::DescriptorType::eInputAttachment;
-		descriptorWritePos.descriptorCount = 1;
-		descriptorWritePos.pImageInfo = &imageDescriptorInfo;
+		vk::WriteDescriptorSet descriptorWrite;
+		descriptorWrite.dstSet = descriptorsSet[i];
+		descriptorWrite.dstBinding = 0;
+		descriptorWrite.dstArrayElement = 0;
+		descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pImageInfo = &imageDescriptorInfo;
 
-		writeDescriptorSets.push_back(descriptorWritePos);
-		
+		device.updateDescriptorSets(descriptorWrite, nullptr);
 	}
-	device.updateDescriptorSets(writeDescriptorSets, nullptr);
 	
+
 }
 

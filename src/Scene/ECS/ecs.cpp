@@ -24,12 +24,16 @@ void ecs::ECS::addSystem(std::shared_ptr<ECSSystem> system) {
      systems.push_back(system);
 }
 
-std::vector<std::shared_ptr<Component>> ecs::ECS::getAllComponents(Entity entity) const{
+std::vector<std::shared_ptr<Component>> ecs::ECS::getAllComponents(Entity entity) const {
     std::vector<std::shared_ptr<Component>> result;
 
     for (const auto& [typeIndex, componentMap] : components) {
-        if (componentMap.find(entity) != componentMap.end()) {
-            result.push_back(std::static_pointer_cast<Component>(componentMap.at(entity)));
+        auto it = componentMap.find(entity);
+        if (it != componentMap.end()) {
+            // Iterujemy przez wszystkie komponenty w wektorze
+            for (const auto& component : it->second) {
+                result.push_back(component);
+            }
         }
     }
 

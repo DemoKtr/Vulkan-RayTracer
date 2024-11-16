@@ -16,7 +16,7 @@ vkRenderStructs::ViewProjectionData vkRenderStructs::getViewProjectionMatrix(int
 	projection[1][1] *= -1;
 	data.projection = projection;
 
-	glm::vec3 eye = { 0.0f, 0.0f, -5.0f };
+	glm::vec3 eye = { 1.0f, 0.0f, -5.0f };
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 up = { 0.0f, 1.0f, 0.0f };
 	glm::mat4 view = glm::lookAt(eye, center, up);

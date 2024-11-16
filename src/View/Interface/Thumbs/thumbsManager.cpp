@@ -9,7 +9,7 @@ void vkThumbs::ThumbsManager::make_descriptor_layout(vk::Device device) {
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 	descriptorLayout = vkInit::make_descriptor_set_layout(device, bindings);
-	descriptorPool = vkInit::make_descriptor_pool(device, 30, bindings);
+	descriptorPool = vkInit::make_descriptor_pool(device, 10, bindings);
 
  
 }
@@ -59,11 +59,9 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
     meshesInput.width = vkSettings::thumbWidth;
 
     iconsThums = new IconThumbs(input);
-    std::cout << "Kurwaaaa2" << std::endl;
     meshesThumbs = new MeshesTumbs(input,meshesInput);
-    std::cout << "Kurwaaaa3" << std::endl;
     texturesThumbs = new TextureThumbs(input,info.textures);
-    std::cout << "Kurwaaaa4" << std::endl;
+
 }
 
 ImTextureID vkThumbs::ThumbsManager::get_folder_icon() {
