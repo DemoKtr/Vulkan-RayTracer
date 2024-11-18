@@ -10,7 +10,7 @@
 #include "Scene/ECS/entity.h"
 #include "Scene/ECS/system.h"
 #include "Scene/ECS/component.h"
-
+#include <iostream>
 namespace ecs {
     class ECSSystem;
     class ECS {
@@ -45,21 +45,28 @@ namespace ecs {
 
             // Sprawdü, czy istnieje komponent danego typu
             if (components.find(typeIndex) == components.end()) {
-                throw std::out_of_range("No components of the requested type found");
+                //throw std::out_of_range("No components of the requested type found");
+                std::cout << "zzzzzzz" << std::endl;
+                return nullptr;
             }
 
             const auto& entityComponents = components.at(typeIndex);
 
             // Sprawdü, czy istnieje komponent dla tego entity
             if (entityComponents.find(entity) == entityComponents.end()) {
-                throw std::out_of_range("Entity does not have components of the requested type");
+                //throw std::out_of_range("Entity does not have components of the requested type");
+
+                std::cout << "chuuuj" << std::endl;
+                return nullptr;
             }
 
             const auto& componentVector = entityComponents.at(entity);
 
             // Sprawdü, czy sπ komponenty w wektorze
             if (componentVector.empty()) {
-                throw std::out_of_range("No components available for the entity");
+                //throw std::out_of_range("No components available for the entity
+                std::cout << "kurwyyy" << std::endl;
+                return nullptr;
             }
 
             // Zak≥adamy, øe interesuje nas pierwszy komponent

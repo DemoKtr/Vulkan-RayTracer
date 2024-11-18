@@ -16,9 +16,10 @@ SceneObject::SceneObject(ecs::ECS* ecs){
 	std::shared_ptr<TransformComponent> transformComponent = std::make_unique<TransformComponent>();
 	std::shared_ptr<MeshComponent> meshcomponent = std::make_unique<MeshComponent>();
 	std::shared_ptr<TextureComponent> texturecomponent = std::make_unique<TextureComponent>();
-
+	ecs->addComponent(id, texturecomponent);
 	ecs->addComponent(id, transformComponent);
-	//ecs->addComponent(id, texturecomponent);
+
+	//
 
 	ecs->addComponent(id, meshcomponent);
 	ecs->getComponent<MeshComponent>(id).get()->setIndex(1);

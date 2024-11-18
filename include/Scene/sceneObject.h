@@ -12,6 +12,8 @@ class SceneObject{
 	std::string name;
 	
 	public:
+		
+		bool isActive{ true };
 
 		ecs::Entity id;
 		std::vector<SceneObject*> children;

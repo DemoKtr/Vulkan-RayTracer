@@ -10,6 +10,6 @@ layout (location = 0) out vec4 outColor;
 
 void main() 
 {
-	vec3 color = texture(textureAtlas, vec3(UV.st, 1)).rgb;
+	vec3 color = texture(textureAtlas, vec3(UV.st, textureId)).rgb;
 	outColor = vec4(color,1.0f);
 }

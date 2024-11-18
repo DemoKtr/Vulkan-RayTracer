@@ -5,6 +5,7 @@
 #include <View/vkMesh/meshTypes.h>
 #include <View/vkImage/texture.h>
 #include "View/Interface/Thumbs/thumbsManager.h"
+#include <View/vkMesh/meshesManager.h>
 
 struct DragDropData {
 	char fullPath[256]; // Upewnij siê, ¿e to wystarczaj¹ca wielkoœæ bufora
@@ -52,7 +53,7 @@ class editor {
 			vk::Format depthFormat,
 			int modelsNumber);
 		~editor();
-		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, modelNames models, vkImage::TexturesNames textures, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
+		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		void DisplaySceneObject(SceneObject* obj);
 		void RemoveSceneObject(SceneObject* obj);
 		void AddSceneObject(SceneObject* obj);
@@ -61,5 +62,5 @@ class editor {
 		void render_file_explorer();
 		void rmb_click_render(std::filesystem::path path);
 
-		void render_components_gui(modelNames models, vkImage::TexturesNames textures);
+		void render_components_gui(modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager);
 };

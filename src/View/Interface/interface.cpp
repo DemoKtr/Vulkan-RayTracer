@@ -66,7 +66,7 @@ editor::~editor() {
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models, vkImage::TexturesNames textures, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
@@ -83,7 +83,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	ImGui::Text("This is a Vulkan window with ImGui!");
 	size_t i = 0;
 	DisplaySceneObject(scene->root);
-	render_components_gui(models, textures);
+	render_components_gui(models, textures, meshesManager);
 	ImGui::End();
 	vk::RenderPassBeginInfo imguiRenderpassInfo = {};
 	imguiRenderpassInfo.renderPass = imguiRenderPass;
@@ -200,19 +200,20 @@ void editor::rmb_click_render(std::filesystem::path path){
 
 }
 
-void editor::render_components_gui(modelNames models, vkImage::TexturesNames textures) {
+void editor::render_components_gui(modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager) {
 	if (selectedObject != nullptr) {
 		ImGui::Begin("Selected Object Properties");
 		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());
 		ImGui::Separator();
 		ImGui::Text("Components:");
 		auto components = scene->ecs->getAllComponents(selectedObject->id);
-
+		ImGui::Checkbox("Active: ", &selectedObject->isActive);
 		for (const auto& componentPtr : components) {
 			Component* comp = componentPtr.get();  // Surowy wskaŸnik
 
 			std::string label = comp->getLabel();
 
+			
 
 			if (ImGui::TreeNode(label.c_str())) {
 				// Wyœwietlanie specyficznych pól dla komponentów
@@ -269,7 +270,9 @@ void editor::render_components_gui(modelNames models, vkImage::TexturesNames tex
 								
 								ImGui::SameLine;
 								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
+									meshesManager->updateMeshIndex(selectedObject, i, scene->ecs);
 									mesh->setIndex(i);  // Zapisz wybrany indeks
+									
 									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
 								}
 

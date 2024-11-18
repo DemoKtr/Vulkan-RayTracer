@@ -20,7 +20,7 @@
 #include "View/vkMesh/meshLoader.h"
 #include <View/vkInit/vkPipeline/pipelineBuilder.h>
 #include <View/vkMesh/vertexFormat.h>
-
+#include <Scene/ECS/components/components.h>
 
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
@@ -358,7 +358,11 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32
 
 
 	for (std::pair<int, std::vector<vkMesh::MeshManagerData>> pair : meshesManager->modelMatrices) {
-		render_objects(commandBuffer, pair.first, startInstance, static_cast<uint32_t>(pair.second.size()));
+		uint32_t k = 0;
+		for (vkMesh::MeshManagerData data : pair.second) {
+			if (data.sceneObject->isActive)++k;
+		}
+		render_objects(commandBuffer, pair.first, startInstance, k);
 
 	}
 	commandBuffer.endRenderPass();
@@ -391,7 +395,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32
 	);
 
 
-	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesNames,texturesNames ,swapchainExtent, imageIndex, debugMode);
+	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesNames,texturesNames, meshesManager,swapchainExtent, imageIndex, debugMode);
 
 	try {
 		commandBuffer.end();
@@ -600,9 +604,22 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
 		for (const auto& meshData : meshDataVector) {
 			if (meshData.modelMatrix) {  // Sprawdzamy, czy wskaŸnik jest wa¿ny
-				_frame.modelsData[i].model = *meshData.modelMatrix;//*meshData.modelMatrix;
-				_frame.modelsData[i].textureID = 0;//*meshData.modelMatrix;
-				i++;
+				if (meshData.sceneObject->isActive){
+					_frame.modelsData[i].model = *meshData.modelMatrix;//*meshData.modelMatrix;
+					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
+					if (textureComponent != nullptr) {
+
+						_frame.modelsData[i].textureID = textureComponent->getColorTextureIndex();
+
+
+					}
+					else {
+
+						_frame.modelsData[i].textureID = 0;
+					}
+					i++;
+					}
+				
 			}
 		}
 	}
