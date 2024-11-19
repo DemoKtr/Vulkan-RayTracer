@@ -65,10 +65,9 @@ ThumbRenderer::~ThumbRenderer() {
 	for (uint32_t i = 0; i < framebuffers.size(); ++i) {
 		device.destroyFramebuffer(framebuffers[i]);
 	}
-
-
-
-
+	device.destroyDescriptorSetLayout(descriptorLayout);
+	device.destroyDescriptorPool(descriptorPool);
+	
 }
 
 void ThumbRenderer::create_renderpass() {

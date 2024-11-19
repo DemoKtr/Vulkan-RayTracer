@@ -52,23 +52,28 @@ GraphicsEngine::~GraphicsEngine() {
 	if (debugMode) {
 		std::cout << "End!\n";
 	}
-
-
-
-	device.destroyCommandPool(CommandPool);
-	device.destroyCommandPool(imguiCommandPool);
-	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
-	device.destroyDescriptorSetLayout(postprocessDescriptorSetLayout);
-	device.destroyDescriptorSetLayout(textureDescriptorSetLayout);
-	device.destroyDescriptorPool(postprocessDescriptorPool);
-	device.destroyDescriptorPool(iconDescriptorPool);
-	device.destroyDescriptorPool(imguiDescriptorPool);
-	device.destroyDescriptorPool(textureDescriptorPool);
+	
+	device.destroyRenderPass(postprocessRenderPass);
 	device.destroyRenderPass(imguiRenderPass);
+	device.destroyPipeline(postprocessPipeline);
+	device.destroyPipelineLayout(postprocessPipelineLayout);
 	delete sceneEditor;
 	delete meshes;
 	delete meshesManager;
 	delete atlasTextures;
+	device.destroyCommandPool(CommandPool);
+	device.destroyCommandPool(imguiCommandPool);
+
+	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(postprocessDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(textureDescriptorSetLayout);
+
+	device.destroyDescriptorPool(postprocessDescriptorPool);
+	device.destroyDescriptorPool(iconDescriptorPool);
+	device.destroyDescriptorPool(imguiDescriptorPool);
+	device.destroyDescriptorPool(textureDescriptorPool);
+	
+	
 	cleanup_swapchain();
 	
 	device.destroy();
@@ -123,7 +128,6 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
-	//pipelineBuilder.add_descriptor_set_layout(meshSetLayout[pipelineType::SKY]);
 	pipelineBuilder.use_depth_test(true);
 	pipelineBuilder.use_projection_matrix(true);
 

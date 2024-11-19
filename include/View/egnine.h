@@ -64,7 +64,7 @@ class GraphicsEngine {
 	vk::DescriptorPool textureDescriptorPool;
 	vk::DescriptorSetLayout textureDescriptorSetLayout;
 
-	resourceManager resourcesManager{};
+
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;

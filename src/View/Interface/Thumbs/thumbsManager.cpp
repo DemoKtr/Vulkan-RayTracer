@@ -64,6 +64,9 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
 }
 
 vkThumbs::ThumbsManager::~ThumbsManager() {
+    delete iconsThums;
+    delete meshesThumbs;
+    delete texturesThumbs;
     logicalDevice.destroyDescriptorPool(descriptorPool);
     logicalDevice.destroyDescriptorSetLayout(descriptorLayout);
 }
