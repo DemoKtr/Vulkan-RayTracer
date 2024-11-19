@@ -46,6 +46,31 @@ ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 	
 }
 
+ThumbRenderer::~ThumbRenderer() {
+	device.destroyRenderPass(renderPass);
+	device.destroyPipeline(pipeline);
+	device.destroyPipelineLayout(pipelineLayout);
+
+	delete universalTexture;
+
+	for (uint32_t i = 0; i < depthImage.size(); ++i) {
+		device.freeMemory(depthImageMemory[i]);
+		device.destroyImage(depthImage[i]);
+		device.destroyImageView(depthImageView[i]);
+	}
+	
+	device.destroySampler(sampler);
+
+
+	for (uint32_t i = 0; i < framebuffers.size(); ++i) {
+		device.destroyFramebuffer(framebuffers[i]);
+	}
+
+
+
+
+}
+
 void ThumbRenderer::create_renderpass() {
 	std::array<vk::AttachmentDescription, 2> attachments;
 

@@ -1,15 +1,15 @@
 #include "View/Interface/Thumbs/thumbsManager.h"
 #include <View/vkInit/descrpitors.h>
 #include "settings.h"
-void vkThumbs::ThumbsManager::make_descriptor_layout(vk::Device device) {
+void vkThumbs::ThumbsManager::make_descriptor_layout() {
 	vkInit::descriptorSetLayoutData bindings;
 	bindings.count = 1;
 	bindings.indices.push_back(0);
 	bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
-	descriptorLayout = vkInit::make_descriptor_set_layout(device, bindings);
-	descriptorPool = vkInit::make_descriptor_pool(device, 10, bindings);
+	descriptorLayout = vkInit::make_descriptor_set_layout(logicalDevice, bindings);
+	descriptorPool = vkInit::make_descriptor_pool(logicalDevice, 10, bindings);
 
  
 }
@@ -27,8 +27,9 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
 		vk::DescriptorSetLayout layout;
 		vk::DescriptorPool descriptorPool;
     */
-    make_descriptor_layout(info.logicalDevice);
-
+    logicalDevice = info.logicalDevice;
+    make_descriptor_layout();
+   
 
     ThumbInput input;
     input.physicalDevice = info.physicalDevice;
@@ -48,8 +49,6 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
 		int heigh;
     */
 
-
-
     MeshesThumbInput meshesInput;
     meshesInput.meshes = info.meshes;
     meshesInput.pictureFormat = info.pictureFormat;
@@ -62,6 +61,11 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
     meshesThumbs = new MeshesTumbs(input,meshesInput);
     texturesThumbs = new TextureThumbs(input,info.textures);
 
+}
+
+vkThumbs::ThumbsManager::~ThumbsManager() {
+    logicalDevice.destroyDescriptorPool(descriptorPool);
+    logicalDevice.destroyDescriptorSetLayout(descriptorLayout);
 }
 
 ImTextureID vkThumbs::ThumbsManager::get_folder_icon() {

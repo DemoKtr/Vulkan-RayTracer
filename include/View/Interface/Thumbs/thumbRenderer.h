@@ -74,6 +74,7 @@ class ThumbRenderer {
 public:
 	
 	ThumbRenderer(ThumbRendererInput input, bool debugMode);
+	~ThumbRenderer();
 	void create_renderpass();
 	void create_pipeline();
 	void create_framebuffers(bool debug);

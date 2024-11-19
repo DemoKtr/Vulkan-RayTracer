@@ -20,18 +20,23 @@ namespace vkThumbs {
 	};
 
 	class ThumbsManager {
+		vk::Device logicalDevice;
+
 		IconThumbs* iconsThums;
 		TextureThumbs* texturesThumbs;
 		MeshesTumbs* meshesThumbs;
 
+		
+
 		vk::DescriptorPool descriptorPool;
 		vk::DescriptorSetLayout descriptorLayout;
 
-		void make_descriptor_layout(vk::Device device);
+		void make_descriptor_layout();
 
 
 	public :
 		ThumbsManager(ThumbsManagerInput info);
+		~ThumbsManager();
 		ImTextureID get_folder_icon();
 		ImTextureID get_header_icon();
 		ImTextureID get_source_icon();
