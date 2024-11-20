@@ -16,6 +16,7 @@ vkThumbs::MeshesTumbs::~MeshesTumbs() {
 		device.destroyImage(image[i]);
 		device.destroyImageView(imageView[i]);
 	}
+	device.destroySampler(sampler);
 }
 
 ImTextureID vkThumbs::MeshesTumbs::get_texture_icon(int index)
@@ -115,6 +116,6 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 		device.updateDescriptorSets(descriptorWrite, nullptr);
 	}
 	
-	device.destroySampler(sampler);
+	
 }
 

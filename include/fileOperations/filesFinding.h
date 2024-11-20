@@ -1,5 +1,6 @@
 #pragma once
 
+
 #include <iostream>
 #include <filesystem>
 #include <string>
@@ -7,13 +8,12 @@
 #include <unordered_map>
 
 
-
-namespace vkImage {
-    struct TexturesNames {
+namespace fileOperations {
+    struct filesPaths {
         std::vector<std::string> fileNames;
         std::vector<std::string> fullPaths;
         std::unordered_map<std::string, int> modelIndex;
-
+        std::unordered_map<std::string, uint64_t> hash;
 
 
         int getModelIndex(std::string path) {
@@ -22,11 +22,11 @@ namespace vkImage {
     };
 
 
-    void make_texture_index(TexturesNames& data);
+    void make_model_index(filesPaths& data);
 
-    void hash_texture_paths(TexturesNames& data);
+    void hash_model_paths(filesPaths& data);
 
-    void listTexturesFilesInDirectory(const std::string& path, TexturesNames& data);
-
+    void listMeshesFilesInDirectory(const std::string& path, filesPaths& data, std::vector<std::string> extensions);
 }
+
 

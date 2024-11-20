@@ -1,7 +1,8 @@
-#include "View/vkMesh/meshTypes.h"
+#include "fileOperations/filesFinding.h"
 #include <windows.h>
 
-void make_model_index(modelNames& data) {
+
+void fileOperations::make_model_index(filesPaths& data) {
 
     uint32_t index = -1;
     data.modelIndex[""] = index++;
@@ -12,7 +13,7 @@ void make_model_index(modelNames& data) {
 
 }
 
-void hash_model_paths(modelNames& data) {
+void fileOperations::hash_model_paths(filesPaths& data) {
 
     std::hash<std::string> hasher;
     for (std::string path : data.fullPaths) {
@@ -20,26 +21,26 @@ void hash_model_paths(modelNames& data) {
     }
 }
 
-void listMeshesFilesInDirectory(const std::string& path, modelNames& data) {
+void fileOperations::listMeshesFilesInDirectory(const std::string& path, filesPaths& data, std::vector<std::string> extensions) {
     char ch[MAX_PATH];
     std::string project_path = std::string(PROJECT_DIR);
     std::string final_path = project_path + path;
     try {
 
         
-        // Rekurencyjne przeszukiwanie folderÛw i podfolderÛw
+        // Rekurencyjne przeszukiwanie folder√≥w i podfolder√≥w
         for (const auto& entry : std::filesystem::recursive_directory_iterator(final_path)) {
-            // Sprawdü, czy element jest plikiem
+            // Sprawd≈∫, czy element jest plikiem
             if (std::filesystem::is_regular_file(entry.path())) {
                 // Pobierz rozszerzenie pliku
                 std::string extension = entry.path().extension().string();
 
-                // Sprawdü, czy rozszerzenie to ".obj" lub ".fbx"
-                if (extension == ".obj" || extension == ".fbx") {
-                    // Dodaj pe≥nπ úcieøkÍ do wektora
+                 // Sprawd≈∫, czy rozszerzenie znajduje siƒô w li≈õcie rozszerze≈Ñ
+                if (std::find(extensions.begin(), extensions.end(), extension) != extensions.end()) {
+                    // Dodaj pe≈ÇnƒÖ ≈õcie≈ºkƒô do wektora
                     data.fullPaths.push_back(entry.path().string());
 
-                    // Dodaj nazwÍ pliku bez rozszerzenia do drugiego wektora
+                    // Dodaj nazwƒô pliku bez rozszerzenia do drugiego wektora
                     data.fileNames.push_back(entry.path().stem().string());
                 }
             }
@@ -52,3 +53,5 @@ void listMeshesFilesInDirectory(const std::string& path, modelNames& data) {
     make_model_index(data);
     hash_model_paths(data);
 }
+
+

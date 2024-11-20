@@ -102,7 +102,6 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/ECS/components/physicsComponent.cpp"
     "src/View/vkVertexData/vertexMenagerie.cpp"
     "src/MultithreatedSystems/ThumbnailTask.cpp"
-    "src/View/vkMesh/meshTypes.cpp"
     "src/View/Interface/Miniatures/miniatureRenderer.cpp"
     "src/View/vkInit/vkPipeline/pipelineBuilder.cpp"
     "src/View/vkInit/vkPipeline/shaders.cpp"
@@ -116,7 +115,6 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/Interface/Commands/commandHistory.cpp"
     "src/View/Interface/Commands/filesystemCommand.cpp"
     "src/View/Interface/Commands/sceneCommand.cpp"
-    "src/View/vkImage/textureTypes.cpp"
     "src/View/vkMesh/meshManager.cpp"
     "src/View/vkMesh/vertexFormat.cpp"
     "src/View/RenderStructs/projection.cpp"
@@ -126,6 +124,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/Interface/Miniatures/texturesMiniature.cpp"
     "src/View/Interface/Miniatures/iconsMiniature.cpp"
     "src/View/Interface/Miniatures/meshesMiniature.cpp"
+    "src/fileOperations/filesFinding.cpp"
     )
 
 # Dodanie bibliotek do aplikacji

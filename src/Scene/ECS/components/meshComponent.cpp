@@ -1,5 +1,4 @@
 #include "Scene/ECS/components/meshComponent.h"
-#include "View/vkMesh/meshTypes.h"
 
 MeshComponent::MeshComponent(){
 	modelIndex = -1;

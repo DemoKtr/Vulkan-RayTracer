@@ -2,10 +2,10 @@
 #include "config.h"
 #include <View/vkUtil/frame.h>
 #include "Scene/scene.h"
-#include <View/vkMesh/meshTypes.h>
 #include <View/vkImage/texture.h>
 #include "View/Interface/Thumbs/thumbsManager.h"
 #include <View/vkMesh/meshesManager.h>
+#include "fileOperations/filesFinding.h"
 
 struct DragDropData {
 	char fullPath[256]; // Upewnij siê, ¿e to wystarczaj¹ca wielkoœæ bufora
@@ -40,7 +40,7 @@ class editor {
 		vk::Device device,
 		vk::CommandBuffer commandBuffer,
 		vk::Queue queue,
-		vkImage::TexturesNames textures,
+		fileOperations::filesPaths textures,
 		vkMesh::VertexMenagerie* meshes,
 		vk::Format pictureFormat,
 		vk::Format depthFormat,
@@ -48,19 +48,18 @@ class editor {
 		);
 
 	public:
-		editor(Scene* scene, std::string path, vkImage::TextureInputChunk info, vkImage::TexturesNames textures, vkMesh::VertexMenagerie* meshes,
+		editor(Scene* scene, std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
 			vk::Format pictureFormat,
 			vk::Format depthFormat,
 			int modelsNumber);
 		~editor();
-		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
-		void DisplaySceneObject(SceneObject* obj);
-		void RemoveSceneObject(SceneObject* obj);
-		void AddSceneObject(SceneObject* obj);
+		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		void AddComponent(ecs::ECS* ecs, ecs::Entity entity);
 		void RemoveComponent(ecs::ECS* ecs, ecs::Entity entity, Component* component);
 		void render_file_explorer();
 		void rmb_click_render(std::filesystem::path path);
-
-		void render_components_gui(modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager);
+		void DisplaySceneObject(SceneObject* obj);
+		void render_components_gui(fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager);
+		void RemoveSceneObject(SceneObject* obj);
+		void AddSceneObject(SceneObject* obj);
 };

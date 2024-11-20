@@ -16,7 +16,6 @@
 #include <View/vkInit/commands.h>
 #include <View/vkInit/synchronizer.h>
 #include <View/vkInit/framebuffer.h>
-
 #include "View/vkMesh/meshLoader.h"
 #include <View/vkInit/vkPipeline/pipelineBuilder.h>
 #include <View/vkMesh/vertexFormat.h>
@@ -550,7 +549,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.commandBuffer = maincommandBuffer;
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
-	vkImage::listTexturesFilesInDirectory("\\core",texturesNames);
+	std::vector<std::string> ext = { ".png",".jpg" };
+	fileOperations::listMeshesFilesInDirectory("\\core", texturesNames,ext);
 	
 	
 	
@@ -559,7 +559,9 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.filenames = nullptr;
 	info.texturesNames = texturesNames;
 	atlasTextures = new vkImage::Texture(info);
-	listMeshesFilesInDirectory("\\core", meshesNames);
+	ext[0] = ".obj";
+	ext[1] = ".fbx";
+	listMeshesFilesInDirectory("\\core", meshesNames,ext);
 	std::vector<vkMesh::MeshLoader> test;
 	for (std::string path : meshesNames.fullPaths) {
 		vkMesh::MeshLoader m(path.c_str());

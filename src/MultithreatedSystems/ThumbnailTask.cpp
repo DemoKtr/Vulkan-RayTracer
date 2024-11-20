@@ -1,4 +1,4 @@
-#include "MultithreatedSystems/ThumbnailTask.h"
+#include "MultithreatedSystems/MiniatureTask.h"
 
 void TaskSystem::ThumbnailTaskQueue::workerThread(GraphicsEngine* engine) {
     while (true) {

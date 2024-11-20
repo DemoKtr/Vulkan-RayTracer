@@ -7,10 +7,10 @@
 #include "View/vkUtil/frame.h"
 #include "settings.h"
 #include "View/Interface/interface.h"
-#include "View/vkMesh/meshTypes.h"
 #include "View/vkMesh/vertexMenagerie.h"
 #include <View/vkMesh/meshesManager.h>
 #include "View/RenderStructs/projection.h"
+#include "fileOperations/filesFinding.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -68,8 +68,8 @@ class GraphicsEngine {
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
-	modelNames  meshesNames;
-	vkImage::TexturesNames texturesNames;
+	fileOperations::filesPaths  meshesNames;
+	fileOperations::filesPaths texturesNames;
 
 	vkMesh::VertexMenagerie* meshes;
 

@@ -2,7 +2,6 @@
 #include "config.h"
 #include "View/vkMesh/vertexMenagerie.h"
 #include "View/vkImage/texture.h"
-#include <View/vkMesh/meshTypes.h>
 #include "View/RenderStructs/projection.h"
 
 struct ThumbRendererInput {
@@ -34,7 +33,7 @@ class ThumbRenderer {
 	vk::RenderPass renderPass;
 	vk::Pipeline pipeline;
 	vk::PipelineLayout pipelineLayout;
-	modelNames  meshesNames;
+	fileOperations::filesPaths  meshesNames;
 	vkImage::Texture* universalTexture;
 	
 	std::vector<vk::Image> image;

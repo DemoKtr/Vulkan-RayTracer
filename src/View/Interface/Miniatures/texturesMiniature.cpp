@@ -1,6 +1,6 @@
 #include "View/Interface/Thumbs/texturesThumbs.h"
 
-vkThumbs::TextureThumbs::TextureThumbs(ThumbInput input, vkImage::TexturesNames textures) : Thumb(input) {
+vkThumbs::TextureThumbs::TextureThumbs(ThumbInput input, fileOperations::filesPaths textures) : Thumb(input) {
 
 	/*struct TextureInputChunk {
 			vk::Device logicalDevice;

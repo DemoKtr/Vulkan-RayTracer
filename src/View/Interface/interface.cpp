@@ -15,7 +15,7 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	vk::Device device,
 	vk::CommandBuffer commandBuffer,
 	vk::Queue queue, 
-	vkImage::TexturesNames textures,
+	fileOperations::filesPaths textures,
 	vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
 	vk::Format depthFormat,
@@ -44,7 +44,7 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	miniatureManager = new vkThumbs::ThumbsManager(input);
 }
 
-editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, vkImage::TexturesNames textures, vkMesh::VertexMenagerie* meshes,
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
 	vk::Format depthFormat,
 	int modelsNumber){
@@ -66,7 +66,7 @@ editor::~editor() {
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames,modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
@@ -200,7 +200,7 @@ void editor::rmb_click_render(std::filesystem::path path){
 
 }
 
-void editor::render_components_gui(modelNames models, vkImage::TexturesNames textures, vkMesh::MeshesManager* meshesManager) {
+void editor::render_components_gui(fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager) {
 	if (selectedObject != nullptr) {
 		ImGui::Begin("Selected Object Properties");
 		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());

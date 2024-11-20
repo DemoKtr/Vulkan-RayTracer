@@ -2,6 +2,7 @@
 #include "View/Interface/Thumbs/iconsThumbs.h"
 #include "View/Interface/Thumbs/meshesThumbs.h"
 #include "View/Interface/Thumbs/texturesThumbs.h"
+#include <fileOperations/filesFinding.h>
 
 
 namespace vkThumbs {
@@ -11,7 +12,7 @@ namespace vkThumbs {
 		vk::PhysicalDevice physicalDevice;
 		vk::CommandBuffer commandBuffer;
 		vk::Queue queue;
-		vkImage::TexturesNames textures;
+		fileOperations::filesPaths textures;
 		vkMesh::VertexMenagerie* meshes;
 		vk::Format pictureFormat;
 		vk::Format depthFormat;

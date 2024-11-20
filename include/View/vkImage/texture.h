@@ -10,7 +10,7 @@ namespace vkImage {
 		vk::PhysicalDevice physicalDevice;
 
 		std::vector<stbi_uc*> pixels;
-		TexturesNames texturesNames;
+		fileOperations::filesPaths texturesNames;
 		//res
 		vk::Image image;
 		vk::DeviceMemory imageMemory;
