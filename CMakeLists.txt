@@ -103,7 +103,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkVertexData/vertexMenagerie.cpp"
     "src/MultithreatedSystems/ThumbnailTask.cpp"
     "src/View/vkMesh/meshTypes.cpp"
-    "src/View/Interface/Thumbs/thumbRenderer.cpp"
+    "src/View/Interface/Miniatures/miniatureRenderer.cpp"
     "src/View/vkInit/vkPipeline/pipelineBuilder.cpp"
     "src/View/vkInit/vkPipeline/shaders.cpp"
     "src/View/vkMesh/vertexMenagerie.cpp"
@@ -121,11 +121,11 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkMesh/vertexFormat.cpp"
     "src/View/RenderStructs/projection.cpp"
     "src/Scene/ECS/components/textureComponent.cpp"
-    "src/View/Interface/Thumbs/thumbsManager.cpp"
-    "src/View/Interface/Thumbs/thumbs.cpp"
-    "src/View/Interface/Thumbs/texturesThumbs.cpp"
-    "src/View/Interface/Thumbs/iconsThumbs.cpp"
-    "src/View/Interface/Thumbs/meshesThumbs.cpp"
+    "src/View/Interface/Miniatures/miniaturesManager.cpp"
+    "src/View/Interface/Miniatures/miniatures.cpp"
+    "src/View/Interface/Miniatures/texturesMiniature.cpp"
+    "src/View/Interface/Miniatures/iconsMiniature.cpp"
+    "src/View/Interface/Miniatures/meshesMiniature.cpp"
     )
 
 # Dodanie bibliotek do aplikacji
