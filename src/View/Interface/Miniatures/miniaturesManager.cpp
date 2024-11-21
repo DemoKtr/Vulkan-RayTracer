@@ -54,6 +54,7 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
     meshesInput.pictureFormat = info.pictureFormat;
     meshesInput.depthFormat = info.depthFormat;
     meshesInput.number_of_models = info.number_of_models;
+    meshesInput.models = info.models;
     meshesInput.heigh = vkSettings::thumbHeigh;
     meshesInput.width = vkSettings::thumbWidth;
 

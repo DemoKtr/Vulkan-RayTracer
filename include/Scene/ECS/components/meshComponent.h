@@ -4,11 +4,11 @@
 
 
 class MeshComponent : public Component {
-    int modelIndex;
+    uint64_t modelIndex;
 
 public:
     MeshComponent();
-    void setIndex(int index);
-    int getIndex();
+    void setIndex(uint64_t index);
+    uint64_t getIndex();
 
 };

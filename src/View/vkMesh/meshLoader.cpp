@@ -5,6 +5,7 @@
 #include <iostream>
 
 vkMesh::MeshLoader::MeshLoader(const char* path) {
+	this->path = path;
 	loadModel(path);
 }
 

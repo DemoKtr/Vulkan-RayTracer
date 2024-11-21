@@ -3,40 +3,40 @@
 
 
 class TextureComponent : public Component {
-	int textureIndex, normalIndex, armIndex, depthIndex;
+    uint64_t textureIndex, normalIndex, armIndex, depthIndex;
     bool isPBR;
 public:
 
     TextureComponent(bool ispbr);
     TextureComponent();
 
-    int getColorTextureIndex() {
+    uint64_t getColorTextureIndex() {
             return textureIndex;
     }
-    int getNormalTextureIndex() {
+    uint64_t getNormalTextureIndex() {
          return normalIndex;
     }
 
-    int getARMTextureIndex() {
+    uint64_t getARMTextureIndex() {
         return armIndex;
     }
 
-    int getDepthTextureIndex() {
+    uint64_t getDepthTextureIndex() {
         return depthIndex;
     }
 
-    void setColorTextureIndex(int id) {
+    void setColorTextureIndex(uint64_t id) {
         textureIndex = id;
     }
-    void setNormalTextureIndex(int id) {
+    void setNormalTextureIndex(uint64_t id) {
         this->normalIndex = id;
     }
 
-    void setARMTextureIndex(int id) {
+    void setARMTextureIndex(uint64_t id) {
         this->armIndex = id;
     }
 
-    void setDepthTextureIndex(int id) {
+    void setDepthTextureIndex(uint64_t id) {
         depthIndex = id;
     }
 

@@ -5,10 +5,10 @@
 void fileOperations::make_model_index(filesPaths& data) {
 
     uint32_t index = -1;
-    data.modelIndex[""] = index++;
+    data.Index[""] = index++;
 
     for (std::string path : data.fullPaths) {
-        data.modelIndex[path] = index++;
+        data.Index[path] = index++;
     }
 
 }
@@ -16,8 +16,12 @@ void fileOperations::make_model_index(filesPaths& data) {
 void fileOperations::hash_model_paths(filesPaths& data) {
 
     std::hash<std::string> hasher;
+    size_t k = 0;
     for (std::string path : data.fullPaths) {
-        data.hash[path] = hasher(path);
+        uint64_t h = hasher(path);
+        data.hash[path] = h;
+        data.hashToIndex[h] = k++;
+
     }
 }
 

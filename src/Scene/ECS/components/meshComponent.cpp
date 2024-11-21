@@ -5,10 +5,10 @@ MeshComponent::MeshComponent(){
 	type = ComponentType::Mesh;
 }
 
-void MeshComponent::setIndex(int index) {
+void MeshComponent::setIndex(uint64_t index) {
 	modelIndex = index;
 }
 
-int MeshComponent::getIndex() {
+uint64_t MeshComponent::getIndex() {
 	return modelIndex;
 }

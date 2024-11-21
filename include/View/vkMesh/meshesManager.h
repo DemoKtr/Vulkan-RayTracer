@@ -12,12 +12,12 @@ namespace vkMesh {
 	class MeshesManager {
 
 	public:
-		std::unordered_map<int, std::vector<MeshManagerData>> modelMatrices;
+		std::unordered_map<uint64_t, std::vector<MeshManagerData>> modelMatrices;
 
 		MeshesManager(SceneObject* root, ecs::ECS* ecs);
 
 		void addMeshesRecursively(SceneObject* obj, ecs::ECS* ecs);
 		void removeSceneObject(SceneObject* obj, ecs::ECS* ecs);
-		void updateMeshIndex(SceneObject* obj, int newIndex, ecs::ECS* ecs);
+		void updateMeshIndex(SceneObject* obj, uint64_t newIndex, ecs::ECS* ecs);
 	};
 }

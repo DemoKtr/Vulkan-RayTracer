@@ -9,6 +9,7 @@ struct ThumbRendererInput {
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
+	fileOperations::filesPaths models;
 	vkMesh::VertexMenagerie* meshes;
 	vk::Format pictureFormat;
 	vk::Format depthFormat;
@@ -47,7 +48,7 @@ class ThumbRenderer {
 	vk::Sampler sampler;
 
 	vk::Format imageFormat, depthFormat;
-
+	fileOperations::filesPaths models;
 	std::vector<vk::Framebuffer> framebuffers;
 	//Resource Descriptors
 	vk::DescriptorSetLayout descriptorLayout;
@@ -70,6 +71,10 @@ class ThumbRenderer {
 	void render_objects(int objectType, uint32_t& startInstance);
 	void prepare_scene();
 	void render_objects(vk::CommandBuffer commandBuffer, int objectType, uint32_t& startInstance, uint32_t instanceCount);
+	void debugAccess(
+		const std::unordered_map<uint64_t, int>& firstIndices,
+		const std::unordered_map<uint64_t, int>& indexCounts,
+		uint64_t k);
 public:
 	
 	ThumbRenderer(ThumbRendererInput input, bool debugMode);

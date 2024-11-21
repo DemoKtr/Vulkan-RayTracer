@@ -15,6 +15,7 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	vk::Device device,
 	vk::CommandBuffer commandBuffer,
 	vk::Queue queue, 
+	fileOperations::filesPaths models,
 	fileOperations::filesPaths textures,
 	vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
@@ -36,6 +37,7 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	input.logicalDevice = device;
 	input.commandBuffer = commandBuffer;
 	input.queue = queue;
+	input.models = models;
 	input.textures = textures;
 	input.meshes = meshes;
 	input.pictureFormat = pictureFormat;
@@ -44,7 +46,7 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	miniatureManager = new vkThumbs::ThumbsManager(input);
 }
 
-editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
 	vk::Format depthFormat,
 	int modelsNumber){
@@ -55,7 +57,7 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, f
 	
 	texture = new vkImage::Texture(info);
 	
-	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, textures,meshes, pictureFormat, depthFormat,modelsNumber);
+	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, models,textures,meshes, pictureFormat, depthFormat,modelsNumber);
 }
 editor::~editor() {
 	delete texture;
@@ -244,7 +246,7 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
 					std::string currentModel;
 					if (mesh->getIndex() >= 0)
-						currentModel = models.fileNames[mesh->getIndex()];
+						currentModel = (models.fileNames[models.getIndex(mesh->getIndex())]);
 					else currentModel = "";
 
 					if (ImGui::BeginCombo("##modelSelector", currentModel.c_str())) { // Combo bez etykiety z lewej strony
@@ -270,10 +272,10 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 								
 								ImGui::SameLine;
 								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
-									meshesManager->updateMeshIndex(selectedObject, i, scene->ecs);
-									mesh->setIndex(i);  // Zapisz wybrany indeks
+									meshesManager->updateMeshIndex(selectedObject, models.hash[models.fullPaths[i]], scene->ecs);
 									
 									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
+
 								}
 
 								ImGui::PopID();
@@ -298,7 +300,7 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 					// Wyœwietl aktualnie przypisany model jako rozwijan¹ listê
 					std::string currentTexture;
 					if (textureComponent->getColorTextureIndex() >= 0)
-						currentTexture = textures.fileNames[textureComponent->getColorTextureIndex()];
+						currentTexture = textures.fileNames[textures.getIndex(textureComponent->getColorTextureIndex())];
 					else currentTexture = "";
 
 					if (ImGui::BeginCombo("##textureSelector", currentTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -323,8 +325,8 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 								// Wybór modelu
 								ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 								ImGui::SameLine;
-								if (ImGui::Selectable(displayText.c_str(), textureComponent->getColorTextureIndex() == i)) {
-									textureComponent->setColorTextureIndex(i);  // Zapisz wybrany indeks
+								if (ImGui::Selectable(displayText.c_str(),textures.getIndex(textureComponent->getColorTextureIndex()) == i)) {
+									textureComponent->setColorTextureIndex(textures.hash[textures.fullPaths[i]]);  // Zapisz wybrany indeks
 									std::cout << "Wybrano indeks: " << textureComponent->getColorTextureIndex() << std::endl;
 								}
 
@@ -333,10 +335,11 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 						}
 						ImGui::EndCombo();
 					}
+		
 					if (*textureComponent->isPBRTexture()) {
 						std::string currentNormalTexture;
 						if (textureComponent->getNormalTextureIndex() >= 0)
-							currentNormalTexture = textures.fileNames[textureComponent->getNormalTextureIndex()];
+							currentNormalTexture = textures.fileNames[textures.getIndex(textureComponent->getNormalTextureIndex())];
 						else currentNormalTexture = "";
 
 						if (ImGui::BeginCombo("##normalSelector", currentNormalTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -360,8 +363,8 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 									// Wybór modelu
 									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 									ImGui::SameLine;
-									if (ImGui::Selectable(displayText.c_str(), textureComponent->getNormalTextureIndex() == i)) {
-										textureComponent->setNormalTextureIndex(i);  // Zapisz wybrany indeks
+									if (ImGui::Selectable(displayText.c_str(), textures.getIndex(textureComponent->getNormalTextureIndex()) == i)) {
+										textureComponent->setNormalTextureIndex(textures.hash[textures.fullPaths[i]]);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getNormalTextureIndex() << std::endl;
 									}
 
@@ -370,9 +373,10 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 							}
 							ImGui::EndCombo();
 						}
+	
 							std::string currentARMTexture;
 							if (textureComponent->getARMTextureIndex() >= 0)
-								currentARMTexture = textures.fileNames[textureComponent->getARMTextureIndex()];
+								currentARMTexture = textures.fileNames[textures.getIndex(textureComponent->getARMTextureIndex())];
 							else currentARMTexture = "";
 
 							if (ImGui::BeginCombo("##ARMtextureSelector", currentARMTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -396,8 +400,8 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 										// Wybór modelu
 										ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 										ImGui::SameLine;
-										if (ImGui::Selectable(displayText.c_str(), textureComponent->getARMTextureIndex() == i)) {
-											textureComponent->setARMTextureIndex(i);  // Zapisz wybrany indeks
+										if (ImGui::Selectable(displayText.c_str(), textures.getIndex(textureComponent->getARMTextureIndex()) == i)) {
+											textureComponent->setARMTextureIndex(textures.hash[textures.fullPaths[i]]);  // Zapisz wybrany indeks
 											std::cout << "Wybrano indeks: " << textureComponent->getARMTextureIndex() << std::endl;
 										}
 
@@ -406,9 +410,10 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 								}
 								ImGui::EndCombo();
 							}
+
 						std::string currentDepthTexture;
 						if (textureComponent->getDepthTextureIndex() >= 0)
-							currentDepthTexture = textures.fileNames[textureComponent->getDepthTextureIndex()];
+							currentDepthTexture = textures.fileNames[textures.getIndex(textureComponent->getDepthTextureIndex())];
 						else currentDepthTexture = "";
 
 						if (ImGui::BeginCombo("##DepthtextureSelector", currentDepthTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -432,8 +437,8 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 									// Wybór modelu
 									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 									ImGui::SameLine;
-									if (ImGui::Selectable(displayText.c_str(), textureComponent->getDepthTextureIndex() == i)) {
-										textureComponent->setDepthTextureIndex(i);  // Zapisz wybrany indeks
+									if (ImGui::Selectable(displayText.c_str(), textures.getIndex(textureComponent->getDepthTextureIndex()) == i)) {
+										textureComponent->setDepthTextureIndex(textures.hash[textures.fullPaths[i]]);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getDepthTextureIndex() << std::endl;
 									}
 
@@ -442,10 +447,7 @@ void editor::render_components_gui(fileOperations::filesPaths models, fileOperat
 							}
 								ImGui::EndCombo();
 						}
-
-
-
-								
+						
 
 					}
 							// Zakoñcz wêze³ drzewa

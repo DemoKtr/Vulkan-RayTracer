@@ -17,7 +17,7 @@ void vkMesh::MeshesManager::addMeshesRecursively(SceneObject* obj, ecs::ECS* ecs
         if (transformComponent != nullptr) {
             // Pobieramy wskaŸnik na MeshComponent i jego indeks
             MeshComponent* meshComponent = ecs->getComponent<MeshComponent>(obj->id).get();
-            int meshIndex = meshComponent->getIndex();
+            uint64_t meshIndex = meshComponent->getIndex();
             // Tworzymy MeshData i zapisujemy do mapy
             modelMatrices[meshIndex].push_back( {obj, transformComponent->getModifyableTransform().getModelMatrixPionter() });
         }
@@ -53,45 +53,60 @@ void vkMesh::MeshesManager::removeSceneObject(SceneObject* obj, ecs::ECS* ecs) {
     }
 }
 
-void vkMesh::MeshesManager::updateMeshIndex(SceneObject* obj, int newIndex, ecs::ECS* ecs) {
-    if (!obj || !ecs) return;  // Sprawdzenie, czy wskaŸniki s¹ wa¿ne
+#include <iostream>
 
-    // Sprawdzamy, czy obiekt ma komponent Mesh
-    if (!ecs->hasComponent<MeshComponent>(obj->id)) return;
+void vkMesh::MeshesManager::updateMeshIndex(SceneObject* obj, uint64_t newIndex, ecs::ECS* ecs) {
+    if (!obj || !ecs) {
+        std::cerr << "[ERROR] Nullptr passed to updateMeshIndex!" << std::endl;
+        return;
+    }
 
-    // Pobieramy obecny indeks mesha
+    if (!ecs->hasComponent<MeshComponent>(obj->id)) {
+        std::cerr << "[DEBUG] Object ID " << obj->id << " has no MeshComponent." << std::endl;
+        return;
+    }
+
     auto meshComponent = ecs->getComponent<MeshComponent>(obj->id);
-    int currentIndex = meshComponent->getIndex();
+    uint64_t currentIndex = meshComponent->getIndex();
 
-    // Sprawdzamy, czy indeks siê zmieni³
     if (currentIndex != newIndex) {
-        // Usuwamy stary wpis z `modelMatrices` dla obecnego indeksu
         auto it = modelMatrices.find(currentIndex);
         if (it != modelMatrices.end()) {
             auto& entries = it->second;
+
+            std::cout << "[DEBUG] Current index " << currentIndex
+                << " has " << entries.size() << " entries before removal." << std::endl;
+
+            size_t beforeSize = entries.size();
             entries.erase(
                 std::remove_if(entries.begin(), entries.end(),
                     [obj](const auto& entry) {
-                        return entry.sceneObject == obj;
+                        return entry.sceneObject && entry.sceneObject->id == obj->id;
                     }),
                 entries.end()
             );
 
-            // Usuniêcie wpisu z mapy, jeœli lista dla danego indeksu jest pusta
             if (entries.empty()) {
                 modelMatrices.erase(it);
             }
+
+            std::cout << "[DEBUG] Removed object from index " << currentIndex
+                << ". Before: " << beforeSize << ", After: " << entries.size() << std::endl;
+        }
+        else {
+            std::cerr << "[ERROR] Index " << currentIndex << " not found in modelMatrices!" << std::endl;
         }
 
-        // Ustawiamy nowy indeks w komponencie
         meshComponent->setIndex(newIndex);
 
-        // Sprawdzamy, czy obiekt ma komponent Transform i dodajemy nowy wpis do `modelMatrices`
         if (ecs->hasComponent<TransformComponent>(obj->id)) {
             glm::mat4* newModelMatrix = ecs->getComponent<TransformComponent>(obj->id)->getModifyableTransform().getModelMatrixPionter();
             modelMatrices[newIndex].push_back({ obj, newModelMatrix });
+            std::cout << "[DEBUG] Added object to new index " << newIndex << std::endl;
         }
     }
 }
+
+
 
 

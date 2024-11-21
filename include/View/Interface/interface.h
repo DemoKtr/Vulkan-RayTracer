@@ -40,6 +40,7 @@ class editor {
 		vk::Device device,
 		vk::CommandBuffer commandBuffer,
 		vk::Queue queue,
+		fileOperations::filesPaths models,
 		fileOperations::filesPaths textures,
 		vkMesh::VertexMenagerie* meshes,
 		vk::Format pictureFormat,
@@ -48,7 +49,7 @@ class editor {
 		);
 
 	public:
-		editor(Scene* scene, std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
+		editor(Scene* scene, std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
 			vk::Format pictureFormat,
 			vk::Format depthFormat,
 			int modelsNumber);

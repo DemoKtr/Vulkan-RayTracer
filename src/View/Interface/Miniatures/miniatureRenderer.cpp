@@ -19,7 +19,7 @@ ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 	imageFormat = input.pictureFormat;
 	queue = input.queue;
 	width = input.width;
-
+	models = input.models;
 
 
 	vk::Extent2D ext;
@@ -250,8 +250,11 @@ void ThumbRenderer::render(bool debugMode) {
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 		commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ViewProjectionData), &vpData);
 		prepare_scene();
-		int indexCount = meshes->indexCounts.find(i)->second;
-		int firstIndex = meshes->firstIndices.find(i)->second;
+		uint64_t k = models.hash[models.fullPaths[i]];
+		//debugAccess(meshes->firstIndices, meshes->indexCounts, k);
+		int indexCount = meshes->indexCounts.find(k)->second;
+		int firstIndex = meshes->firstIndices.find(k)->second;
+		
 		universalTexture->useTexture(commandBuffer, pipelineLayout,0);
 		commandBuffer.drawIndexed(indexCount, 1, firstIndex, 0, startInstance);
 		startInstance++;
@@ -294,6 +297,7 @@ void ThumbRenderer::render(bool debugMode) {
 	submitInfo.pCommandBuffers = &commandBuffer;
 	queue.submit(1, &submitInfo, nullptr);
 	queue.waitIdle();
+	
 
 }
 
@@ -383,4 +387,24 @@ void ThumbRenderer::prepare_scene() {
 	vk::DeviceSize offets[] = { 0 };
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offets);
 	commandBuffer.bindIndexBuffer(meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+}
+
+void ThumbRenderer::debugAccess(const std::unordered_map<uint64_t, int>& firstIndices, const std::unordered_map<uint64_t, int>& indexCounts, uint64_t k) {
+	// SprawdŸ, czy klucz `k` istnieje w `indexCounts`
+	if (indexCounts.find(k) != indexCounts.end()) {
+		int indexCount = indexCounts.find(k)->second;
+		std::cout << "indexCounts[" << k << "] = " << indexCount << std::endl;
+	}
+	else {
+		std::cerr << "Key " << k << " not found in indexCounts!" << std::endl;
+	}
+
+	// SprawdŸ, czy klucz `k` istnieje w `firstIndices`
+	if (firstIndices.find(k) != firstIndices.end()) {
+		int firstIndex = firstIndices.find(k)->second;
+		std::cout << "firstIndices[" << k << "] = " << firstIndex << std::endl;
+	}
+	else {
+		std::cerr << "Key " << k << " not found in firstIndices!" << std::endl;
+	}
 }

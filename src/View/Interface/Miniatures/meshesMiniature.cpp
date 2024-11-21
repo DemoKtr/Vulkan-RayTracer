@@ -51,6 +51,7 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 	input.meshes = meshesInput.meshes;
 	input.pictureFormat = meshesInput.pictureFormat;
 	input.depthFormat = meshesInput.depthFormat;
+	input.models = meshesInput.models;
 	input.width = meshesInput.width;
 	input.heigh = meshesInput.heigh;
 	input.number_of_models = meshesInput.number_of_models;

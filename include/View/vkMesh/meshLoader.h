@@ -6,6 +6,7 @@
 namespace vkMesh {
 	class MeshLoader {
 	public:
+		std::string path;
 		std::vector<Mesh> meshes;
 		// constructor, expects a filepath to a 3D model.
 		MeshLoader(const char* path);

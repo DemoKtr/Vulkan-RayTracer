@@ -359,15 +359,17 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32
 	uint32_t startInstance = 0;
 	//Triangles
 
-
-	for (std::pair<int, std::vector<vkMesh::MeshManagerData>> pair : meshesManager->modelMatrices) {
+	
+	for (std::pair<uint64_t, std::vector<vkMesh::MeshManagerData>> pair : meshesManager->modelMatrices) {
 		uint32_t k = 0;
 		for (vkMesh::MeshManagerData data : pair.second) {
 			if (data.sceneObject->isActive)++k;
 		}
+		
 		render_objects(commandBuffer, pair.first, startInstance, k);
-
+		
 	}
+	
 	commandBuffer.endRenderPass();
 
 	// Przygotowanie ImageMemoryBarrier do zmiany layoutu na VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
@@ -409,7 +411,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32
 			std::cout << "failed to record command buffer!" << std::endl;
 		}
 	}
-
+	
 }
 
 void GraphicsEngine::prepare_scene(vk::CommandBuffer commandBuffer) {
@@ -420,11 +422,12 @@ void GraphicsEngine::prepare_scene(vk::CommandBuffer commandBuffer) {
 
 }
 
-void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, int objectType, uint32_t& startInstance, uint32_t instanceCount) {
+void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount) {
 
+	
 	int indexCount = meshes->indexCounts.find(objectType)->second;
 	int firstIndex = meshes->firstIndices.find(objectType)->second;
-	//materials[objectType]->useTexture(commandBuffer, layout);
+
 
 	atlasTextures->useTexture(commandBuffer, postprocessPipelineLayout);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
@@ -571,7 +574,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
-		meshes->consume(index++,buffer.vertices,buffer.indicies);
+		meshes->consume(meshesNames.hash[m.path], buffer.vertices, buffer.indicies);
 	
 	}
 
@@ -588,7 +591,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
 	
-	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
+	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info,meshesNames ,texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
 
 }
 
@@ -609,23 +612,20 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	size_t i = 0;
 	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
 		for (const auto& meshData : meshDataVector) {
-			if (meshData.modelMatrix) {  // Sprawdzamy, czy wskaŸnik jest wa¿ny
+			if (meshData.modelMatrix && meshData.sceneObject) {  // Sprawdzamy, czy wskaŸnik jest wa¿ny
 				if (meshData.sceneObject->isActive){
 					_frame.modelsData[i].model = *meshData.modelMatrix;//*meshData.modelMatrix;
+
 					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
+					
 					if (textureComponent != nullptr) {
-
-						_frame.modelsData[i].textureID = textureComponent->getColorTextureIndex();
-
-
+						_frame.modelsData[i].textureID = texturesNames.getIndex(textureComponent->getColorTextureIndex());
 					}
 					else {
-
 						_frame.modelsData[i].textureID = 0;
 					}
 					i++;
-					}
-				
+					}				
 			}
 		}
 	}

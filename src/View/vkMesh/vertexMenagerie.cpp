@@ -10,7 +10,7 @@ vkMesh::VertexMenagerie::~VertexMenagerie() {
 	logicalDevice.freeMemory(vertexBuffer.bufferMemory);
 	logicalDevice.freeMemory(indexBuffer.bufferMemory);
 }
-void vkMesh::VertexMenagerie::consume(int meshType, std::vector<float> data, std::vector<uint32_t> indices) {
+void vkMesh::VertexMenagerie::consume(uint64_t meshType, std::vector<float> data, std::vector<uint32_t> indices) {
 	int indexCount = static_cast<int>(indices.size());
 	int vertexCount = static_cast<int>(data.size()/8);
 	int lastIndex = static_cast<int>(indexLump.size());
