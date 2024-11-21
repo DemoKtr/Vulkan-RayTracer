@@ -125,6 +125,10 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/Interface/Miniatures/iconsMiniature.cpp"
     "src/View/Interface/Miniatures/meshesMiniature.cpp"
     "src/fileOperations/filesFinding.cpp"
+    "src/Scene/ECS/scripts/scriptCompiler.cpp"
+    "src/Scene/ECS/scripts/scriptInterface.cpp"
+    "src/Scene/ECS/scripts/scriptLoader.cpp"
+    "src/Scene/ECS/scripts/scriptManager.cpp"
     )
 
 # Dodanie bibliotek do aplikacji

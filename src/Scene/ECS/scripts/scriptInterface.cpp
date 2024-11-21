@@ -1,1 +1,1 @@
-#pragma once
+#include "Scene/ECS/scripts/scriptInterface.h"

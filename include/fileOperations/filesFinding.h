@@ -26,7 +26,7 @@ namespace fileOperations {
 
     void hash_model_paths(filesPaths& data);
 
-    void listMeshesFilesInDirectory(const std::string& path, filesPaths& data, std::vector<std::string> extensions);
+    void list_files_in_directory(const std::string& path, filesPaths& data, std::vector<std::string> extensions);
 }
 
 

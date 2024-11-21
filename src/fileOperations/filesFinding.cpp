@@ -21,7 +21,7 @@ void fileOperations::hash_model_paths(filesPaths& data) {
     }
 }
 
-void fileOperations::listMeshesFilesInDirectory(const std::string& path, filesPaths& data, std::vector<std::string> extensions) {
+void fileOperations::list_files_in_directory(const std::string& path, filesPaths& data, std::vector<std::string> extensions) {
     char ch[MAX_PATH];
     std::string project_path = std::string(PROJECT_DIR);
     std::string final_path = project_path + path;

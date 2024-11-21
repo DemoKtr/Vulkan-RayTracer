@@ -550,7 +550,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
 	std::vector<std::string> ext = { ".png",".jpg" };
-	fileOperations::listMeshesFilesInDirectory("\\core", texturesNames,ext);
+	fileOperations::list_files_in_directory("\\core", texturesNames,ext);
 	
 	
 	
@@ -561,7 +561,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	atlasTextures = new vkImage::Texture(info);
 	ext[0] = ".obj";
 	ext[1] = ".fbx";
-	listMeshesFilesInDirectory("\\core", meshesNames,ext);
+	list_files_in_directory("\\core", meshesNames,ext);
 	std::vector<vkMesh::MeshLoader> test;
 	for (std::string path : meshesNames.fullPaths) {
 		vkMesh::MeshLoader m(path.c_str());
