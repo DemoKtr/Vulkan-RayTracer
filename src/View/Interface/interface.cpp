@@ -3,7 +3,7 @@
 #include <backends/imgui_impl_vulkan.h>
 
 #include <Scene/ECS/components/componentFabric.h>
-
+#include "Scene/ECS/scripts/scriptCompiler.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/euler_angles.hpp>
@@ -46,10 +46,10 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	miniatureManager = new vkThumbs::ThumbsManager(input);
 }
 
-editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, ScriptsFiels scripts, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
 	vk::Format depthFormat,
-	int modelsNumber){
+	int modelsNumber):scriptsFiles(scripts){
 	this->scene = scene;
 	
 	baseFolder = path;
@@ -77,6 +77,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	if (ImGui::Button("Click Me")) {
 		// Kod do wykonania po naciœniêciu przycisku
 		std::cout << "Button was clicked!" << std::endl;
+		scripts::compileAllScripts(scriptsFiles.cpp,scriptsFiles.dll,scriptsFiles.scriptsCounter);
 	}
 	render_file_explorer();
 
@@ -633,3 +634,4 @@ void editor::AddSceneObject(SceneObject* obj) {
 	SceneObject* newChild = new SceneObject(scene->ecs);
 	obj->addChild(newChild); // Dodaj nowy obiekt do dzieci
 }
+

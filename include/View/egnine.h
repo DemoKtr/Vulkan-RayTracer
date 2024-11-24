@@ -71,6 +71,9 @@ class GraphicsEngine {
 	fileOperations::filesPaths  meshesNames;
 	fileOperations::filesPaths texturesNames;
 
+	fileOperations::filesPaths cppNames;
+	fileOperations::filesPaths dllNames;
+
 	vkMesh::VertexMenagerie* meshes;
 
 	vkImage::Texture* atlasTextures;
@@ -96,6 +99,8 @@ class GraphicsEngine {
 	void create_frame_command_buffer();
 	void create_frame_resources(Scene* scene);
 	void create_framebuffers();
+
+	void load_scripts();
 
 	void record_draw_command(vk::CommandBuffer commandBuffer, uint32_t imageIndex);
 

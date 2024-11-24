@@ -322,6 +322,12 @@ void GraphicsEngine::create_framebuffers(){
 	vkInit::make_postprocess_framebuffer(frameBufferInput,swapchainFrames, debugMode);
 }
 
+void GraphicsEngine::load_scripts() {
+	std::vector<std::string> ext = { ".cpp", };
+	fileOperations::list_files_in_directory("\\core", cppNames, ext);
+	scripts::compileAllScripts(cppNames,dllNames);
+}
+
 void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32_t imageIndex) {
 	vk::CommandBufferBeginInfo beginInfo = {};
 
@@ -590,9 +596,11 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.filenames = str.c_str();
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
-	
-	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info,meshesNames ,texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
-
+	load_scripts();
+	ScriptsFiels scriptsfiles(cppNames,dllNames);
+	scriptsfiles.scriptsCounter = dllNames.fullPaths.size();
+	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, scriptsfiles, meshesNames ,texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
+	;
 }
 
 
