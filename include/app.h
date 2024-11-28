@@ -19,7 +19,7 @@ class App
 	void build_glfw_window(glm::ivec2 screenSize, bool debugMode);
 	void calculateFrameRate();
 	int verticesCounter = {};
-	void build_imgui_context();
+
 
 	
 
@@ -37,6 +37,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
-
+int myMax(int a, int b);
 
 #endif // !APP_H

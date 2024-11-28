@@ -102,6 +102,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/ECS/components/physicsComponent.cpp"
     "src/View/vkVertexData/vertexMenagerie.cpp"
     "src/MultithreatedSystems/ThumbnailTask.cpp"
+    "src/MultithreatedSystems/Console.cpp"
     "src/View/Interface/Miniatures/miniatureRenderer.cpp"
     "src/View/vkInit/vkPipeline/pipelineBuilder.cpp"
     "src/View/vkInit/vkPipeline/shaders.cpp"
@@ -127,8 +128,13 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/fileOperations/filesFinding.cpp"
     "src/Scene/ECS/scripts/scriptCompiler.cpp"
     "src/Scene/ECS/scripts/scriptInterface.cpp"
-    "src/Scene/ECS/scripts/scriptLoader.cpp"
-    "src/Scene/ECS/scripts/scriptManager.cpp"
+    "src/Scene/ECS/scripts/Script.cpp"
+    "src/Scene/Objects/Prefab.cpp"
+    "src/View/Interface/PrefabWindow/PrefabEditor.cpp"
+    "src/View/Interface/PrefabWindow/PrefabWindow.cpp"
+    "src/View/Interface/PrefabWindow/PrefabRenderer.cpp"
+    "src/View/Interface/ImGuiRenderer/EditorCommands.cpp"
+    "src/View/Interface/ImGuiRenderer/PrefabEditorCommands.cpp"
     )
 
 # Dodanie bibliotek do aplikacji

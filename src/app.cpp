@@ -3,8 +3,8 @@
 #include <settings.h>
 #include "imgui.h"
 #include <backends/imgui_impl_vulkan.h>
-
-
+#include <algorithm>
+#include "MultithreatedSystems/Console.h"
 
 void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode)
 {
@@ -39,7 +39,8 @@ void App::calculateFrameRate()
 	double delta = currentTime - lastTime;
 
 	if (delta >= 1) {
-		int framerate{ std::max(1, int(numFrames / delta)) };
+		int framerate = myMax(1, static_cast<int>(numFrames / delta));
+
 
 		std::stringstream title{};
 		title << "Running at " << framerate << " fps.  There are" << verticesCounter << "vertices send to gpu";
@@ -53,22 +54,27 @@ void App::calculateFrameRate()
 	++numFrames;
 }
 
-void App::build_imgui_context() {
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-	// Ustaw styl
-	ImGui::StyleColorsDark();
-	ImGui_ImplVulkan_InitInfo init_info = {};
-}
 
 App::App(glm::ivec2 screenSize, bool debugMode)
 {
 	vkSettings::lastX = screenSize.x / 2.0f;
 	vkSettings::lastY = screenSize.y / 2.0f;
-	build_glfw_window(screenSize, debugMode);
+	console::ImGuiConsoleBuffer coutBuffer(std::cout, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bia³y dla std::cout
+	console::ImGuiConsoleBuffer cerrBuffer(std::cerr, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Czerwony dla std::cerr
+	console::ImGuiConsoleBuffer clogBuffer(std::clog, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // ¯ó³ty kolor dla ostrze¿eñ
+	clogBuffer.setCallback(console::AddConsoleMessage);
 
+	// Przyk³adowe u¿ycie std::clog
+	
+
+	//Ustawienie callbacków do dodawania wiadomoœci do konsoli
+	coutBuffer.setCallback(console::AddConsoleMessage);
+	cerrBuffer.setCallback(console::AddConsoleMessage);
+
+
+	build_glfw_window(screenSize, debugMode);
+	std::clog << "This is a warning message logged to clog.\n";
 	scene = new Scene();
 	
 	graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
@@ -161,4 +167,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	//App* referenceApp = static_cast<App*>(glfwGetWindowUserPointer(window));
 	//referenceApp->camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+int myMax(int a, int b) {
+	return (a > b) ? a : b;
 }

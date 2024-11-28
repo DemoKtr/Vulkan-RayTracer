@@ -22,9 +22,20 @@ struct ScriptsFiels {
 	
 };
 
+
+
 class editor {
 
 	
+	float leftPanelWidth = 200.0f;
+	float rightPanelWidth = 200.0f;
+	float bottomPanelHeight = 200.0f;
+	float menuHeight = 0.0f;
+
+	bool resizingLeft = false;
+	bool resizingRight = false;
+	bool resizingBottom = false;
+
 
 	Scene* scene;
 	SceneObject* selectedObject = nullptr;
@@ -60,6 +71,7 @@ class editor {
 		);
 	ScriptsFiels scriptsFiles;
 	public:
+		
 		editor(Scene* scene, std::string path, vkImage::TextureInputChunk info,ScriptsFiels scripts ,fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
 			vk::Format pictureFormat,
 			vk::Format depthFormat,

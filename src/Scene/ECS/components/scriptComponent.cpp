@@ -1,0 +1,1 @@
+#include "Scene/ECS/components/scriptComponent.h"

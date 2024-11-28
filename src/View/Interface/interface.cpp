@@ -1,13 +1,12 @@
 #include "View/Interface/interface.h"
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_vulkan.h>
+
 
 #include <Scene/ECS/components/componentFabric.h>
 #include "Scene/ECS/scripts/scriptCompiler.h"
-
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/euler_angles.hpp>
 
+#include "View/Interface/ImGuiRenderer/EditorCommands.h"
 
 
 
@@ -51,7 +50,7 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, S
 	vk::Format depthFormat,
 	int modelsNumber):scriptsFiles(scripts){
 	this->scene = scene;
-	
+
 	baseFolder = path;
 	currentFolder = baseFolder;
 	
@@ -74,6 +73,8 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	ImGui_ImplGlfw_NewFrame();
 	ImGui_ImplVulkan_NewFrame();
 	ImGui::NewFrame();
+
+	/* ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (ImGui::Button("Click Me")) {
 		// Kod do wykonania po naciœniêciu przycisku
 		std::cout << "Button was clicked!" << std::endl;
@@ -88,6 +89,19 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	DisplaySceneObject(scene->root);
 	render_components_gui(models, textures, meshesManager);
 	ImGui::End();
+	*/ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// Wysokoœæ i szerokoœæ ekranu
+	
+
+	
+
+
+	vkImGui::render_editor();
+	
+	
+	
+	
 	vk::RenderPassBeginInfo imguiRenderpassInfo = {};
 	imguiRenderpassInfo.renderPass = imguiRenderPass;
 	imguiRenderpassInfo.framebuffer = swapchainFrames[numberOfFrame].imguiFrameBuffer;

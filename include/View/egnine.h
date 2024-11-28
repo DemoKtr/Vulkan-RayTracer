@@ -94,8 +94,6 @@ class GraphicsEngine {
 	void create_pipeline();
 	void finalize_setup(Scene* scene);
 	void make_assets(Scene* scene);
-	void create_imgui_resources();
-	void create_imgui_descriptor_pool();
 	void create_frame_command_buffer();
 	void create_frame_resources(Scene* scene);
 	void create_framebuffers();

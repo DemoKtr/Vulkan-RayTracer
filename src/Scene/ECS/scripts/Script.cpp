@@ -3,7 +3,15 @@
 
 scripts::Script::Script(std::string libraryPath) {
     this->libraryPath = libraryPath;
-    this->loadLibrary();
+    this->handle = this->loadLibrary();
+}
+
+scripts::Script::Script(const Script& script)
+    : ecs(script.ecs),                      // Skopiowanie wskaünika (p≥ytka kopia)
+    entity(script.entity),                // Kopiowanie wartoúci
+    libraryPath(script.libraryPath),      // Kopiowanie std::string
+    handle(nullptr) {                     // Domyúlnie ustaw handle jako nullptr
+    std::cout << "Konstruktor kopiujπcy wywo≥any" << std::endl;
 }
 
 scripts::Script::Script()
@@ -12,6 +20,11 @@ scripts::Script::Script()
 
 scripts::Script::~Script() {
     this->closeLibrary();
+}
+
+void scripts::Script::setECSContext(ecs::ECS* ecs, ecs::Entity entity) {
+    this->ecs = ecs;
+    this->entity = entity;
 }
 
 void scripts::Script::execute_onStart_function() {
@@ -24,7 +37,7 @@ void scripts::Script::execute_onStart_function() {
 void scripts::Script::execute_onUpdate_function(float deltaTime) {
     auto onUpdate = (void (*)(float))getFunction("onUpdate");
     if (onUpdate) {
-        onUpdate(0.016f); // Wywo≥anie funkcji
+        onUpdate(deltaTime); // Wywo≥anie funkcji
     }
 }
 

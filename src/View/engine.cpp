@@ -245,17 +245,6 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 }
 
-
-void GraphicsEngine::create_imgui_resources(){
-	create_imgui_descriptor_pool();
-
-}
-
-void GraphicsEngine::create_imgui_descriptor_pool() {
-	
-	imguiDescriptorPool = vkInit::make_imgui_descriptor_pool(device);
-}
-
 void GraphicsEngine::create_frame_command_buffer() {
 	
 	CommandPool = vkInit::make_command_pool(physicalDevice, device, surface, debugMode);
@@ -268,9 +257,7 @@ void GraphicsEngine::create_frame_command_buffer() {
 }
 
 void GraphicsEngine::InitImGui(GLFWwindow* window){
-	
-	
-	create_imgui_resources();
+	imguiDescriptorPool = vkInit::make_imgui_descriptor_pool(device);
 	
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
