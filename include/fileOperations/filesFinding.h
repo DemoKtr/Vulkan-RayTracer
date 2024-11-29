@@ -12,9 +12,9 @@ namespace fileOperations {
     struct filesPaths {
         std::vector<std::string> fileNames;
         std::vector<std::string> fullPaths;
-        std::unordered_map<std::string, int> Index;
+        std::unordered_map<std::string, uint32_t> Index;
         std::unordered_map<std::string, uint64_t> hash;
-        std::unordered_map<uint64_t, int> hashToIndex;
+        std::unordered_map<uint64_t, uint32_t> hashToIndex;
 
 
 

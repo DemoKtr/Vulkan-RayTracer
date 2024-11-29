@@ -58,26 +58,28 @@ void App::calculateFrameRate()
 
 App::App(glm::ivec2 screenSize, bool debugMode)
 {
+	
 	vkSettings::lastX = screenSize.x / 2.0f;
 	vkSettings::lastY = screenSize.y / 2.0f;
-	console::ImGuiConsoleBuffer coutBuffer(std::cout, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bia³y dla std::cout
-	console::ImGuiConsoleBuffer cerrBuffer(std::cerr, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Czerwony dla std::cerr
-	console::ImGuiConsoleBuffer clogBuffer(std::clog, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // ¯ó³ty kolor dla ostrze¿eñ
-	clogBuffer.setCallback(console::AddConsoleMessage);
+	//console::ImGuiConsoleBuffer coutBuffer(std::cout, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bia³y dla std::cout
+	//console::ImGuiConsoleBuffer cerrBuffer(std::cerr, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Czerwony dla std::cerr
+	//::ImGuiConsoleBuffer clogBuffer(std::clog, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // ¯ó³ty kolor dla ostrze¿eñ
+	//clogBuffer.setCallback(console::AddConsoleMessage);
 
 	// Przyk³adowe u¿ycie std::clog
 	
 
 	//Ustawienie callbacków do dodawania wiadomoœci do konsoli
-	coutBuffer.setCallback(console::AddConsoleMessage);
-	cerrBuffer.setCallback(console::AddConsoleMessage);
+	//coutBuffer.setCallback(console::AddConsoleMessage);
+	//cerrBuffer.setCallback(console::AddConsoleMessage);
 
 
 	build_glfw_window(screenSize, debugMode);
-	std::clog << "This is a warning message logged to clog.\n";
+
 	scene = new Scene();
 	
 	graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
+
 	graphicsEngine->InitImGui(window);
 
 }

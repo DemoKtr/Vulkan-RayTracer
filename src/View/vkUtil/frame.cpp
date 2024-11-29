@@ -37,9 +37,8 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	cameraUBODescriptor.offset = 0;
 	cameraUBODescriptor.range = sizeof(CameraUBO);
 
-	int sbo_size = number_of_objects + (number_of_objects / 2);
-	this->n = sbo_size;
-	input.size = 1024 * sizeof(MeshSBO);
+	int sbo_size = 2048;
+	input.size = sbo_size * sizeof(MeshSBO);
 	input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 	modelsDataBuffer = createBuffer(input);
 	modelsDataWriteLocation = logicalDevice.mapMemory(modelsDataBuffer.bufferMemory,0, sbo_size *sizeof(MeshSBO));
@@ -51,6 +50,10 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 		MeshSBO meshSBO;
 		meshSBO.model = glm::mat4(1.0f);
 		meshSBO.textureID = -1;
+		meshSBO.padding[0] = -1;
+		meshSBO.padding[1] = -1;
+		meshSBO.padding[2] = -1;
+		
 		modelsData.push_back(meshSBO);
 	}
 

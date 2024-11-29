@@ -13,10 +13,10 @@ layout(set = 0, binding = 0) uniform UBO {
 
 struct SBO {
     mat4 model;
-	int textureId;
+	uvec4 textureID; // textureID przechowywane w jednym z elementów
 };
 
-layout(std140, set = 0, binding = 1) readonly buffer StorageBuffer {
+layout(std430,set = 0, binding = 1) readonly buffer StorageBuffer {
     SBO sbo[];
 } ObjectData;
 
@@ -26,12 +26,12 @@ layout (push_constant) uniform constants {
 }ProjectionData;
 
 
-layout(location = 0) out vec2 TexCoord;
-layout(location = 1) flat out int textureIndex;
+layout (location = 0) out vec2 TexCoord;
+layout (location = 1) flat out uint textureIndex;
 
 
 void main() {
 	gl_Position =  ProjectionData.projection * cameraData.view*ObjectData.sbo[gl_InstanceIndex].model * vertexPosition;
 	TexCoord = vertexTexCoord.xy;
-	textureIndex = ObjectData.sbo[gl_InstanceIndex].textureId;
+	textureIndex = ObjectData.sbo[gl_InstanceIndex].textureID.x;
 }

@@ -10,9 +10,10 @@ namespace vkUtil {
 		glm::vec4 camPos;
 	};
 
-	struct MeshSBO {
+	struct alignas(16) MeshSBO {
 		glm::mat4 model;
-		int textureID;
+		uint32_t textureID;
+		uint32_t padding[3];
 	};
 
 
@@ -53,7 +54,7 @@ namespace vkUtil {
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
 
-		int n;
+		
 
 
 		vk::CommandBuffer commandBuffer;

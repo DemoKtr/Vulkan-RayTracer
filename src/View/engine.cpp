@@ -315,7 +315,7 @@ void GraphicsEngine::load_scripts() {
 	scripts::compileAllScripts(cppNames,dllNames);
 }
 
-void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32_t imageIndex) {
+void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* scene ,uint32_t imageIndex) {
 	vk::CommandBufferBeginInfo beginInfo = {};
 
 	try {
@@ -353,15 +353,15 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, uint32
 	//Triangles
 
 	
-	for (std::pair<uint64_t, std::vector<vkMesh::MeshManagerData>> pair : meshesManager->modelMatrices) {
+	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
+
 		uint32_t k = 0;
-		for (vkMesh::MeshManagerData data : pair.second) {
-			if (data.sceneObject->isActive)++k;
+		for (vkMesh::MeshManagerData data : meshDataVector) {
+			if (data.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(data.sceneObject->id))++k;
 		}
-		
-		render_objects(commandBuffer, pair.first, startInstance, k);
-		
+		render_objects(commandBuffer, key, startInstance, k);
 	}
+
 	
 	commandBuffer.endRenderPass();
 
@@ -469,7 +469,7 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 	prepare_frame(imageIndex, scene, deltaTime, camera);
 	//render_imgui(imgcommandBuffer,frameNumber,debugMode);
-	record_draw_command(imgcommandBuffer, imageIndex);
+	record_draw_command(imgcommandBuffer,scene ,imageIndex);
 	
 	
 
@@ -596,19 +596,21 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	
 
 	vkUtil::SwapChainFrame& _frame = swapchainFrames[imageIndex];
-	glm::vec3 eye = { 0.0f, 0.0f, -5.0f };
+	glm::vec3 eye = { 0.0f, 0.0f, -20.0f };
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 up = { 0.0f, 1.0f, 0.0f };
 	glm::mat4 view = glm::lookAt(eye, center, up);
 	_frame.cameraData.view = view;//camera.GetViewMatrix();
 
 	_frame.cameraData.camPos = glm::vec4(camera.Position,1.0f);
-
+	
 	size_t i = 0;
 	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
 		for (const auto& meshData : meshDataVector) {
 			if (meshData.modelMatrix && meshData.sceneObject) {  // Sprawdzamy, czy wskaŸnik jest wa¿ny
-				if (meshData.sceneObject->isActive){
+				if (meshData.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(meshData.sceneObject->id)){
+
+
 					_frame.modelsData[i].model = *meshData.modelMatrix;//*meshData.modelMatrix;
 
 					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
@@ -618,13 +620,37 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 					}
 					else {
 						_frame.modelsData[i].textureID = 0;
+						
 					}
 					i++;
-					}				
+				}				
 			}
 		}
 	}
-
+	/*
+	std::cout << "Jestem macierzem obiektu 0:" << std::endl;
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			std::cout << _frame.modelsData[1].model[i][j] << "  ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << "Jestem macierzem obiektu 1:" << std::endl;
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			std::cout << _frame.modelsData[1].model[i][j] <<"  ";
+		}
+		std::cout << std::endl;
+	}
+	std::cout << "Jestem macierzem obiektu 2:" << std::endl;
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			std::cout << _frame.modelsData[2].model[i][j] << "  ";
+		}
+		std::cout << std::endl;
+	}
+	*/
+	
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));
 	_frame.write_postprocess_descriptors();

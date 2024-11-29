@@ -1,7 +1,7 @@
 #version 450
 
 layout (location = 0) in vec2 UV;
-layout (location = 1) flat in int textureId;
+layout (location = 1) flat in uint textureId;
 
 layout(set=1,binding=0) uniform sampler2DArray textureAtlas;
 

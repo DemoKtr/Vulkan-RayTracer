@@ -135,6 +135,8 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/Interface/PrefabWindow/PrefabRenderer.cpp"
     "src/View/Interface/ImGuiRenderer/EditorCommands.cpp"
     "src/View/Interface/ImGuiRenderer/PrefabEditorCommands.cpp"
+    "src/View/Interface/ImGuiRenderer/ComponentsFunctions.cpp"
+    "src/View/Interface/ImGuiRenderer/sceneObjectsFunctions.cpp"
     )
 
 # Dodanie bibliotek do aplikacji

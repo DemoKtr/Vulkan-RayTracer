@@ -1,6 +1,6 @@
 #pragma once
 #include "config.h"
-
+#include <filesystem>
 namespace vkSettings {
 	static float zNear = 0.1f;
 	static float zFar = 64.0f;
@@ -20,13 +20,20 @@ namespace vkSettings {
 	static bool resizingRight = false;
 	static bool resizingBottom = false;
 
+	static bool renderConsole = false;
 
+	static bool showComponentSelector = false;
+	static bool showModelSelector = false;
 
     static int MIN_TRIANGLES = 2; // Minimalna liczba trójk¹tów w wêŸle BVH
     static int MAX_DEPTH = 32;     // Maksymalna g³êbokoœæ drzewa BVH
     static int thumbWidth = 512;
     static int thumbHeigh = 512;
-    
+
+
+	//
+	//copy/cut paste
+	
 
 
 }

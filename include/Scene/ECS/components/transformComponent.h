@@ -30,7 +30,7 @@ public:
     void setScale(const glm::vec3& scale) {
         transform.setLocalScale(scale);
     }
-
+       
     ~TransformComponent();
    
 

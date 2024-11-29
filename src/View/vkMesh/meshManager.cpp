@@ -1,9 +1,11 @@
 #include "View/vkMesh/meshesManager.h"
 #include "Scene/ECS/components/components.h"
+#include <iostream>
 
 vkMesh::MeshesManager::MeshesManager(SceneObject* root, ecs::ECS* ecs) {
 	// Rekurencyjnie przechodzimy przez drzewo sceny i dodajemy obiekty z komponentem Mesh
-	addMeshesRecursively(root,ecs);
+	//addMeshesRecursively(root,ecs);
+    addMeshesRecursively(root, ecs);
 }
 
 void vkMesh::MeshesManager::addMeshesRecursively(SceneObject* obj, ecs::ECS* ecs) {
@@ -16,6 +18,7 @@ void vkMesh::MeshesManager::addMeshesRecursively(SceneObject* obj, ecs::ECS* ecs
 
         if (transformComponent != nullptr) {
             // Pobieramy wskaŸnik na MeshComponent i jego indeks
+
             MeshComponent* meshComponent = ecs->getComponent<MeshComponent>(obj->id).get();
             uint64_t meshIndex = meshComponent->getIndex();
             // Tworzymy MeshData i zapisujemy do mapy
@@ -53,7 +56,7 @@ void vkMesh::MeshesManager::removeSceneObject(SceneObject* obj, ecs::ECS* ecs) {
     }
 }
 
-#include <iostream>
+
 
 void vkMesh::MeshesManager::updateMeshIndex(SceneObject* obj, uint64_t newIndex, ecs::ECS* ecs) {
     if (!obj || !ecs) {
@@ -110,3 +113,21 @@ void vkMesh::MeshesManager::updateMeshIndex(SceneObject* obj, uint64_t newIndex,
 
 
 
+void vkMesh::MeshesManager::addMesh(SceneObject* obj, ecs::ECS* ecs) {
+    if (!obj) return;
+
+    // Sprawdzamy, czy obiekt ma komponent Mesh
+    if (ecs->hasComponent<MeshComponent>(obj->id)) {
+        // Pobieramy macierz modelu z komponentu transformacji i dodajemy do mapy
+        TransformComponent* transformComponent = ecs->getComponent<TransformComponent>(obj->id).get();
+
+        if (transformComponent != nullptr) {
+            // Pobieramy wskaŸnik na MeshComponent i jego indeks
+            MeshComponent* meshComponent = ecs->getComponent<MeshComponent>(obj->id).get();
+            uint64_t meshIndex = meshComponent->getIndex();
+            // Tworzymy MeshData i zapisujemy do mapy
+            modelMatrices[meshIndex].push_back({ obj, transformComponent->getModifyableTransform().getModelMatrixPionter() });
+
+        }
+    }
+}

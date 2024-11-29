@@ -30,19 +30,15 @@ vkThumbs::IconThumbs::IconThumbs(ThumbInput input) : Thumb(input) {
 	info.descriptorPool = descriptorPool; 
 
 	folderIcon = new vkImage::Texture(info);
-	std::cout << "test2" << std::endl;
 	info.filenames = "resources/textures/header.jpg";
 	headerIcon = new vkImage::Texture(info);
-	std::cout << "test1" << std::endl;
 	info.filenames = "resources/textures/source.jpg";
 	sourceIcon = new vkImage::Texture(info);
-	std::cout << "test3" << std::endl;
 	info.filenames = "resources/textures/text.jpg";
 	textIcon = new vkImage::Texture(info);
-	std::cout << "test4" << std::endl;
 	info.filenames = "resources/textures/file.jpg";
 	fileIcon = new vkImage::Texture(info);
-	std::cout << "test5" << std::endl;
+
 	
 }
 
