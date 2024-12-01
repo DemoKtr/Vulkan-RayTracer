@@ -289,17 +289,18 @@ void vkImGui::render_scenegraph(SceneObject* root, SceneObject*& selectedObject,
 			selectedObject = root;	
 		}
 		
-
+		rmb_click_render(root, ecs, meshesManager);
 		// Rekurencyjne rysowanie dzieci obiektu
 		for (auto& child : root->children) {
 			render_scenegraph(child, selectedObject,ecs,meshesManager);
 		}
 
+
 		ImGui::TreePop();
 
 	}
 	
-	rmb_click_render(root,ecs,meshesManager);
+	
 }
 
 void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager, vkThumbs::ThumbsManager* miniatureManager, ComponentType& selectedComponentType) {
