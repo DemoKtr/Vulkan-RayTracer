@@ -49,6 +49,13 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(imgui)
 
+FetchContent_Declare(
+    nlohmann_json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG master # Ustaw wersję, którą chcesz użyć
+)
+FetchContent_MakeAvailable(nlohmann_json)
+
 # Źródła projektu
 set(SOURCES
     src/main.cpp
@@ -131,12 +138,14 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/ECS/scripts/Script.cpp"
     "src/Scene/Objects/Prefab.cpp"
     "src/View/Interface/PrefabWindow/PrefabEditor.cpp"
-    "src/View/Interface/PrefabWindow/PrefabWindow.cpp"
     "src/View/Interface/PrefabWindow/PrefabRenderer.cpp"
     "src/View/Interface/ImGuiRenderer/EditorCommands.cpp"
     "src/View/Interface/ImGuiRenderer/PrefabEditorCommands.cpp"
     "src/View/Interface/ImGuiRenderer/ComponentsFunctions.cpp"
     "src/View/Interface/ImGuiRenderer/sceneObjectsFunctions.cpp"
+    "src/View/Interface/ImGuiRenderer/PrefabFunctions.cpp"
+    "src/fileOperations/serializations.cpp"
+
     )
 
 # Dodanie bibliotek do aplikacji
@@ -146,6 +155,7 @@ target_link_libraries(${PROJECT_NAME}
   glfw
   glm
   assimp
+  nlohmann_json::nlohmann_json
 )
 # Ustawienia dla kompilacji w systemie Linux
 if(UNIX)

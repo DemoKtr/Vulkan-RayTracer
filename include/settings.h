@@ -31,6 +31,8 @@ namespace vkSettings {
     static int thumbHeigh = 512;
 
 
+
+	static float deltaTime = 0.0f;
 	//
 	//copy/cut paste
 	

@@ -1,0 +1,232 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in; // 16x16 grup roboczych
+
+layout(binding = 0, rgba8) uniform writeonly image2D resultImage;
+layout(binding = 5) uniform sampler2DArray objectTextures; // Tekstura dla obiektu
+
+struct AABB {
+    vec3 min;
+    vec3 max;
+};
+struct Vertex {
+    vec3 position;
+    vec3 normal;
+    vec2 uv;
+};
+
+struct ModelData {
+    mat4 modelMatrix;
+    uvec4 textureIndex; // Indeks do 2D Image Array
+	int MeshIndex;
+};
+
+// Struktura GPU_BVHNode (węzeł BVH)
+struct BVHNode {
+    AABB boundingBox;   // Ograniczający AABB
+    int leftChildIndex; // Indeks lewego dziecka, -1 jeśli liść
+    int rightChildIndex;// Indeks prawego dziecka, -1 jeśli liść
+    int nextNodeIndex;       // Indeks węzła po przetworzeniu liści (dzięki temu unikam stosu)
+	ModelData data;
+};
+
+uint numberOfModels = 1000;
+int maxBounces = 10;
+float reflectionStrength = 0.5f;
+struct Meshes{
+	int baseIndicies;
+	int numberOfIndicies;	
+};
+
+layout(std430, binding = 1) buffer VerticesBuffer {
+    Vertex vertices[];
+    
+};
+
+layout(std430, binding = 2) buffer IndicesBuffer {
+	uint indices[];
+};
+
+layout(std430, binding = 3) buffer MeshesBuffer {
+	Meshes meshes[];
+
+};
+layout(std430, binding = 4) buffer BVHBuffer {
+	
+	BVHNode nodes[];
+};
+
+
+struct Ray {
+    vec3 origin;
+    vec3 direction;
+};
+
+
+// Prosta funkcja testująca przecięcie ray-AABB
+bool intersectAABB(Ray ray, AABB box) {
+    vec3 tMin = (box.min - ray.origin) / ray.direction;
+    vec3 tMax = (box.max - ray.origin) / ray.direction;
+
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+
+    float tNear = max(max(t1.x, t1.y), t1.z);
+    float tFar = min(min(t2.x, t2.y), t2.z);
+
+    return tNear <= tFar && tFar > 0.0;
+}
+
+bool intersectTriangle(
+    Ray ray, 
+    vec3 v0, 
+    vec3 v1, 
+    vec3 v2, 
+    out float t, 
+    out vec2 barycentricCoords
+) {
+    vec3 edge1 = v1 - v0;
+    vec3 edge2 = v2 - v0;
+    vec3 h = cross(ray.direction, edge2);
+    float a = dot(edge1, h);
+
+    // Sprawdzenie, czy promień jest równoległy do trójkąta
+    if (abs(a) < 1e-6) return false;
+
+    float f = 1.0 / a;
+    vec3 s = ray.origin - v0;
+
+    // Oblicz współrzędną barycentryczną u
+    float u = f * dot(s, h);
+    if (u < 0.0 || u > 1.0) return false;
+
+    // Oblicz współrzędną barycentryczną v
+    vec3 q = cross(s, edge1);
+    float v = f * dot(ray.direction, q);
+    if (v < 0.0 || u + v > 1.0) return false;
+
+    // Oblicz odległość t od początku promienia do punktu przecięcia
+    t = f * dot(edge2, q);
+
+    // Promień trafia trójkąt, jeśli t > 0
+    if (t > 0.0) {
+        barycentricCoords = vec2(u, v); // Zapisz współrzędne barycentryczne
+        return true;
+    }
+
+    return false;
+}
+
+bool traverseBVH(
+    Ray ray, 
+    out float closestT, 
+    out vec3 hitColor, 
+    out vec3 hitNormal, 
+    out vec3 hitPosition, 
+    out vec3 hitRayDirection, 
+    out uint hitTextureIndex, 
+    out vec2 hitUV
+) {
+    int currentNodeIndex = 0; // Zaczynamy od korzenia BVH
+    closestT = 1e20;          // Inicjalnie nieskończenie daleko
+    bool hit = false;
+
+    while (currentNodeIndex != -1) {
+        BVHNode node = nodes[currentNodeIndex];
+
+        // Test przecięcia promienia z AABB węzła
+        if (intersectAABB(ray, node.boundingBox)) {
+            if (node.leftChildIndex == -1 && node.rightChildIndex == -1) {
+                // Węzeł liścia: testuj trójkąty
+                Meshes mesh = meshes[node.data.MeshIndex];
+                for (uint i = 0; i < mesh.numberOfIndicies / 3; ++i) {
+                    uint index0 = indices[mesh.baseIndicies + i * 3 + 0];
+                    uint index1 = indices[mesh.baseIndicies + i * 3 + 1];
+                    uint index2 = indices[mesh.baseIndicies + i * 3 + 2];
+
+                    vec3 v0 = (node.data.modelMatrix * vec4(vertices[index0].position, 1.0)).xyz;
+                    vec3 v1 = (node.data.modelMatrix * vec4(vertices[index1].position, 1.0)).xyz;
+                    vec3 v2 = (node.data.modelMatrix * vec4(vertices[index2].position, 1.0)).xyz;
+
+
+					vec2 uv0 = vertices[index0].uv;
+                    vec2 uv1 = vertices[index1].uv;
+                    vec2 uv2 = vertices[index2].uv;
+					
+					
+                    float t;
+					vec2 baryCoords;
+                    if (intersectTriangle(ray, v0, v1, v2, t, baryCoords) && t < closestT) {
+                        closestT = t;
+                        hit = true;
+
+                        // Oblicz UV trafienia
+                        hitUV = uv0 * (1.0 - baryCoords.x - baryCoords.y) +
+                                uv1 * baryCoords.x +
+                                uv2 * baryCoords.y;
+
+                      
+                        // Zaktualizuj pozycję i kierunek
+                        hitPosition = ray.origin + t * ray.direction;
+                        hitRayDirection = ray.direction;
+
+
+                        hitTextureIndex = node.data.textureIndex.x;
+
+                        // Kolor tymczasowy (np. normal)
+                        //hitColor = hitNormal * 0.5 + 0.5;
+                    }
+                }
+            }
+        }
+
+        // Przejdź do następnego węzła
+        currentNodeIndex = node.nextNodeIndex;
+    }
+
+    return hit;
+}
+
+vec3 renderScene(vec3 rayOrigin, vec3 rayDirection, int depth) {
+    Ray ray = Ray(rayOrigin, rayDirection);
+    float closestT;
+    vec3 hitColor = vec3(0.0);
+    vec3 hitNormal;
+    vec3 hitPosition;
+    vec3 hitRayDirection;
+    uint hitTextureIndex = uint(-1);
+    vec2 hitUV;
+
+    if (traverseBVH(ray, closestT, hitColor, hitNormal, hitPosition, hitRayDirection, hitTextureIndex, hitUV)) {
+        // Pobierz kolor z tekstury, jeśli istnieje
+        if (hitTextureIndex < textureSize(objectTextures, 0).z) {
+            hitColor = texture(objectTextures, vec3(hitUV, float(hitTextureIndex))).rgb;
+        }
+
+        // Dodaj efekt odbicia
+        if (/*ubo.reflectionsEnabled == 1 &&*/ depth < maxBounces) {
+            vec3 reflectedDirection = reflect(hitRayDirection, hitNormal);
+            vec3 reflectedColor = renderScene(hitPosition + 1e-4 * reflectedDirection, reflectedDirection, depth + 1);
+            hitColor = mix(hitColor, reflectedColor, reflectionStrength);
+        }
+    }
+
+    return hitColor;
+}
+
+void main() {
+    ivec2 dim = imageSize(resultImage);
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
+
+    vec3 rayO = ubo.cameraPos;
+    vec3 rayD = normalize(vec3((-1.0 + 2.0 * uv) * vec2(ubo.aspectRatio, 1.0), -1.0));
+
+    // Ścieżka podstawowego koloru
+    vec3 finalColor = renderScene(rayO, rayD, 0);
+
+    // Wypisz wynik
+    imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.0));
+}
+
+
+

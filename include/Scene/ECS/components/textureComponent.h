@@ -6,7 +6,7 @@ class TextureComponent : public Component {
     uint64_t textureIndex, normalIndex, armIndex, depthIndex;
     bool isPBR;
 public:
-
+    
     TextureComponent(bool ispbr);
     TextureComponent();
 
@@ -43,7 +43,7 @@ public:
     bool* isPBRTexture() {
         return &isPBR;
     }
-
+    nlohmann::json serialize() const override;
     ~TextureComponent();
 
 

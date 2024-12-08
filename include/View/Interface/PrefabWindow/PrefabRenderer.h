@@ -2,21 +2,36 @@
 #include "config.h"
 #include <GLFW/glfw3.h>
 #include <Scene/scene.h>
+#include "Player/camera.h"
 namespace vkPrefab {
-	struct PrefabRendererInput {
-
+	struct PrefabInput {
+		GLFWwindow* mainWindow;
+		bool debugMode;
+		vk::Instance instance;
+		//physical device
+		vk::PhysicalDevice physicalDevice;
+		//logical device
+		vk::Device device;
+		//queues
+		vk::Queue graphicsQueue;
+		vk::Queue presentQueue;
+		vk::Queue computeQueue;
+		vk::Queue transferQueue;
 	};
 	class PrefabRenderer {
 
 		bool debugMode{ false };
-
+		GLFWwindow* window;
 		vk::Instance instance{ nullptr }; //instancja
 		
 		vk::PhysicalDevice physicalDevice{ nullptr };
 		//logical device
 		vk::Device device{ nullptr };
 		//queues
-		vk::Queue graphicsQueue{ nullptr };	
+		vk::Queue graphicsQueue;
+		vk::Queue presentQueue;
+		vk::Queue computeQueue;
+		vk::Queue transferQueue;
 		//surface
 		vk::SurfaceKHR surface;
 		//swapchain
@@ -35,8 +50,8 @@ namespace vkPrefab {
 		void finalize_setup(Scene* scene);
 		
 	public:
-		PrefabRenderer(PrefabRendererInput input);
-		void render(Scene* scene, int& verticesCounter, float deltaTime, bool renderIMGUI);
+		PrefabRenderer(PrefabInput input);
+		void render(Scene* scene,Camera::Camera camera,float deltaTime, bool renderIMGUI);
 		void InitImGui(GLFWwindow* window);
 	};
 }

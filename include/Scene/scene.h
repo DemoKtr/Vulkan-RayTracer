@@ -4,7 +4,7 @@
 
 class Scene {
 	
-	bool b = false;
+	
 public:
 	ecs::ECS* ecs;
 	Scene();

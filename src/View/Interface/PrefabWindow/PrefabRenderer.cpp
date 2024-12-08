@@ -8,7 +8,7 @@ void vkPrefab::PrefabRenderer::finalize_setup(Scene* scene) {
 
 }
 
-vkPrefab::PrefabRenderer::PrefabRenderer(PrefabRendererInput input) {
+vkPrefab::PrefabRenderer::PrefabRenderer(PrefabInput input) {
 	
 }
 

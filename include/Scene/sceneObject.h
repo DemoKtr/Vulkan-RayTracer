@@ -16,8 +16,10 @@ class SceneObject{
 
 	std::string name;
 	
+	
+
 	public:
-		
+		void destroyChilds();
 		bool isActive{ true };
 
 		ecs::Entity id;
@@ -27,6 +29,7 @@ class SceneObject{
 		SceneObject(ecs::ECS* ecs, SceneObject* parent);
 		SceneObject(ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager);
 		SceneObject(ecs::ECS* ecs);
+		SceneObject();
 		~SceneObject();
 		void draw();
 		void addChild(SceneObject* obj);

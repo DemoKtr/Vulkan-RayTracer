@@ -10,5 +10,5 @@ public:
     MeshComponent();
     void setIndex(uint64_t index);
     uint64_t getIndex();
-
+    nlohmann::json serialize() const override;
 };

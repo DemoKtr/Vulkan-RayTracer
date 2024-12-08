@@ -10,6 +10,11 @@ TextureComponent::TextureComponent() {
 	type = ComponentType::Texture;
 }
 
+nlohmann::json TextureComponent::serialize() const
+{
+	return nlohmann::json();
+}
+
 TextureComponent::~TextureComponent() {
 
 }

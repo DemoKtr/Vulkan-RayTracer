@@ -12,8 +12,7 @@ struct GPU_BVHNode {
     AABB boundingBox;   // Ograniczający AABB
     int leftChildIndex; // Indeks lewego dziecka, -1 jeśli liść
     int rightChildIndex;// Indeks prawego dziecka, -1 jeśli liść
-    int firstTriangleIndex;  // Indeks pierwszego trójkąta (dla liści)
-    int triangleCount;       // Ilość trójkątów w liściu (0 dla węzłów wewnętrznych)
+
     int nextNodeIndex;       // Indeks węzła po przetworzeniu liści (dzięki temu unikam stosu)
 };
 
@@ -140,30 +139,41 @@ bool TraverseBVH(vec3 rayOrigin, vec3 rayDir, out vec4 outColor) {
 
 
 
-void main() {
-    // Współrzędne bieżącego piksela na obrazie
-    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
-    
-    // Rozmiar obrazu (możemy to pobrać z `imageSize(resultImage)`)
-    ivec2 imageSize = imageSize(resultImage);
-    
-    // Konwersja współrzędnych piksela na współrzędne normalizowane (z przedziału [-1, 1])
-    vec2 normalizedCoords = (vec2(pixelCoords) / vec2(imageSize)) * 2.0 - 1.0;
-    
-    // Obliczenie położenia kamery i kierunku promienia (tu zakładamy prostą kamerę)
-    vec3 rayOrigin = vec3(0.0, 0.0, 0.0); // Pozycja kamery w (0, 0, 0)
-    vec3 rayDir = normalize(vec3(normalizedCoords.x, normalizedCoords.y, -1.0)); // Kierunek promienia w stronę sceny
-    
-    // Wynikowy kolor promienia
-    vec4 finalColor = vec4(0.0); // Domyślnie czarny, jeśli promień nie trafi w żaden obiekt
+vec3 renderScene(vec3 rayOrigin, vec3 rayDirection, int depth) {
+    Ray ray = Ray(rayOrigin, rayDirection);
+    float closestT;
+    vec3 hitColor = vec3(0.0);
+    vec3 hitNormal;
+    uint hitTextureIndex;
+    vec2 hitUV;
 
-    // Sprawdzamy przecięcie promienia z obiektami w BVH
-    if (TraverseBVH(rayOrigin, rayDir, finalColor)) {
-        // Jeśli promień trafił w trójkąt, ustawiamy odpowiedni kolor (z tekstury)
-        imageStore(resultImage, pixelCoords, finalColor);
-    } else {
-        // Jeśli promień nie trafił w żaden obiekt, ustawiamy kolor tła (np. niebo)
-        imageStore(resultImage, pixelCoords, vec4(0.0, 0.0, 0.0, 1.0)); // Czarny kolor tła
+    if (traverseBVH(ray, closestT, hitColor, hitNormal, hitTextureIndex, hitUV)) {
+        // Pobierz kolor z tekstury, jeśli istnieje
+        if (hitTextureIndex < textureSize(objectTextures, 0).z) {
+            hitColor = texture(objectTextures, vec3(hitUV, float(hitTextureIndex))).rgb;
+        }
+
+        // Dodaj efekt odbicia
+        if (ubo.reflectionsEnabled == 1 && depth < ubo.maxBounces) {
+            vec3 reflectedDirection = reflect(ray.direction, hitNormal);
+            vec3 reflectedColor = renderScene(ray.origin + closestT * ray.direction + 1e-4 * reflectedDirection, reflectedDirection, depth + 1);
+            hitColor = mix(hitColor, reflectedColor, ubo.reflectionStrength);
+        }
     }
+
+    return hitColor;
 }
 
+void main() {
+    ivec2 dim = imageSize(resultImage);
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / dim;
+
+    vec3 rayO = ubo.cameraPos;
+    vec3 rayD = normalize(vec3((-1.0 + 2.0 * uv) * vec2(ubo.aspectRatio, 1.0), -1.0));
+
+    // Ścieżka podstawowego koloru
+    vec3 finalColor = renderScene(rayO, rayD, 0);
+
+    // Wypisz wynik
+    imageStore(resultImage, ivec2(gl_GlobalInvocationID.xy), vec4(finalColor, 1.0));
+}

@@ -30,7 +30,9 @@ public:
     void setScale(const glm::vec3& scale) {
         transform.setLocalScale(scale);
     }
-       
+
+    nlohmann::json serialize() const override;
+
     ~TransformComponent();
    
 

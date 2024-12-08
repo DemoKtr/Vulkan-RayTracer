@@ -12,3 +12,8 @@ void MeshComponent::setIndex(uint64_t index) {
 uint64_t MeshComponent::getIndex() {
 	return modelIndex;
 }
+
+nlohmann::json MeshComponent::serialize() const
+{
+	return nlohmann::json();
+}

@@ -85,11 +85,11 @@ namespace ecs {
         void removeComponent(Component* component, Entity entity);
         void printNumberOfComponents(Entity entity);
 
-
-    private:
-        Entity nextEntityId = 1;
         std::unordered_map<Entity, std::bitset<MAX_COMPONENTS>> entityMasks;
         std::unordered_map<std::type_index, std::unordered_map<Entity, std::vector<std::shared_ptr<Component>>>> components;
+    private:
+        Entity nextEntityId = 1;
+        
         std::vector<std::shared_ptr<ECSSystem>> systems;
 
         template <typename T>
