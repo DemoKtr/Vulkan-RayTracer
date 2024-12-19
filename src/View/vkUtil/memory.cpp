@@ -101,6 +101,13 @@ typedef struct VkMemoryRequirements {
 		input.physicalDevice, memoryRequirements.memoryTypeBits,
 		input.memoryProperties
 	);
+	if (!(input.memoryAllocatet == vk::MemoryAllocateFlags())) {
+		vk::MemoryAllocateFlagsInfo memoryAllocateFlagsInfo;
+		memoryAllocateFlagsInfo.flags = input.memoryAllocatet;
+
+		// Jeœli u¿ywasz `bufferDeviceAddress`, dodaj odpowiedni¹ flagê
+		allocInfo.pNext = &memoryAllocateFlagsInfo;
+	}
 
 	buffer.bufferMemory = input.logicalDevice.allocateMemory(allocInfo);
 	input.logicalDevice.bindBufferMemory(buffer.buffer, buffer.bufferMemory, 0);

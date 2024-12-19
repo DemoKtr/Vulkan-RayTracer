@@ -38,10 +38,20 @@ bool vkInit::isSuitable(const vk::PhysicalDevice& device, bool debugMode)
 	* the swapchain extension
 	*/
 	const std::vector<const char*> requestedExtensions = {
-		{VK_KHR_SWAPCHAIN_EXTENSION_NAME},  {VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME},VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME ,
+		{VK_KHR_SWAPCHAIN_EXTENSION_NAME},  {VK_KHR_SEPARATE_DEPTH_STENCIL_LAYOUTS_EXTENSION_NAME},
+		VK_KHR_DRIVER_PROPERTIES_EXTENSION_NAME ,
+		VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+		VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+		VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+		VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME,
+		VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
 
 	};
-
+	
 	if (debugMode) {
 		std::cout << "We are requesting device extensions:\n";
 
@@ -125,31 +135,53 @@ vk::Device vkInit::create_logical_device(vk::PhysicalDevice physicalDevice, vk::
 	}
 
 	std::vector<const char*> deviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME, 
+		VK_KHR_RAY_QUERY_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+		VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME,
+		VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, VK_KHR_SPIRV_1_4_EXTENSION_NAME,
+		VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME,
+		VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+		VK_KHR_DEPTH_STENCIL_RESOLVE_EXTENSION_NAME,
+		VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+		VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME, 
+		VK_KHR_CREATE_RENDERPASS_2_EXTENSION_NAME,
 	};
-
+	
+	
+		
 	vk::PhysicalDeviceFeatures deviceFeatures = vk::PhysicalDeviceFeatures();
 	deviceFeatures.geometryShader = VK_TRUE;
 	deviceFeatures.sampleRateShading = VK_TRUE;
+	
 	//deviceFeatures.samplerAnisotropy = true;
 	std::vector<const char*> enabledLayers;
 	if (debugMode) {
 		enabledLayers.push_back("VK_LAYER_KHRONOS_validation");
 	}
-
+	vk::PhysicalDeviceBufferAddressFeaturesEXT bufferDeviceAddressFeatures;
+	bufferDeviceAddressFeatures.sType = vk::StructureType::ePhysicalDeviceBufferDeviceAddressFeatures;
+	bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+	
+	vk::PhysicalDeviceFeatures2 deviceFeatures2;
+	deviceFeatures2.pNext = &bufferDeviceAddressFeatures;
+	deviceFeatures2.sType = vk::StructureType::ePhysicalDeviceFeatures2;
 
 	vk::DeviceCreateInfo deviceInfo = vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
 		queueCreateInfo.size(), queueCreateInfo.data(),
 		enabledLayers.size(), enabledLayers.data(),
 		deviceExtensions.size(), deviceExtensions.data(),
-		&deviceFeatures);
+		NULL);
 
+		deviceInfo.pNext = &deviceFeatures2;
+
+
+		
 	try {
 		vk::Device device = physicalDevice.createDevice(deviceInfo);
 		if (debugMode) {
 			std::cout << "Device is successfully created" << std::endl;
 		}
-
+		
 		return device;
 	}
 	catch (vk::SystemError err) {

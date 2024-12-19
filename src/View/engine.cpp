@@ -20,7 +20,8 @@
 #include <View/vkInit/vkPipeline/pipelineBuilder.h>
 #include <View/vkMesh/vertexFormat.h>
 #include <Scene/ECS/components/components.h>
-
+#include "View/vkInit/vkAccelerationStructures/AccelerationStructure.h"
+#include "View/vkInit/vkExtensionsFunctions/BufferAdress.h"
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -160,7 +161,7 @@ void GraphicsEngine::make_instance() {
 void GraphicsEngine::choice_device() {
 	this->physicalDevice = vkInit::choose_physical_device(instance, debugMode);
 	this->device = vkInit::create_logical_device(physicalDevice, surface, debugMode);
-
+	vkExtensions::Init(device);
 	std::array<vk::Queue, 3> queues = vkInit::get_Queues(physicalDevice, device, surface, debugMode);
 
 	this->graphicsQueue = queues[0];
@@ -579,6 +580,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	finalizationInfo.queue = graphicsQueue;
 	finalizationInfo.commandBuffer = maincommandBuffer;
 	meshes->finalize(finalizationInfo);
+	this->build_accelerationStructures();
 	//info.texturesNames = texturesNames;
 	info.filenames = str.c_str();
 	info.descriptorPool = iconDescriptorPool;
@@ -587,7 +589,9 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	ScriptsFiels scriptsfiles(cppNames,dllNames);
 	scriptsfiles.scriptsCounter = dllNames.fullPaths.size();
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, scriptsfiles, meshesNames ,texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
-	;
+	
+
+
 }
 
 
@@ -655,4 +659,10 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));
 	_frame.write_postprocess_descriptors();
 
+}
+
+void GraphicsEngine::build_accelerationStructures() {
+	
+	vkAcceleration::AccelerationStructuresBuilderInfo info (device, meshes);
+	vkAcceleration::build_structures(info);
 }

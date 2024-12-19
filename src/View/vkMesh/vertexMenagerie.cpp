@@ -44,7 +44,7 @@ void vkMesh::VertexMenagerie::finalize(FinalizationChunk finalizationChunk) {
 	inputChunk.memoryProperties = vk::MemoryPropertyFlagBits::eHostVisible
 		| vk::MemoryPropertyFlagBits::eHostCoherent;
 	Buffer stagingBuffer = vkUtil::createBuffer(inputChunk);
-
+	inputChunk.memoryAllocatet = vk::MemoryAllocateFlagBits::eDeviceAddress;
 	//fill it with vertex data
 	void* memoryLocation = logicalDevice.mapMemory(stagingBuffer.bufferMemory, 0, inputChunk.size);
 	memcpy(memoryLocation, vertexLump.data(), inputChunk.size);
@@ -53,7 +53,7 @@ void vkMesh::VertexMenagerie::finalize(FinalizationChunk finalizationChunk) {
 
 	//make the vertex buffer
 	inputChunk.usage = vk::BufferUsageFlagBits::eTransferDst
-		| vk::BufferUsageFlagBits::eVertexBuffer;
+		| vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 	inputChunk.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 	vertexBuffer = vkUtil::createBuffer(inputChunk);
 
@@ -83,7 +83,7 @@ void vkMesh::VertexMenagerie::finalize(FinalizationChunk finalizationChunk) {
 
 	//make the vertex buffer
 	inputChunk.usage = vk::BufferUsageFlagBits::eTransferDst
-		| vk::BufferUsageFlagBits::eIndexBuffer;
+		| vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eShaderDeviceAddress;
 	inputChunk.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 	indexBuffer = vkUtil::createBuffer(inputChunk);
 

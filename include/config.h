@@ -16,5 +16,6 @@ struct BufferInputChunk {
 	vk::Device logicalDevice;
 	vk::PhysicalDevice physicalDevice;
 	vk::MemoryPropertyFlags memoryProperties;
+	vk::MemoryAllocateFlags memoryAllocatet;
 };
 

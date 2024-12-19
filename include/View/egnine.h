@@ -84,6 +84,7 @@ class GraphicsEngine {
 	vk::PipelineLayout postprocessPipelineLayout;
 	vk::RenderPass postprocessRenderPass;
 	
+	
 
 	void make_instance(); //instance Setup
 	void choice_device();
@@ -106,6 +107,8 @@ class GraphicsEngine {
 	void render_objects(vk::CommandBuffer commandBuffer, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount);
 
 	void prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera);
+
+	void build_accelerationStructures();
 	
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);
