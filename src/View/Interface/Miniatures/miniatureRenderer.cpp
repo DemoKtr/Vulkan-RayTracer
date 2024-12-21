@@ -6,7 +6,7 @@
 #include <View/RenderStructs/projection.h>
 #include <View/vkInit/descrpitors.h>
 #include "fileOperations/resources.h"
-
+#include "View/vkResources/resources.h"
 
 ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 
@@ -14,7 +14,7 @@ ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 	depthFormat = input.depthFormat;
 	device = input.device;
 	height = input.heigh;
-	meshes = input.meshes;
+
 	
 	number_of_images = fileOperations::meshesNames.fileNames.size();
 	physicalDevice = input.physicalDevice;
@@ -235,7 +235,6 @@ void ThumbRenderer::render(bool debugMode) {
 	vk::ClearValue depthColorValue;
 	depthColorValue.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
 	std::vector<vk::ClearValue> colorVector = { {backgroundColor,depthColorValue} };
-	std::cout << "1" << std::endl;
 	
 	for (int i = 0; i < number_of_images; ++i) {
 		vk::RenderPassBeginInfo renderpassInfo = {};
@@ -254,8 +253,8 @@ void ThumbRenderer::render(bool debugMode) {
 		prepare_scene();
 		uint64_t k = fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]];
 		//debugAccess(meshes->firstIndices, meshes->indexCounts, k);
-		int indexCount = meshes->indexCounts.find(k)->second;
-		int firstIndex = meshes->firstIndices.find(k)->second;
+		int indexCount = vkResources::meshes->indexCounts.find(k)->second;
+		int firstIndex = vkResources::meshes->firstIndices.find(k)->second;
 
 		universalTexture->useTexture(commandBuffer, pipelineLayout,0);
 		commandBuffer.drawIndexed(indexCount, 1, firstIndex, 0, startInstance);
@@ -374,8 +373,8 @@ ThumbRendererOutput ThumbRenderer::get_meshes_images() {
 
 
 void ThumbRenderer::render_objects(int objectType, uint32_t& startInstance) {
-	int indexCount = meshes->indexCounts.find(objectType)->second;
-	int firstIndex = meshes->firstIndices.find(objectType)->second;
+	int indexCount = vkResources::meshes->indexCounts.find(objectType)->second;
+	int firstIndex = vkResources::meshes->firstIndices.find(objectType)->second;
 	//materials[objectType]->useTexture(commandBuffer, layout);
 
 	universalTexture->useTexture(commandBuffer, pipelineLayout, 0);
@@ -385,10 +384,10 @@ void ThumbRenderer::render_objects(int objectType, uint32_t& startInstance) {
 }
 
 void ThumbRenderer::prepare_scene() {
-	vk::Buffer vertexBuffers[] = { meshes->vertexBuffer.buffer };
+	vk::Buffer vertexBuffers[] = { vkResources::meshes->vertexBuffer.buffer };
 	vk::DeviceSize offets[] = { 0 };
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offets);
-	commandBuffer.bindIndexBuffer(meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+	commandBuffer.bindIndexBuffer(vkResources::meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
 }
 
 void ThumbRenderer::debugAccess(const std::unordered_map<uint64_t, int>& firstIndices, const std::unordered_map<uint64_t, int>& indexCounts, uint64_t k) {

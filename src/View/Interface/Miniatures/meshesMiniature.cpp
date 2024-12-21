@@ -47,7 +47,6 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 	input.device = device;
 	input.queue = queue;
 	input.commandBuffer = commandBuffer;
-	input.meshes = meshesInput.meshes;
 	input.pictureFormat = meshesInput.pictureFormat;
 	input.depthFormat = meshesInput.depthFormat;
 	input.width = meshesInput.width;

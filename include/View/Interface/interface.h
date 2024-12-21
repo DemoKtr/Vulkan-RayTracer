@@ -46,7 +46,6 @@ class editor {
 		vk::Device device,
 		vk::CommandBuffer commandBuffer,
 		vk::Queue queue,
-		vkMesh::VertexMenagerie* meshes,
 		vk::Format pictureFormat,
 		vk::Format depthFormat);
 
@@ -55,7 +54,6 @@ class editor {
 
 		editor(Scene* scene, std::string path,
 			vkImage::TextureInputChunk info,
-			vkMesh::VertexMenagerie* meshes,
 			vk::Format pictureFormat,
 			vk::Format depthFormat);
 		~editor();

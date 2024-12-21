@@ -13,7 +13,6 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	vk::Device device,
 	vk::CommandBuffer commandBuffer,
 	vk::Queue queue, 
-	vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
 	vk::Format depthFormat) {
 	//vk::Device logicalDevice;
@@ -21,7 +20,6 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	//vk::CommandBuffer commandBuffer;
 	//vk::Queue queue;
 	//vkImage::TexturesNames textures;
-	//vkMesh::VertexMenagerie* meshes;
 	//vk::Format pictureFormat;
 	//vk::Format depthFormat;
 	//int number_of_models;
@@ -31,8 +29,6 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	input.logicalDevice = device;
 	input.commandBuffer = commandBuffer;
 	input.queue = queue;
-
-	input.meshes = meshes;
 	input.pictureFormat = pictureFormat;
 	input.depthFormat = depthFormat;
 
@@ -40,7 +36,7 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	miniatureManager = new vkThumbs::ThumbsManager(input);
 }
 
-editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, vkMesh::VertexMenagerie* meshes,
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info,
 	vk::Format pictureFormat,
 	vk::Format depthFormat){
 	this->scene = scene;
@@ -49,7 +45,7 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, v
 	this->filesExploresData.currentFolder = filesExploresData.baseFolder;
 
 	texture = new vkImage::Texture(info);
-	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue,meshes, pictureFormat, depthFormat);
+	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, pictureFormat, depthFormat);
 	
 }
 editor::~editor() {

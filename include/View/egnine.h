@@ -70,9 +70,6 @@ class GraphicsEngine {
 	vkMesh::MeshesManager* meshesManager;
 
 
-	vkMesh::VertexMenagerie* meshes;
-
-	vkImage::Texture* atlasTextures;
 	/// <summary>
 	///  Pipelines
 	/// </summary>

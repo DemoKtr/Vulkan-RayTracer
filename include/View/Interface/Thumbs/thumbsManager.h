@@ -12,9 +12,6 @@ namespace vkThumbs {
 		vk::PhysicalDevice physicalDevice;
 		vk::CommandBuffer commandBuffer;
 		vk::Queue queue;
-		fileOperations::filesPaths models;
-		fileOperations::filesPaths textures;
-		vkMesh::VertexMenagerie* meshes;
 		vk::Format pictureFormat;
 		vk::Format depthFormat;
 

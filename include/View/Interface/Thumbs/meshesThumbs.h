@@ -6,8 +6,6 @@
 namespace vkThumbs {
 
 	struct MeshesThumbInput{
-		vkMesh::VertexMenagerie* meshes;
-		fileOperations::filesPaths models;
 		vk::Format pictureFormat;
 		vk::Format depthFormat;
 		int width;

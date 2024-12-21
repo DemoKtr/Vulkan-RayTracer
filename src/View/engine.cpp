@@ -23,6 +23,8 @@
 #include "View/vkInit/vkAccelerationStructures/AccelerationStructure.h"
 #include "View/vkInit/vkExtensionsFunctions/BufferAdress.h"
 #include "fileOperations/resources.h"
+#include "View/vkResources/resources.h"
+
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
 	this->mainWindow = window;
@@ -57,9 +59,9 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyPipeline(postprocessPipeline);
 	device.destroyPipelineLayout(postprocessPipelineLayout);
 	delete sceneEditor;
-	delete meshes;
+	delete vkResources::meshes;
 	delete meshesManager;
-	delete atlasTextures;
+	delete vkResources::atlasTextures;
 	device.destroyCommandPool(CommandPool);
 	device.destroyCommandPool(imguiCommandPool);
 
@@ -408,21 +410,21 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 }
 
 void GraphicsEngine::prepare_scene(vk::CommandBuffer commandBuffer) {
-	vk::Buffer vertexBuffers[] = { meshes->vertexBuffer.buffer };
+	vk::Buffer vertexBuffers[] = { vkResources::meshes->vertexBuffer.buffer };
 	vk::DeviceSize offets[] = { 0 };
 	commandBuffer.bindVertexBuffers(0, 1, vertexBuffers, offets);
-	commandBuffer.bindIndexBuffer(meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
+	commandBuffer.bindIndexBuffer(vkResources::meshes->indexBuffer.buffer, 0, vk::IndexType::eUint32);
 
 }
 
 void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount) {
 
 	
-	int indexCount = meshes->indexCounts.find(objectType)->second;
-	int firstIndex = meshes->firstIndices.find(objectType)->second;
+	int indexCount = vkResources::meshes->indexCounts.find(objectType)->second;
+	int firstIndex = vkResources::meshes->firstIndices.find(objectType)->second;
 
 
-	atlasTextures->useTexture(commandBuffer, postprocessPipelineLayout);
+	vkResources::atlasTextures->useTexture(commandBuffer, postprocessPipelineLayout);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 
 	startInstance += instanceCount;
@@ -532,7 +534,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	
 
-	meshes = new vkMesh::VertexMenagerie();
+	vkResources::meshes = new vkMesh::VertexMenagerie();
 	vkInit::descriptorSetLayoutData bindings;
 	bindings.count = 1;
 	bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
@@ -555,7 +557,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.layout = textureDescriptorSetLayout;
 	info.filenames = nullptr;
 	info.texturesNames = fileOperations::texturesNames;
-	atlasTextures = new vkImage::Texture(info);
+	vkResources::atlasTextures = new vkImage::Texture(info);
 	ext[0] = ".obj";
 	ext[1] = ".fbx";
 	list_files_in_directory("\\core", fileOperations::meshesNames,ext);
@@ -570,7 +572,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
-		meshes->consume(fileOperations::meshesNames.hash[m.path], buffer.vertices, buffer.indicies);
+		vkResources::meshes->consume(fileOperations::meshesNames.hash[m.path], buffer.vertices, buffer.indicies);
 	
 	}
 
@@ -581,14 +583,14 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	finalizationInfo.physicalDevice = physicalDevice;
 	finalizationInfo.queue = graphicsQueue;
 	finalizationInfo.commandBuffer = maincommandBuffer;
-	meshes->finalize(finalizationInfo);
+	vkResources::meshes->finalize(finalizationInfo);
 	//this->build_accelerationStructures();
 	//info.texturesNames = texturesNames;
 	info.filenames = str.c_str();
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
 	load_scripts();
-	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, meshes, swapchainFormat, swapchainFrames[0].depthFormat);
+	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, swapchainFormat, swapchainFrames[0].depthFormat);
 
 
 
@@ -663,6 +665,6 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 
 void GraphicsEngine::build_accelerationStructures() {
 	
-	vkAcceleration::AccelerationStructuresBuilderInfo info (device, meshes);
+	vkAcceleration::AccelerationStructuresBuilderInfo info (device, vkResources::meshes);
 	vkAcceleration::build_structures(info);
 }

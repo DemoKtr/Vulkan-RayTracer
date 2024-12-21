@@ -9,7 +9,6 @@ struct ThumbRendererInput {
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
-	vkMesh::VertexMenagerie* meshes;
 	vk::Format pictureFormat;
 	vk::Format depthFormat;
 	int width;
@@ -58,7 +57,7 @@ class ThumbRenderer {
 	vk::CommandBuffer commandBuffer;
 	vk::Queue queue;
 
-	vkMesh::VertexMenagerie* meshes;
+
 
 	vkRenderStructs::ViewProjectionData vpData;
 
