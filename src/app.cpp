@@ -63,7 +63,7 @@ App::App(glm::ivec2 screenSize, bool debugMode)
 	vkSettings::lastY = screenSize.y / 2.0f;
 	//console::ImGuiConsoleBuffer coutBuffer(std::cout, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bia³y dla std::cout
 	//console::ImGuiConsoleBuffer cerrBuffer(std::cerr, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Czerwony dla std::cerr
-	//::ImGuiConsoleBuffer clogBuffer(std::clog, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // ¯ó³ty kolor dla ostrze¿eñ
+	//console::ImGuiConsoleBuffer clogBuffer(std::clog, ImVec4(1.0f, 1.0f, 0.0f, 1.0f)); // ¯ó³ty kolor dla ostrze¿eñ
 	//clogBuffer.setCallback(console::AddConsoleMessage);
 
 	// Przyk³adowe u¿ycie std::clog
@@ -77,11 +77,11 @@ App::App(glm::ivec2 screenSize, bool debugMode)
 	build_glfw_window(screenSize, debugMode);
 
 	scene = new Scene();
-	
+
 	graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
 
 	graphicsEngine->InitImGui(window);
-
+	
 }
 
 App::~App()
@@ -101,6 +101,7 @@ void App::run()
 		processInput(window);
 		glfwPollEvents();
 		scene->updateScene(deltaTime);
+	
 		graphicsEngine->render(scene, verticesCounter, deltaTime, camera,f12_button[1]);
 		calculateFrameRate();
 		

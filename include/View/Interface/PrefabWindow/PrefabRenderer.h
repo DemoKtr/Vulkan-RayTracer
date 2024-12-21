@@ -3,10 +3,16 @@
 #include <GLFW/glfw3.h>
 #include <Scene/scene.h>
 #include "Player/camera.h"
+#include <View/vkMesh/vertexMenagerie.h>
+#include "View/vkImage/texture.h"
+#include "View/vkUtil/frame.h"
+#include <View/RenderStructs/projection.h>
+#include <View/vkMesh/meshesManager.h>
+
+
 namespace vkPrefab {
 	struct PrefabInput {
-		GLFWwindow* mainWindow;
-		bool debugMode;
+		glm::ivec2 screenSize;
 		vk::Instance instance;
 		//physical device
 		vk::PhysicalDevice physicalDevice;
@@ -17,9 +23,17 @@ namespace vkPrefab {
 		vk::Queue presentQueue;
 		vk::Queue computeQueue;
 		vk::Queue transferQueue;
+
+		vkMesh::VertexMenagerie* meshes;
+
+		vkImage::Texture* atlasTextures;
+		
 	};
 	class PrefabRenderer {
 
+		glm::ivec2 screenSize;
+		int maxFramesInFlight, frameNumber;
+		vkRenderStructs::ProjectionData projection;
 		bool debugMode{ false };
 		GLFWwindow* window;
 		vk::Instance instance{ nullptr }; //instancja
@@ -37,6 +51,7 @@ namespace vkPrefab {
 		//swapchain
 		vk::SwapchainKHR swapchain;
 		//frames
+		std::vector<vkUtil::SwapChainFrame> swapchainFrames;
 		//std::vector<vkUtil::SwapChainFrame> swapchainFrames;
 		//swapchainFormat
 		vk::Format swapchainFormat;
@@ -45,12 +60,21 @@ namespace vkPrefab {
 		//DescriptorPool
 		vk::DescriptorPool imguiDescriptorPool;
 
+		vkMesh::MeshesManager* meshesManager;
+		vkMesh::VertexMenagerie* meshes;
+		vkImage::Texture* atlasTextures;
 
 
+		void create_swapchain();
+		void create_frame_resources();
+		void create_descriptors_set_layouts();
+		void create_pipeline();
+		void make_assets(Scene* scene);
 		void finalize_setup(Scene* scene);
-		
+		void recreate_swapchain(Scene* scene);
+		void cleanup_swapchain();
 	public:
-		PrefabRenderer(PrefabInput input);
+		PrefabRenderer(PrefabInput input, Scene* scene, GLFWwindow* Window);
 		void render(Scene* scene,Camera::Camera camera,float deltaTime, bool renderIMGUI);
 		void InitImGui(GLFWwindow* window);
 	};

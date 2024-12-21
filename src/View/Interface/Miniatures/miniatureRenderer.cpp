@@ -5,21 +5,22 @@
 #include <View/vkMesh/vertexFormat.h>
 #include <View/RenderStructs/projection.h>
 #include <View/vkInit/descrpitors.h>
-
+#include "fileOperations/resources.h"
 
 
 ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
+
 	commandBuffer = input.commandBuffer;
 	depthFormat = input.depthFormat;
 	device = input.device;
 	height = input.heigh;
 	meshes = input.meshes;
-	number_of_images = input.number_of_models;
+	
+	number_of_images = fileOperations::meshesNames.fileNames.size();
 	physicalDevice = input.physicalDevice;
 	imageFormat = input.pictureFormat;
 	queue = input.queue;
 	width = input.width;
-	models = input.models;
 
 
 	vk::Extent2D ext;
@@ -42,7 +43,7 @@ ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 	make_assets();
 
 	render(debugMode);
-	
+
 	
 }
 
@@ -234,7 +235,7 @@ void ThumbRenderer::render(bool debugMode) {
 	vk::ClearValue depthColorValue;
 	depthColorValue.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
 	std::vector<vk::ClearValue> colorVector = { {backgroundColor,depthColorValue} };
-	
+	std::cout << "1" << std::endl;
 	
 	for (int i = 0; i < number_of_images; ++i) {
 		vk::RenderPassBeginInfo renderpassInfo = {};
@@ -249,12 +250,13 @@ void ThumbRenderer::render(bool debugMode) {
 		commandBuffer.beginRenderPass(&renderpassInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 		commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ViewProjectionData), &vpData);
+
 		prepare_scene();
-		uint64_t k = models.hash[models.fullPaths[i]];
+		uint64_t k = fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]];
 		//debugAccess(meshes->firstIndices, meshes->indexCounts, k);
 		int indexCount = meshes->indexCounts.find(k)->second;
 		int firstIndex = meshes->firstIndices.find(k)->second;
-		
+
 		universalTexture->useTexture(commandBuffer, pipelineLayout,0);
 		commandBuffer.drawIndexed(indexCount, 1, firstIndex, 0, startInstance);
 		startInstance++;
@@ -280,7 +282,7 @@ void ThumbRenderer::render(bool debugMode) {
 	commandBuffer.pipelineBarrier(
 		vk::PipelineStageFlagBits::eTopOfPipe, vk::PipelineStageFlagBits::eFragmentShader,
 		vk::DependencyFlags(), {}, {}, barrier);
-	
+
 	}
 
 	try {

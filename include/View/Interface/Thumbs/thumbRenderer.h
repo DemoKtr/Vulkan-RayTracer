@@ -9,13 +9,11 @@ struct ThumbRendererInput {
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
-	fileOperations::filesPaths models;
 	vkMesh::VertexMenagerie* meshes;
 	vk::Format pictureFormat;
 	vk::Format depthFormat;
 	int width;
 	int heigh;
-	int number_of_models;
 
 };
 

@@ -22,7 +22,7 @@
 #include <Scene/ECS/components/components.h>
 #include "View/vkInit/vkAccelerationStructures/AccelerationStructure.h"
 #include "View/vkInit/vkExtensionsFunctions/BufferAdress.h"
-
+#include "fileOperations/resources.h"
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
 	this->mainWindow = window;
@@ -40,7 +40,6 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	create_pipeline();
 
 	finalize_setup(scene);
-
 	make_assets(scene);
 
 
@@ -312,8 +311,8 @@ void GraphicsEngine::create_framebuffers(){
 
 void GraphicsEngine::load_scripts() {
 	std::vector<std::string> ext = { ".cpp", };
-	fileOperations::list_files_in_directory("\\core", cppNames, ext);
-	scripts::compileAllScripts(cppNames,dllNames);
+	fileOperations::list_files_in_directory("\\core",fileOperations::cppNames, ext);
+	scripts::compileAllScripts(fileOperations::cppNames, fileOperations::dllNames);
 }
 
 void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* scene ,uint32_t imageIndex) {
@@ -394,7 +393,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	);
 
 
-	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesNames,texturesNames, meshesManager,swapchainExtent, imageIndex, debugMode);
+	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesManager,swapchainExtent, imageIndex, debugMode);
 
 	try {
 		commandBuffer.end();
@@ -547,20 +546,23 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
 	std::vector<std::string> ext = { ".png",".jpg" };
-	fileOperations::list_files_in_directory("\\core", texturesNames,ext);
+	
+	fileOperations::list_files_in_directory("\\core", fileOperations::texturesNames,ext);
 	
 	
 	
 	info.descriptorPool = textureDescriptorPool;
 	info.layout = textureDescriptorSetLayout;
 	info.filenames = nullptr;
-	info.texturesNames = texturesNames;
+	info.texturesNames = fileOperations::texturesNames;
 	atlasTextures = new vkImage::Texture(info);
 	ext[0] = ".obj";
 	ext[1] = ".fbx";
-	list_files_in_directory("\\core", meshesNames,ext);
+	list_files_in_directory("\\core", fileOperations::meshesNames,ext);
+	
+
 	std::vector<vkMesh::MeshLoader> test;
-	for (std::string path : meshesNames.fullPaths) {
+	for (std::string path : fileOperations::meshesNames.fullPaths) {
 		vkMesh::MeshLoader m(path.c_str());
 		test.push_back(m);
 	}
@@ -568,7 +570,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
-		meshes->consume(meshesNames.hash[m.path], buffer.vertices, buffer.indicies);
+		meshes->consume(fileOperations::meshesNames.hash[m.path], buffer.vertices, buffer.indicies);
 	
 	}
 
@@ -580,16 +582,14 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	finalizationInfo.queue = graphicsQueue;
 	finalizationInfo.commandBuffer = maincommandBuffer;
 	meshes->finalize(finalizationInfo);
-	this->build_accelerationStructures();
+	//this->build_accelerationStructures();
 	//info.texturesNames = texturesNames;
 	info.filenames = str.c_str();
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
 	load_scripts();
-	ScriptsFiels scriptsfiles(cppNames,dllNames);
-	scriptsfiles.scriptsCounter = dllNames.fullPaths.size();
-	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, scriptsfiles, meshesNames ,texturesNames,meshes, swapchainFormat, swapchainFrames[0].depthFormat, meshesNames.fullPaths.size());
-	
+	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, meshes, swapchainFormat, swapchainFrames[0].depthFormat);
+
 
 
 }
@@ -620,7 +620,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
 					
 					if (textureComponent != nullptr) {
-						_frame.modelsData[i].textureID = texturesNames.getIndex(textureComponent->getColorTextureIndex());
+						_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(textureComponent->getColorTextureIndex());
 					}
 					else {
 						_frame.modelsData[i].textureID = 0;

@@ -4,7 +4,7 @@
 #include <Scene/ECS/components/componentFabric.h>
 #include "Scene/ECS/scripts/scriptCompiler.h"
 
-
+#include "fileOperations/resources.h"
 
 
 
@@ -13,13 +13,9 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	vk::Device device,
 	vk::CommandBuffer commandBuffer,
 	vk::Queue queue, 
-	fileOperations::filesPaths models,
-	fileOperations::filesPaths textures,
 	vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
-	vk::Format depthFormat,
-	int modelsNumber
-	) {
+	vk::Format depthFormat) {
 	//vk::Device logicalDevice;
 	//vk::PhysicalDevice physicalDevice;
 	//vk::CommandBuffer commandBuffer;
@@ -35,27 +31,26 @@ void editor::create_miniatures(vk::PhysicalDevice physicalDevice,
 	input.logicalDevice = device;
 	input.commandBuffer = commandBuffer;
 	input.queue = queue;
-	input.models = models;
-	input.textures = textures;
+
 	input.meshes = meshes;
 	input.pictureFormat = pictureFormat;
 	input.depthFormat = depthFormat;
-	input.number_of_models = modelsNumber;
+
+
 	miniatureManager = new vkThumbs::ThumbsManager(input);
 }
 
-editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, ScriptsFiels scripts, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
+editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info, vkMesh::VertexMenagerie* meshes,
 	vk::Format pictureFormat,
-	vk::Format depthFormat,
-	int modelsNumber):scriptsFiles(scripts){
+	vk::Format depthFormat){
 	this->scene = scene;
-	
+
 	this->filesExploresData.baseFolder = path;
 	this->filesExploresData.currentFolder = filesExploresData.baseFolder;
-	
+
 	texture = new vkImage::Texture(info);
+	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue,meshes, pictureFormat, depthFormat);
 	
-	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, models,textures,meshes, pictureFormat, depthFormat,modelsNumber);
 }
 editor::~editor() {
 	delete texture;
@@ -66,7 +61,7 @@ editor::~editor() {
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
@@ -93,7 +88,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	// Wysokoœæ i szerokoœæ ekranu
 	
 
-	vkImGui::render_editor(miniatureManager, filesExploresData, scene->root,selectedObject,selectedComponentType,scene->ecs,models,textures,meshesManager);
+	vkImGui::render_editor(miniatureManager, filesExploresData, scene->root,selectedObject,selectedComponentType,scene->ecs,meshesManager);
 	
 	
 	

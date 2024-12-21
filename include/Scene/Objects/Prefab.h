@@ -22,14 +22,13 @@ namespace vkPrefab {
 
 		void build_glfw_window(glm::ivec2 screenSize, bool debugMode);
 
-		void deserialize(nlohmann::json serialized);
+		void load_from_file(nlohmann::json serialized);
 
 		static void windowCloseCallback(GLFWwindow* window);
 
 		void closeWindow();
 	public:
-		Prefab(PrefabInput input,glm::ivec2 screenSize, bool debugMode);
-		Prefab(PrefabInput input, nlohmann::json serialized,glm::ivec2 screenSize, bool debugMode);
+		Prefab(PrefabInput input, nlohmann::json serialized, bool debugMode);
 		~Prefab();
 		void render();
 		

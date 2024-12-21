@@ -1,10 +1,9 @@
 #include "View/Interface/Thumbs/meshesThumbs.h"
 #include <View/Interface/Thumbs/thumbRenderer.h>
 #include <View/vkInit/descrpitors.h>
-
+#include "fileOperations/resources.h"
 
 vkThumbs::MeshesTumbs::MeshesTumbs(ThumbInput input, MeshesThumbInput meshesInput) : Thumb(input){
-
 
 	make_descrptor_set(meshesInput);
 
@@ -51,12 +50,8 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 	input.meshes = meshesInput.meshes;
 	input.pictureFormat = meshesInput.pictureFormat;
 	input.depthFormat = meshesInput.depthFormat;
-	input.models = meshesInput.models;
 	input.width = meshesInput.width;
 	input.heigh = meshesInput.heigh;
-	input.number_of_models = meshesInput.number_of_models;
-	int modelsCount = meshesInput.number_of_models;
-
 	ThumbRenderer* renderer = new ThumbRenderer(input, true);
 	ThumbRendererOutput images = renderer->get_meshes_images();
 	image = images.image;
@@ -99,7 +94,7 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 		std::cout << "Failed to make sampler." << std::endl;
 	}
 	
-	for (uint32_t i = 0; i < modelsCount; ++i) {
+	for (uint32_t i = 0; i < fileOperations::meshesNames.fileNames.size(); ++i) {
 
 		vk::DescriptorImageInfo imageDescriptorInfo;
 		imageDescriptorInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

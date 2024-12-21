@@ -10,7 +10,7 @@ namespace vkThumbs {
 
 		std::vector<vkImage::Texture*> textures;
 	public:
-		TextureThumbs(ThumbInput input, fileOperations::filesPaths textures);
+		TextureThumbs(ThumbInput input);
 		~TextureThumbs();
 
 		ImTextureID get_texture_icon(int index);

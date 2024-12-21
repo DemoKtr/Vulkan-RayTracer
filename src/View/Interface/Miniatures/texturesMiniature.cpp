@@ -1,6 +1,6 @@
 #include "View/Interface/Thumbs/texturesThumbs.h"
-
-vkThumbs::TextureThumbs::TextureThumbs(ThumbInput input, fileOperations::filesPaths textures) : Thumb(input) {
+#include "fileOperations/resources.h"
+vkThumbs::TextureThumbs::TextureThumbs(ThumbInput input) : Thumb(input) {
 
 	/*struct TextureInputChunk {
 			vk::Device logicalDevice;
@@ -24,7 +24,7 @@ vkThumbs::TextureThumbs::TextureThumbs(ThumbInput input, fileOperations::filesPa
 
 	info.filenames = nullptr;
 
-	for (std::string filename : textures.fullPaths) {
+	for (std::string filename : fileOperations::texturesNames.fullPaths) {
 		info.filenames = filename.c_str();
 		vkImage::Texture* icon = new vkImage::Texture(info);
 		this->textures.push_back(icon);

@@ -10,7 +10,6 @@ namespace vkThumbs {
 		fileOperations::filesPaths models;
 		vk::Format pictureFormat;
 		vk::Format depthFormat;
-		int number_of_models;
 		int width;
 		int heigh;
 	};

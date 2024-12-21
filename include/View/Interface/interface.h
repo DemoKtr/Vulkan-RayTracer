@@ -10,15 +10,6 @@
 #include "View/Interface/ImGuiRenderer/EditorCommands.h"
 
 
-struct ScriptsFiels {
-	fileOperations::filesPaths& cpp;
-	fileOperations::filesPaths& dll;
-	int scriptsCounter{0};
-
-	// Konstruktor inicjalizuj¹cy referencje
-	
-};
-
 
 
 
@@ -55,23 +46,20 @@ class editor {
 		vk::Device device,
 		vk::CommandBuffer commandBuffer,
 		vk::Queue queue,
-		fileOperations::filesPaths models,
-		fileOperations::filesPaths textures,
 		vkMesh::VertexMenagerie* meshes,
 		vk::Format pictureFormat,
-		vk::Format depthFormat,
-		int number_of_models
-		);
-	ScriptsFiels scriptsFiles;
+		vk::Format depthFormat);
+
 	public:
 		
 
-		editor(Scene* scene, std::string path, vkImage::TextureInputChunk info,ScriptsFiels scripts ,fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::VertexMenagerie* meshes,
+		editor(Scene* scene, std::string path,
+			vkImage::TextureInputChunk info,
+			vkMesh::VertexMenagerie* meshes,
 			vk::Format pictureFormat,
-			vk::Format depthFormat,
-			int modelsNumber);
+			vk::Format depthFormat);
 		~editor();
-		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, fileOperations::filesPaths models, fileOperations::filesPaths textures, vkMesh::MeshesManager* meshesManager, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
+		void render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, vkMesh::MeshesManager* meshesManager, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		
 
 };

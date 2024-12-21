@@ -17,7 +17,6 @@ namespace vkThumbs {
 		vkMesh::VertexMenagerie* meshes;
 		vk::Format pictureFormat;
 		vk::Format depthFormat;
-		int number_of_models;
 
 	};
 

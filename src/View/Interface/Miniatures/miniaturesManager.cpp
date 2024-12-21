@@ -1,6 +1,7 @@
 #include "View/Interface/Thumbs/thumbsManager.h"
 #include <View/vkInit/descrpitors.h>
 #include "settings.h"
+#include "fileOperations/resources.h"
 void vkThumbs::ThumbsManager::make_descriptor_layout() {
 	vkInit::descriptorSetLayoutData bindings;
 	bindings.count = 1;
@@ -9,9 +10,7 @@ void vkThumbs::ThumbsManager::make_descriptor_layout() {
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 	descriptorLayout = vkInit::make_descriptor_set_layout(logicalDevice, bindings);
-	descriptorPool = vkInit::make_descriptor_pool(logicalDevice, 10, bindings);
-
- 
+	descriptorPool = vkInit::make_descriptor_pool(logicalDevice,fileOperations::meshesNames.fileNames.size() + fileOperations::texturesNames.fileNames.size() + 15 + 1, bindings);
 }
 
 
@@ -53,14 +52,13 @@ vkThumbs::ThumbsManager::ThumbsManager(ThumbsManagerInput info) {
     meshesInput.meshes = info.meshes;
     meshesInput.pictureFormat = info.pictureFormat;
     meshesInput.depthFormat = info.depthFormat;
-    meshesInput.number_of_models = info.number_of_models;
     meshesInput.models = info.models;
     meshesInput.heigh = vkSettings::thumbHeigh;
     meshesInput.width = vkSettings::thumbWidth;
-
     iconsThums = new IconThumbs(input);
     meshesThumbs = new MeshesTumbs(input,meshesInput);
-    texturesThumbs = new TextureThumbs(input,info.textures);
+    texturesThumbs = new TextureThumbs(input);
+
 
 }
 

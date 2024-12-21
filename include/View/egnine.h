@@ -10,7 +10,7 @@
 #include "View/vkMesh/vertexMenagerie.h"
 #include <View/vkMesh/meshesManager.h>
 #include "View/RenderStructs/projection.h"
-#include "fileOperations/filesFinding.h"
+
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -68,11 +68,7 @@ class GraphicsEngine {
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
-	fileOperations::filesPaths  meshesNames;
-	fileOperations::filesPaths texturesNames;
 
-	fileOperations::filesPaths cppNames;
-	fileOperations::filesPaths dllNames;
 
 	vkMesh::VertexMenagerie* meshes;
 
