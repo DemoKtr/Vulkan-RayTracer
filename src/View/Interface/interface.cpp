@@ -88,34 +88,72 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imgui
 	
 	
 	
-	
-	vk::RenderPassBeginInfo imguiRenderpassInfo = {};
-	imguiRenderpassInfo.renderPass = imguiRenderPass;
-	imguiRenderpassInfo.framebuffer = swapchainFrames[numberOfFrame].imguiFrameBuffer;
-	imguiRenderpassInfo.renderArea.offset.x = 0;
-	imguiRenderpassInfo.renderArea.offset.y = 0;
-	imguiRenderpassInfo.renderArea.extent = swapchainExtent;
-	//vk::ClearValue clearColor = vk::ClearValue(vk::ClearColorValue(std::array<float, 4>{0.0f, 0.0f, 0.0f, 1.0f}));
-	//imguiRenderpassInfo.clearValueCount = 1;
-	//imguiRenderpassInfo.pClearValues = &clearColor;
+	vk::RenderingAttachmentInfoKHR colorAttachment = {};
+	colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfoKHR;
+	colorAttachment.imageView = swapchainFrames[numberOfFrame].mainimageView; // Widok obrazu.
+	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
+	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	//colorAttachment.clearValue.color = vk::ClearColorValue(color);
 
-	// Rozpocznij render pass
-	commandBuffer.beginRenderPass(imguiRenderpassInfo, vk::SubpassContents::eInline);
+
+
+
+	vk::RenderingInfoKHR renderingInfo = {};
+	renderingInfo.sType = vk::StructureType::eRenderingInfoKHR;
+	renderingInfo.renderArea.extent.width = swapchainExtent.width;
+	renderingInfo.renderArea.extent.height = swapchainExtent.height;
+	renderingInfo.layerCount = 1;
+	renderingInfo.colorAttachmentCount = 1;
+	renderingInfo.pColorAttachments = &colorAttachment;
+	renderingInfo.pDepthAttachment = nullptr;
+
+
+	
+
+	// Rozpoczêcie renderowania
+	try {
+		commandBuffer.beginRendering(&renderingInfo);
+
+	}
+	catch (vk::SystemError err) {
+		std::cerr << "Failed to begin rendering: " << err.what() << std::endl;
+		return;
+	}
+	
 
 	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-	// Zakoñcz render pass
-	commandBuffer.endRenderPass();
-	/*
-	try {
-		commandBuffer.end();
-	}
-	catch (vk::SystemError err) {
 
-		if (debugMode) {
-			std::cout << "failed to record command buffer!" << std::endl;
-		}
-	}*/
+
+	commandBuffer.endRendering();
+
+	vk::ImageMemoryBarrier barrier = {};
+	barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal; // obecny layout obrazu, np. undefined po stworzeniu
+	barrier.newLayout = vk::ImageLayout::ePresentSrcKHR; // nowy layout
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = swapchainFrames[numberOfFrame].mainimage;
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+
+	barrier.srcAccessMask = {}; 
+	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eColorAttachmentRead;
+
+	// U¿yj vkCmdPipelineBarrier, aby zrealizowaæ barierê w command buffer
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTopOfPipe, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
+		vk::PipelineStageFlagBits::eColorAttachmentOutput, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
+		{}, // flagi bariery
+		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
+		barrier // wskaŸnik do bariery obrazu
+	);
+
+
 }
 
 

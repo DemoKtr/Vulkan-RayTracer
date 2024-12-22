@@ -291,7 +291,13 @@ void GraphicsEngine::InitImGui(GLFWwindow* window){
 	init_info.MinImageCount = 2; // minimalna liczba obrazów ;
 	init_info.ImageCount = swapchainFrames.size(); // liczba obrazów w swap chain ;
 	init_info.CheckVkResultFn = nullptr; // Mo¿esz przypisaæ swoj¹ funkcjê do obs³ugi b³êdów
-	init_info.RenderPass = imguiRenderPass;
+	init_info.RenderPass = nullptr;
+	init_info.UseDynamicRendering = VK_TRUE;
+	init_info.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
+	VkFormat format = VkFormat(swapchainFormat);
+	init_info.PipelineRenderingCreateInfo.pColorAttachmentFormats = &format;
+	init_info.PipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+
 	ImGui_ImplVulkan_Init(&init_info);
 
 	// Przyk³ad tworzenia deskryptora dla ImGui
@@ -332,7 +338,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	// Sprawdzenie rozpoczêcia nagrywania command buffer
 	try {
 		commandBuffer.begin(beginInfo);
-		std::cout << "Command buffer recording started successfully.\n";
+
 	}
 	catch (vk::SystemError err) {
 		std::cerr << "Failed to begin recording command buffer: " << err.what() << std::endl;
@@ -470,33 +476,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 
 	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesManager,swapchainExtent, imageIndex, debugMode);
 
-	/*
-	vk::ImageMemoryBarrier afterdepthBarrier = {};
-	afterdepthBarrier.sType = vk::StructureType::eImageMemoryBarrier;
-	afterdepthBarrier.pNext = nullptr;
-	afterdepthBarrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite; // Zapis g³êbokoœci
-	afterdepthBarrier.dstAccessMask = {};
-	afterdepthBarrier.oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal; // Poprzedni layout
-	afterdepthBarrier.newLayout = vk::ImageLayout::eUndefined; // Layout do zresetowania
-	afterdepthBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	afterdepthBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	afterdepthBarrier.image = swapchainFrames[imageIndex].depthBuffer; // Uchwyt do obrazu g³êbokoœci
-	afterdepthBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
-	afterdepthBarrier.subresourceRange.baseMipLevel = 0;
-	afterdepthBarrier.subresourceRange.levelCount = 1;
-	afterdepthBarrier.subresourceRange.baseArrayLayer = 0;
-	afterdepthBarrier.subresourceRange.layerCount = 1;
-
-	// Wstawienie bariery w komendzie renderowania
-
-	commandBuffer.pipelineBarrier(
-		vk::PipelineStageFlagBits::eLateFragmentTests, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
-		vk::PipelineStageFlagBits::eTopOfPipe, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
-		{}, // flagi bariery
-		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
-		afterdepthBarrier // wskaŸnik do bariery obrazu
-	);
-	*/
+	
 	try {
 		commandBuffer.end();
 	}
