@@ -86,7 +86,7 @@ vk::Instance vkInit::make_instance(bool debugMode, const char* appName) {
 		version, //engine version
 		version //api Version
 	);
-
+	appInfo.setApiVersion(VK_API_VERSION_1_3);
 	uint32_t glfwExtensionCount{ 0 };
 	const char** glfwExtensions;
 	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -95,6 +95,7 @@ vk::Instance vkInit::make_instance(bool debugMode, const char* appName) {
 	if (debugMode) {
 		extensions.push_back("VK_EXT_debug_utils");
 		extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 		//extensions.push_back(VK_KHR_GET_DISPLAY_PROPERTIES_2_EXTENSION_NAME);
 	}
 

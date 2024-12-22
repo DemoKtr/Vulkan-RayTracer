@@ -149,6 +149,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkInit/vkAccelerationStructures/AccelerationStructure.cpp"
     "src/View/vkInit/vkExtensionsFunctions/BufferAdress.cpp"
     "src/View/vkResources/resources.cpp"
+    "src/View/vkInit/vkPipeline/pipelineCache.cpp"
 
     )
 

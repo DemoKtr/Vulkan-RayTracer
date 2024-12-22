@@ -64,18 +64,12 @@ class GraphicsEngine {
 	vk::DescriptorPool textureDescriptorPool;
 	vk::DescriptorSetLayout textureDescriptorSetLayout;
 
-
+	vk::RenderPass postprocessRenderPass;
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
 
 
-	/// <summary>
-	///  Pipelines
-	/// </summary>
-	vk::Pipeline postprocessPipeline;
-	vk::PipelineLayout postprocessPipelineLayout;
-	vk::RenderPass postprocessRenderPass;
 	
 	
 
@@ -97,7 +91,7 @@ class GraphicsEngine {
 	void record_draw_command(vk::CommandBuffer commandBuffer,Scene* scene,uint32_t imageIndex);
 
 	void prepare_scene(vk::CommandBuffer commandBuffer);
-	void render_objects(vk::CommandBuffer commandBuffer, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount);
+	void render_objects(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount);
 
 	void prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera);
 

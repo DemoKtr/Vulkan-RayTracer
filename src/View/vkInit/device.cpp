@@ -153,6 +153,8 @@ vk::Device vkInit::create_logical_device(vk::PhysicalDevice physicalDevice, vk::
 	deviceFeatures.geometryShader = VK_TRUE;
 	deviceFeatures.sampleRateShading = VK_TRUE;
 	
+	
+	
 	//deviceFeatures.samplerAnisotropy = true;
 	std::vector<const char*> enabledLayers;
 	if (debugMode) {
@@ -161,9 +163,16 @@ vk::Device vkInit::create_logical_device(vk::PhysicalDevice physicalDevice, vk::
 	vk::PhysicalDeviceBufferAddressFeaturesEXT bufferDeviceAddressFeatures;
 	bufferDeviceAddressFeatures.sType = vk::StructureType::ePhysicalDeviceBufferDeviceAddressFeatures;
 	bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+
+
+	vk::PhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeatures;
+	dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+	dynamicRenderingFeatures.sType = vk::StructureType::ePhysicalDeviceDynamicRenderingFeaturesKHR;
+	dynamicRenderingFeatures.pNext = &bufferDeviceAddressFeatures;
+
 	
 	vk::PhysicalDeviceFeatures2 deviceFeatures2;
-	deviceFeatures2.pNext = &bufferDeviceAddressFeatures;
+	deviceFeatures2.pNext = &dynamicRenderingFeatures;
 	deviceFeatures2.sType = vk::StructureType::ePhysicalDeviceFeatures2;
 
 	vk::DeviceCreateInfo deviceInfo = vk::DeviceCreateInfo(vk::DeviceCreateFlags(),
@@ -172,7 +181,7 @@ vk::Device vkInit::create_logical_device(vk::PhysicalDevice physicalDevice, vk::
 		deviceExtensions.size(), deviceExtensions.data(),
 		NULL);
 
-		deviceInfo.pNext = &deviceFeatures2;
+		deviceInfo.pNext = &dynamicRenderingFeatures;
 
 
 		

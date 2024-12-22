@@ -12,7 +12,7 @@ vkInit::PipelineBuilder::PipelineBuilder(vk::Device device) {
 	configure_input_assembly();
 	make_rasterizer_info();
 	configure_multisampling();
-	configure_color_blending();
+	
 	pipelineInfo.basePipelineHandle = nullptr;
 }
 
@@ -64,6 +64,8 @@ void vkInit::PipelineBuilder::set_renderpass(vk::RenderPass renderpass) {
 
 vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swapchainFormat,vk::Format depthFormat){
 	//Vertex Input
+	configure_color_blending();
+
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 
 	//Input Assembly
@@ -95,9 +97,19 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swap
 	pipelineInfo.layout = pipelineLayout;
 
 
+	if (dynamicRendering) {
+		vk::PipelineRenderingCreateInfoKHR pipeline_rendering_create_info; 
+		pipeline_rendering_create_info.sType = vk::StructureType::ePipelineRenderingCreateInfoKHR,
+		pipeline_rendering_create_info.colorAttachmentCount = 1,
+		pipeline_rendering_create_info.pColorAttachmentFormats = &swapchainFormat;
+		pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eD32Sfloat;
+		
+		pipelineInfo.renderPass = nullptr;
+		pipelineInfo.pNext = &pipeline_rendering_create_info;
+	}
+		
+	else pipelineInfo.renderPass = renderPass;
 	
-	pipelineInfo.renderPass = renderPass;
-	pipelineInfo.subpass = 0;
 
 	//Make the Pipeline
 	std::cout<<"Create Graphics Pipeline"<<std::endl;
@@ -222,15 +234,22 @@ void vkInit::PipelineBuilder::configure_multisampling() {
 }
 
 void vkInit::PipelineBuilder::configure_color_blending() {
-
+	
 	colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	colorBlendAttachment.blendEnable = VK_FALSE;
 
 	colorBlending.flags = vk::PipelineColorBlendStateCreateFlags();
 	colorBlending.logicOpEnable = VK_FALSE;
 	colorBlending.logicOp = vk::LogicOp::eCopy;
-	colorBlending.attachmentCount = 1;
-	colorBlending.pAttachments = &colorBlendAttachment;
+	if (dynamicRendering) {
+		colorBlending.attachmentCount = 1;
+		colorBlending.pAttachments = &colorBlendAttachment;
+	}
+	else {
+		colorBlending.attachmentCount = 1;
+		colorBlending.pAttachments = &colorBlendAttachment;
+	}
+	
 	colorBlending.blendConstants[0] = 0.0f;
 	colorBlending.blendConstants[1] = 0.0f;
 	colorBlending.blendConstants[2] = 0.0f;

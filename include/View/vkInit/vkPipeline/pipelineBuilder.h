@@ -10,6 +10,7 @@ namespace vkInit {
 	class PipelineBuilder {
 		
 	public:
+		bool dynamicRendering = false;
 		PipelineBuilder(vk::Device device);
 		~PipelineBuilder();
 

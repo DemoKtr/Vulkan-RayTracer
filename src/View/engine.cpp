@@ -37,6 +37,10 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	make_instance();
 	choice_device();
 
+	vkResources::scenePipelines = new vkUtil::PipelineCache(device);
+	vkResources::editorPipelines = new vkUtil::PipelineCache(device);
+
+
 	create_descriptor_set_layouts();
 
 	create_pipeline();
@@ -53,11 +57,9 @@ GraphicsEngine::~GraphicsEngine() {
 	if (debugMode) {
 		std::cout << "End!\n";
 	}
-	
-	device.destroyRenderPass(postprocessRenderPass);
+	delete vkResources::scenePipelines;
+	delete vkResources::editorPipelines;
 	device.destroyRenderPass(imguiRenderPass);
-	device.destroyPipeline(postprocessPipeline);
-	device.destroyPipelineLayout(postprocessPipelineLayout);
 	delete sceneEditor;
 	delete vkResources::meshes;
 	delete meshesManager;
@@ -113,6 +115,8 @@ void GraphicsEngine::create_frame_resources(Scene* scene) {
 
 void GraphicsEngine::create_pipeline() {
 
+	vkUtil::PipelineCacheChunk pipeline;
+	pipeline.type = 0;
 	postprocessRenderPass = vkUtil::create_postprocess_renderpass(device, swapchainFormat, swapchainFrames[0].depthFormat);
 
 	vkInit::PipelineBuilder pipelineBuilder(device);
@@ -125,17 +129,19 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.specify_vertex_shader("resources/shaders/vert.spv");
 	pipelineBuilder.specify_fragment_shader("resources/shaders/frag.spv");
 	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
-	pipelineBuilder.set_renderpass(postprocessRenderPass);
+	//pipelineBuilder.set_renderpass(pipeline.renderPass);
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
 	pipelineBuilder.use_depth_test(true);
 	pipelineBuilder.use_projection_matrix(true);
-
+	pipelineBuilder.dynamicRendering = true;
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(swapchainFormat,swapchainFrames[0].depthFormat);
 
-	postprocessPipelineLayout = output.layout;
-	postprocessPipeline = output.pipeline;
+	pipeline.pipelineLayout = output.layout;
+	pipeline.pipeline = output.pipeline;
+
+	vkResources::scenePipelines->addPipeline("Unlit Pipeline", pipeline);
 
 	pipelineBuilder.reset();
 }
@@ -301,6 +307,7 @@ void GraphicsEngine::finalize_setup(Scene* scene){
 }
 
 void GraphicsEngine::create_framebuffers(){
+	
 	vkInit::framebufferInput frameBufferInput;
 	frameBufferInput.device = device;
 	frameBufferInput.renderpass = imguiRenderPass;
@@ -309,6 +316,7 @@ void GraphicsEngine::create_framebuffers(){
 	frameBufferInput.renderpass = postprocessRenderPass;
 	frameBufferInput.swapchainExtent = swapchainExtent;
 	vkInit::make_postprocess_framebuffer(frameBufferInput,swapchainFrames, debugMode);
+	
 }
 
 void GraphicsEngine::load_scripts() {
@@ -318,37 +326,101 @@ void GraphicsEngine::load_scripts() {
 }
 
 void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* scene ,uint32_t imageIndex) {
+	
 	vk::CommandBufferBeginInfo beginInfo = {};
 
+	// Sprawdzenie rozpoczêcia nagrywania command buffer
 	try {
 		commandBuffer.begin(beginInfo);
+		std::cout << "Command buffer recording started successfully.\n";
 	}
 	catch (vk::SystemError err) {
-		if (debugMode) {
-			std::cout << "Failed to begin recording command buffer!" << std::endl;
-		}
+		std::cerr << "Failed to begin recording command buffer: " << err.what() << std::endl;
+		return;
+	}
+	vk::ImageMemoryBarrier depthBarrier = {};
+	depthBarrier.oldLayout = vk::ImageLayout::eUndefined; // obecny layout obrazu, np. undefined po stworzeniu
+	depthBarrier.newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal; // nowy layout
+	depthBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	depthBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	depthBarrier.image = swapchainFrames[imageIndex].depthBuffer;
+	depthBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth; // zakres aspektu obrazu (kolor)
+	depthBarrier.subresourceRange.baseMipLevel = 0;
+	depthBarrier.subresourceRange.levelCount = 1;
+	depthBarrier.subresourceRange.baseArrayLayer = 0;
+	depthBarrier.subresourceRange.layerCount = 1;
+	
+	// Okreœl dostêp pamiêci, aby przejœæ z poprzedniego do nowego layoutu
+	depthBarrier.srcAccessMask = {}; // Brak poprzednich operacji do synchronizacji
+	depthBarrier.dstAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentRead | vk::AccessFlagBits::eDepthStencilAttachmentWrite; // Docelowy dostêp, np. pisanie do attachmentu koloru
+
+	// U¿yj vkCmdPipelineBarrier, aby zrealizowaæ barierê w command buffer
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTopOfPipe, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
+		vk::PipelineStageFlagBits::eEarlyFragmentTests, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
+		{}, // flagi bariery
+		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
+		depthBarrier // wskaŸnik do bariery obrazu
+	);
+
+
+
+
+
+	// Debugging dla kolorów i za³¹czników
+	std::array<float, 4> color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	vk::RenderingAttachmentInfoKHR colorAttachment = {};
+	colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
+	colorAttachment.imageView = swapchainFrames[imageIndex].mainimageView; // Widok obrazu.
+	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	colorAttachment.clearValue.color = vk::ClearColorValue(color);
+
+
+
+	vk::RenderingAttachmentInfoKHR depthAttachment = {};
+	depthAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
+	depthAttachment.imageView = swapchainFrames[imageIndex].depthBufferView; // Widok obrazu dla g³êbi.
+	depthAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	depthAttachment.loadOp = vk::AttachmentLoadOp::eClear;
+	depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+	depthAttachment.clearValue.depthStencil.depth = 1.0f;
+	depthAttachment.clearValue.depthStencil.stencil = 0.0f;
+
+	// Debugging attachmentów g³êbi
+
+
+	vk::RenderingInfoKHR renderingInfo = {};
+	renderingInfo.sType = vk::StructureType::eRenderingInfoKHR;
+	renderingInfo.renderArea.extent.width = swapchainExtent.width;
+	renderingInfo.renderArea.extent.height = swapchainExtent.height;
+	renderingInfo.layerCount = 1;
+	renderingInfo.colorAttachmentCount = 1;
+	renderingInfo.pColorAttachments = &colorAttachment;
+	renderingInfo.pDepthAttachment = &depthAttachment;
+	
+
+
+
+	// Pipeline i layout
+	vkUtil::PipelineCacheChunk pipelineInfo = vkResources::scenePipelines->getPipeline("Unlit Pipeline");
+;
+
+	// Rozpoczêcie renderowania
+	try {
+		commandBuffer.beginRendering(&renderingInfo);
+	
+	}
+	catch (vk::SystemError err) {
+		std::cerr << "Failed to begin rendering: " << err.what() << std::endl;
+		return;
 	}
 
-	vk::ClearValue backgroundColor;
-	std::array<float, 4> color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	backgroundColor.color = vk::ClearColorValue(color);
-	vk::ClearValue depthColorValue;
-	depthColorValue.depthStencil = vk::ClearDepthStencilValue({ 1.0f, 0 });
-	std::vector<vk::ClearValue> colorVector = { {backgroundColor,depthColorValue} };
-	vk::RenderPassBeginInfo postProcessGraphicRenderPass = {};
-	postProcessGraphicRenderPass.renderPass = postprocessRenderPass;
-	postProcessGraphicRenderPass.framebuffer = swapchainFrames[imageIndex].postProcessFrameBuffer;
-	postProcessGraphicRenderPass.renderArea.offset.x = 0;
-	postProcessGraphicRenderPass.renderArea.offset.y = 0;
-	postProcessGraphicRenderPass.renderArea.extent = swapchainExtent;
-	postProcessGraphicRenderPass.clearValueCount = colorVector.size();
-	postProcessGraphicRenderPass.pClearValues = colorVector.data();
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipeline);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipelineLayout, 0, swapchainFrames[imageIndex].postprocessDescriptorSet, nullptr);
+	commandBuffer.pushConstants(pipelineInfo.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ProjectionData), &projection);
 
-	commandBuffer.beginRenderPass(&postProcessGraphicRenderPass, vk::SubpassContents::eInline);
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, postprocessPipeline);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, postprocessPipelineLayout, 0, swapchainFrames[imageIndex].postprocessDescriptorSet, nullptr);
-	commandBuffer.pushConstants(postprocessPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ProjectionData), &projection);
-	
 	prepare_scene(commandBuffer);
 	
 	uint32_t startInstance = 0;
@@ -361,11 +433,13 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 		for (vkMesh::MeshManagerData data : meshDataVector) {
 			if (data.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(data.sceneObject->id))++k;
 		}
-		render_objects(commandBuffer, key, startInstance, k);
+		render_objects(commandBuffer, pipelineInfo.pipelineLayout,key, startInstance, k);
 	}
 
 	
-	commandBuffer.endRenderPass();
+	//commandBuffer.endRenderPass();
+
+	commandBuffer.endRendering();
 
 	// Przygotowanie ImageMemoryBarrier do zmiany layoutu na VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 	vk::ImageMemoryBarrier barrier = {};
@@ -374,7 +448,6 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = swapchainFrames[imageIndex].mainimage;
-		; // uchwyt do obrazu, który chcesz zaktualizowaæ
 	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
 	barrier.subresourceRange.baseMipLevel = 0;
 	barrier.subresourceRange.levelCount = 1;
@@ -397,6 +470,33 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 
 	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesManager,swapchainExtent, imageIndex, debugMode);
 
+	/*
+	vk::ImageMemoryBarrier afterdepthBarrier = {};
+	afterdepthBarrier.sType = vk::StructureType::eImageMemoryBarrier;
+	afterdepthBarrier.pNext = nullptr;
+	afterdepthBarrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite; // Zapis g³êbokoœci
+	afterdepthBarrier.dstAccessMask = {};
+	afterdepthBarrier.oldLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal; // Poprzedni layout
+	afterdepthBarrier.newLayout = vk::ImageLayout::eUndefined; // Layout do zresetowania
+	afterdepthBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	afterdepthBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	afterdepthBarrier.image = swapchainFrames[imageIndex].depthBuffer; // Uchwyt do obrazu g³êbokoœci
+	afterdepthBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+	afterdepthBarrier.subresourceRange.baseMipLevel = 0;
+	afterdepthBarrier.subresourceRange.levelCount = 1;
+	afterdepthBarrier.subresourceRange.baseArrayLayer = 0;
+	afterdepthBarrier.subresourceRange.layerCount = 1;
+
+	// Wstawienie bariery w komendzie renderowania
+
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eLateFragmentTests, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
+		vk::PipelineStageFlagBits::eTopOfPipe, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
+		{}, // flagi bariery
+		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
+		afterdepthBarrier // wskaŸnik do bariery obrazu
+	);
+	*/
 	try {
 		commandBuffer.end();
 	}
@@ -417,14 +517,14 @@ void GraphicsEngine::prepare_scene(vk::CommandBuffer commandBuffer) {
 
 }
 
-void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount) {
+void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer,vk::PipelineLayout pipelineLayout ,uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount) {
 
 	
 	int indexCount = vkResources::meshes->indexCounts.find(objectType)->second;
 	int firstIndex = vkResources::meshes->firstIndices.find(objectType)->second;
 
 
-	vkResources::atlasTextures->useTexture(commandBuffer, postprocessPipelineLayout);
+	vkResources::atlasTextures->useTexture(commandBuffer, pipelineLayout);
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
 
 	startInstance += instanceCount;
