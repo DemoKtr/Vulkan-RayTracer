@@ -6,6 +6,7 @@
 #include <Scene/ECS/components/components.h>
 #include <Scene/ECS/components/componentFabric.h>
 #include "View/Interface/ImGuiRenderer/ComponentsFunctions.h"
+#include "Scene/Objects/PrefabManager.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/euler_angles.hpp>
 
@@ -24,8 +25,14 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	if (ImGui::BeginMainMenuBar()) {
 		vkSettings::menuHeight = ImGui::GetWindowHeight();
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("Create")) {
-				// Akcja Create
+			if (ImGui::BeginMenu("Create")) {
+				if (ImGui::MenuItem("Prefab")) {
+					rmb_click_file_explorer_render(filesExploresData);
+				}
+				if (ImGui::MenuItem("Script")) {
+					// Akcja stworz plik script
+				}
+				ImGui::EndMenu();
 			}
 
 			// Submenu dla "Open"
@@ -103,7 +110,7 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	ImGui::SetNextWindowPos(bottomPanelPos); // Pozycja dolnego panelu
 	ImGui::SetNextWindowSize(bottomPanelSize); // Rozmiar dolnego panelu
 	ImGui::Begin("Bottom Panel", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
-
+	
 	// Przyciski w dolnym panelu
 	ImGui::BeginChild("Header", ImVec2(0, 18), false, ImGuiWindowFlags_NoScrollWithMouse);
 	if (ImGui::Button("Project")) {
@@ -116,14 +123,19 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	ImGui::EndChild();
 
 	ImGui::BeginChild("Content", ImVec2(0, 0), true); // Zawartość przewijalna
+
+	
 	if (vkSettings::renderConsole) {
 		
 		render_console();
 
 	}
 	else {
+		
 		render_file_explorator(miniatureManager, filesExploresData);
+		
 	}
+	
 	ImGui::EndChild();
 	
 	// Zaktualizowanie zmiennej wysokości dolnego panelu
@@ -273,10 +285,11 @@ void vkImGui::render_file_explorator(vkThumbs::ThumbsManager* miniatureManager, 
 					}
 
 				}
-				ImGui::EndDragDropTarget(); // Upewnij siê, ¿e to jest pox
+				
+				
 			}
 
-
+			
 			ImGui::PopID();
 		}
 }
@@ -664,6 +677,12 @@ void vkImGui::rmb_click_render(SceneObject* root, ecs::ECS* ecs, vkMesh::MeshesM
 		}
 		ImGui::EndPopup(); // Zamknięcie popupu "ContextMenu"
 	}
+}
+
+void vkImGui::rmb_click_file_explorer_render( vkImGui::FilesExploresData& filesExploresData) {
+			vkPrefab::PrefabManager& prefabManager = vkPrefab::PrefabManager::getInstance();
+			prefabManager.createPrefab(true);
+
 }
 
 

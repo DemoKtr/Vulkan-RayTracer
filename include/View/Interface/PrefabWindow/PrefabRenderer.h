@@ -11,24 +11,7 @@
 
 
 namespace vkPrefab {
-	struct PrefabInput {
-		glm::ivec2 screenSize;
-		vk::Instance instance;
-		//physical device
-		vk::PhysicalDevice physicalDevice;
-		//logical device
-		vk::Device device;
-		//queues
-		vk::Queue graphicsQueue;
-		vk::Queue presentQueue;
-		vk::Queue computeQueue;
-		vk::Queue transferQueue;
-
-		vkMesh::VertexMenagerie* meshes;
-
-		vkImage::Texture* atlasTextures;
-		
-	};
+	
 	class PrefabRenderer {
 
 		glm::ivec2 screenSize;
@@ -61,21 +44,38 @@ namespace vkPrefab {
 		vk::DescriptorPool imguiDescriptorPool;
 
 		vkMesh::MeshesManager* meshesManager;
-		vkMesh::VertexMenagerie* meshes;
-		vkImage::Texture* atlasTextures;
+		
+
+		vk::DescriptorSetLayout MVPDescriptorSetLayout;
+		vk::DescriptorSetLayout textureDescriptorSetLayout;
+
+
+		vk::DescriptorPool MVPDescriptorPool;
+
+		vk::CommandBuffer maincommandBuffer;
+		vk::CommandPool imguiCommandPool;
+		vk::CommandPool CommandPool;
 
 
 		void create_swapchain();
-		void create_frame_resources();
+		void create_frame_resources(Scene* scene);
 		void create_descriptors_set_layouts();
 		void create_pipeline();
 		void make_assets(Scene* scene);
 		void finalize_setup(Scene* scene);
 		void recreate_swapchain(Scene* scene);
 		void cleanup_swapchain();
+		void create_frame_command_buffer();
+
+		void prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera);
+
+		void record_draw_command(vk::CommandBuffer commandBuffer, Scene* scene, uint32_t imageIndex);
+
+		void prepare_scene(vk::CommandBuffer commandBuffer);
+		void render_objects(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount);
 	public:
-		PrefabRenderer(PrefabInput input, Scene* scene, GLFWwindow* Window);
-		void render(Scene* scene,Camera::Camera camera,float deltaTime, bool renderIMGUI);
+		PrefabRenderer(Scene* scene, GLFWwindow* Window);
+		void render(Scene* scene,Camera::Camera camera,float deltaTime);
 		void InitImGui(GLFWwindow* window);
 	};
 }

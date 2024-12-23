@@ -54,14 +54,10 @@ namespace vkUtil {
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
 
-		
-
-
 		vk::CommandBuffer commandBuffer;
 		vk::CommandBuffer imguiCommandBuffer;
 		vk::CommandBuffer postprocessCommandBuffer;
-		vk::Framebuffer imguiFrameBuffer;
-		vk::Framebuffer postProcessFrameBuffer;
+
 
 		//Sync objects
 		vk::Semaphore imageAvailable, renderFinished, computeFinished;

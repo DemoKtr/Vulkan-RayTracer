@@ -6,7 +6,6 @@ namespace vkUtil {
 
     struct PipelineCacheChunk {
         vk::Pipeline pipeline;
-        vk::RenderPass renderPass;
         vk::PipelineLayout pipelineLayout;
         int type = 0;
         // 0 - rendering scene

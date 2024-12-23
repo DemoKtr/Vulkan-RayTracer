@@ -137,6 +137,8 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/ECS/scripts/scriptInterface.cpp"
     "src/Scene/ECS/scripts/Script.cpp"
     "src/Scene/Objects/Prefab.cpp"
+    "src/Scene/Objects/PrefabManager.cpp"
+    "src/Scene/Objects/PrefabResources.cpp"
     "src/View/Interface/PrefabWindow/PrefabEditor.cpp"
     "src/View/Interface/PrefabWindow/PrefabRenderer.cpp"
     "src/View/Interface/ImGuiRenderer/EditorCommands.cpp"

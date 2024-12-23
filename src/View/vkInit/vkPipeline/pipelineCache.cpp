@@ -30,7 +30,6 @@ vkUtil::PipelineCache::~PipelineCache() {
     for (auto& pair : pipelines) {
         device.destroyPipeline(pair.second.pipeline);
         device.destroyPipelineLayout(pair.second.pipelineLayout);
-        device.destroyRenderPass(pair.second.renderPass);
     }
    
 }

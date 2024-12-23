@@ -24,6 +24,7 @@
 #include "View/vkInit/vkExtensionsFunctions/BufferAdress.h"
 #include "fileOperations/resources.h"
 #include "View/vkResources/resources.h"
+#include "Scene/Objects/PrefabResources.h"
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -48,7 +49,14 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	finalize_setup(scene);
 	make_assets(scene);
 
-
+	vkPrefab::data.physicalDevice = physicalDevice;
+	vkPrefab::data.device = this->device;
+	vkPrefab::data.instance = this->instance;
+	vkPrefab::data.screenSize = this->screenSize;
+	vkPrefab::data.graphicsQueue = this->graphicsQueue;
+	vkPrefab::data.presentQueue = this->presentQueue;
+	vkPrefab::data.computeQueue = this->computeQueue;
+	
 }
 
 GraphicsEngine::~GraphicsEngine() {
@@ -59,7 +67,7 @@ GraphicsEngine::~GraphicsEngine() {
 	}
 	delete vkResources::scenePipelines;
 	delete vkResources::editorPipelines;
-	device.destroyRenderPass(imguiRenderPass);
+
 	delete sceneEditor;
 	delete vkResources::meshes;
 	delete meshesManager;
@@ -117,7 +125,6 @@ void GraphicsEngine::create_pipeline() {
 
 	vkUtil::PipelineCacheChunk pipeline;
 	pipeline.type = 0;
-	postprocessRenderPass = vkUtil::create_postprocess_renderpass(device, swapchainFormat, swapchainFrames[0].depthFormat);
 
 	vkInit::PipelineBuilder pipelineBuilder(device);
 
@@ -129,7 +136,6 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.specify_vertex_shader("resources/shaders/vert.spv");
 	pipelineBuilder.specify_fragment_shader("resources/shaders/frag.spv");
 	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
-	//pipelineBuilder.set_renderpass(pipeline.renderPass);
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
@@ -300,30 +306,15 @@ void GraphicsEngine::InitImGui(GLFWwindow* window){
 
 	ImGui_ImplVulkan_Init(&init_info);
 
-	// Przyk³ad tworzenia deskryptora dla ImGui
-	//ImGui_ImplVulkan_CreateFontsTexture(vkCommandBuffer);
 	
 }
 
 void GraphicsEngine::finalize_setup(Scene* scene){
-	imguiRenderPass = vkUtil::create_imgui_renderpass(device, swapchainFormat);
-	create_framebuffers();
 	create_frame_command_buffer();
 	create_frame_resources(scene);
 }
 
-void GraphicsEngine::create_framebuffers(){
-	
-	vkInit::framebufferInput frameBufferInput;
-	frameBufferInput.device = device;
-	frameBufferInput.renderpass = imguiRenderPass;
-	frameBufferInput.swapchainExtent = swapchainExtent;
-	vkInit::make_framebuffers(frameBufferInput, swapchainFrames, debugMode);
-	frameBufferInput.renderpass = postprocessRenderPass;
-	frameBufferInput.swapchainExtent = swapchainExtent;
-	vkInit::make_postprocess_framebuffer(frameBufferInput,swapchainFrames, debugMode);
-	
-}
+
 
 void GraphicsEngine::load_scripts() {
 	std::vector<std::string> ext = { ".cpp", };
@@ -474,7 +465,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	);
 
 
-	sceneEditor->render_editor(commandBuffer, imguiRenderPass, swapchainFrames, meshesManager,swapchainExtent, imageIndex, debugMode);
+	sceneEditor->render_editor(commandBuffer, swapchainFrames, meshesManager,swapchainExtent, imageIndex, debugMode);
 
 	
 	try {
@@ -569,7 +560,10 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 	vk::Semaphore signalSemaphores[] = { swapchainFrames[frameNumber].renderFinished };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
+	if (prefabsManager.getActiveWindowCount() > 0) {
+		prefabsManager.update(deltaTime); // Aktualizujemy mened¿era
 
+	}
 	try {
 		graphicsQueue.submit(submitInfo, swapchainFrames[frameNumber].inFlight);
 	}
@@ -601,6 +595,7 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 		recreate_swapchain(scene);
 		return;
 	}
+	
 
 	frameNumber = (frameNumber + 1) % maxFramesInFlight;
 	}
@@ -713,29 +708,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 			}
 		}
 	}
-	/*
-	std::cout << "Jestem macierzem obiektu 0:" << std::endl;
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			std::cout << _frame.modelsData[1].model[i][j] << "  ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << "Jestem macierzem obiektu 1:" << std::endl;
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			std::cout << _frame.modelsData[1].model[i][j] <<"  ";
-		}
-		std::cout << std::endl;
-	}
-	std::cout << "Jestem macierzem obiektu 2:" << std::endl;
-	for (int i = 0; i < 4; ++i) {
-		for (int j = 0; j < 4; ++j) {
-			std::cout << _frame.modelsData[2].model[i][j] << "  ";
-		}
-		std::cout << std::endl;
-	}
-	*/
+
 	
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));

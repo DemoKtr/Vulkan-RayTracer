@@ -20,6 +20,8 @@ namespace vkPrefab {
 		Camera::Camera camera;
 		PrefabRenderer* renderer;
 
+		bool isClose = false;
+
 		void build_glfw_window(glm::ivec2 screenSize, bool debugMode);
 
 		void load_from_file(nlohmann::json serialized);
@@ -28,10 +30,11 @@ namespace vkPrefab {
 
 		void closeWindow();
 	public:
-		Prefab(PrefabInput input, nlohmann::json serialized, bool debugMode);
+		Prefab(nlohmann::json serialized, bool debugMode);
+		Prefab(bool debugMode);
 		~Prefab();
-		void render();
-		
+		void render(float deltaTime);
+		bool isClosed();
 
 
 

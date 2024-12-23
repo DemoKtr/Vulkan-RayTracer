@@ -10,6 +10,7 @@
 #include "View/vkMesh/vertexMenagerie.h"
 #include <View/vkMesh/meshesManager.h>
 #include "View/RenderStructs/projection.h"
+#include "Scene/Objects/PrefabManager.h"
 
 
 class GraphicsEngine {
@@ -53,7 +54,7 @@ class GraphicsEngine {
 	//DESCRIPTOR SET LAYOUT
 	vk::DescriptorSetLayout postprocessDescriptorSetLayout;
 
-	vk::RenderPass imguiRenderPass;
+
 	vk::CommandBuffer maincommandBuffer;
 	vk::CommandPool imguiCommandPool;
 	vk::CommandPool CommandPool;
@@ -64,13 +65,13 @@ class GraphicsEngine {
 	vk::DescriptorPool textureDescriptorPool;
 	vk::DescriptorSetLayout textureDescriptorSetLayout;
 
-	vk::RenderPass postprocessRenderPass;
+
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
 
 
-	
+	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
 	
 
 	void make_instance(); //instance Setup
@@ -84,7 +85,7 @@ class GraphicsEngine {
 	void make_assets(Scene* scene);
 	void create_frame_command_buffer();
 	void create_frame_resources(Scene* scene);
-	void create_framebuffers();
+
 
 	void load_scripts();
 

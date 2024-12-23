@@ -123,7 +123,6 @@ void vkUtil::SwapChainFrame::destroy(){
 	logicalDevice.destroySemaphore(computeFinished);
 	logicalDevice.destroyFence(inFlight);
 	//logicalDevice.destroyFramebuffer(mainframebuffer);
-	logicalDevice.destroyFramebuffer(imguiFrameBuffer);
-	logicalDevice.destroyFramebuffer(postProcessFrameBuffer);
+
 
 }

@@ -57,7 +57,7 @@ editor::~editor() {
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, vk::RenderPass imguiRenderPass, std::vector<vkUtil::SwapChainFrame> swapchainFrames, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame> swapchainFrames, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();

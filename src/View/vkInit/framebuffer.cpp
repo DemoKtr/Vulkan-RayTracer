@@ -1,7 +1,7 @@
 #include "View/vkInit/framebuffer.h"
 
 void vkInit::make_framebuffers(framebufferInput inputChunk, std::vector<vkUtil::SwapChainFrame>& frames, bool debug){
-
+	/*
 	for (int i = 0; i < frames.size(); ++i) {
 
 		std::vector<vk::ImageView> attachments = {
@@ -32,9 +32,11 @@ void vkInit::make_framebuffers(framebufferInput inputChunk, std::vector<vkUtil::
 		}
 
 	}
+	*/
 }
 
 void vkInit::make_postprocess_framebuffer(framebufferInput inputChunk, std::vector<vkUtil::SwapChainFrame>& frames, bool debug) {
+	/*
 	for (int i = 0; i < frames.size(); ++i) {
 		
 		std::vector<vk::ImageView> attachments = {
@@ -64,4 +66,5 @@ void vkInit::make_postprocess_framebuffer(framebufferInput inputChunk, std::vect
 		}
 
 	}
+	*/
 }

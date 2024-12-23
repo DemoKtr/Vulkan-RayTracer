@@ -29,5 +29,6 @@ namespace vkImGui {
 	void display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager, vkThumbs::ThumbsManager* miniatureManager, ComponentType& selectedComponentType);
 	void rmb_click_render(std::filesystem::path path, vkImGui::FilesExploresData& filesExploresData);
 	void rmb_click_render(SceneObject* root, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager);
+	void rmb_click_file_explorer_render( vkImGui::FilesExploresData& filesExploresData);
 
 }

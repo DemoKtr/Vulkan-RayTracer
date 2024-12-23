@@ -6,8 +6,7 @@
 #include <algorithm>
 #include "MultithreatedSystems/Console.h"
 
-void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode)
-{
+void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode) {
 	glfwInit();
 
 	//no default rendering client, we'll hook vulkan up
