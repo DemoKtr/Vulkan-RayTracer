@@ -7,11 +7,14 @@
 #include <Scene/ECS/components/componentFabric.h>
 #include "View/Interface/ImGuiRenderer/ComponentsFunctions.h"
 #include "Scene/Objects/PrefabManager.h"
+#include "View/Interface/ImGuiRenderer/filesOperationsFunctions.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/euler_angles.hpp>
 
 #include "View/Interface/ImGuiRenderer/sceneObjectsFunctions.h"
 #include "fileOperations/Resources.h"
+
+
 void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	vkImGui::FilesExploresData& filesExploresData, 
 	SceneObject* root, SceneObject* &selectedObj,
@@ -20,17 +23,20 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	float screenHeight = ImGui::GetIO().DisplaySize.y;
 	float screenWidth = ImGui::GetIO().DisplaySize.x;
 
-	//ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f)); // Jasny szary kolor
+
+	
 
 	if (ImGui::BeginMainMenuBar()) {
 		vkSettings::menuHeight = ImGui::GetWindowHeight();
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::BeginMenu("Create")) {
 				if (ImGui::MenuItem("Prefab")) {
-					rmb_click_file_explorer_render(filesExploresData);
+					fileType = fileOperations::FileType::Type::Prefab;
+					fileSaverIsOpen = true;
 				}
 				if (ImGui::MenuItem("Script")) {
-					// Akcja stworz plik script
+					fileType = fileOperations::FileType::Type::Script;
+					fileSaverIsOpen = true;
 				}
 				ImGui::EndMenu();
 			}
@@ -78,8 +84,8 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	}
 
 	//ImGui::PopStyleColor(); // Przywrócenie poprzedniego stylu
-
-
+	if(fileSaverIsOpen)
+		render_file_save_window(filesExploresData.currentFolder.string(), fileType, fileSaverIsOpen);
 
 
 	// Pozycja i rozmiar dolnego panelu
@@ -169,7 +175,12 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	// Jeśli zmienia się rozmiar panelu prawego:
 	ImVec2 rightPanelActualSize = ImGui::GetWindowSize();
 	vkSettings::rightPanelWidth = rightPanelActualSize.x; // Zaktualizowanie zmiennej rozmiaru prawego panelu
+	
 	ImGui::End();
+	
+	
+
+	
 }
 
 void vkImGui::render_console() {
@@ -679,11 +690,6 @@ void vkImGui::rmb_click_render(SceneObject* root, ecs::ECS* ecs, vkMesh::MeshesM
 	}
 }
 
-void vkImGui::rmb_click_file_explorer_render( vkImGui::FilesExploresData& filesExploresData) {
-			vkPrefab::PrefabManager& prefabManager = vkPrefab::PrefabManager::getInstance();
-			prefabManager.createPrefab(true);
-
-}
 
 
 

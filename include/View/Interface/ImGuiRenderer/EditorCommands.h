@@ -7,6 +7,7 @@
 #include "Scene/sceneObject.h"
 #include <View/vkMesh/meshesManager.h>
 #include "View/Interface/Thumbs/thumbsManager.h"
+#include "fileOperations/filesTypes.h"
 namespace vkImGui {
 
 	struct DragDropData {
@@ -21,6 +22,9 @@ namespace vkImGui {
 		std::filesystem::path currentFolder;
 	};
 
+	static bool fileSaverIsOpen = false;
+	static fileOperations::FileType::Type fileType = fileOperations::FileType::Type::Unknown;
+
 	void render_editor(vkThumbs::ThumbsManager* miniatureManager, vkImGui::FilesExploresData& filesExploresData, SceneObject* root, SceneObject* &selectedObj, ComponentType& selectedComponentType, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager);
 	void render_console();
 	void render_file_explorator(vkThumbs::ThumbsManager* miniatureManager, vkImGui::FilesExploresData& filesExploresData);
@@ -29,6 +33,6 @@ namespace vkImGui {
 	void display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager, vkThumbs::ThumbsManager* miniatureManager, ComponentType& selectedComponentType);
 	void rmb_click_render(std::filesystem::path path, vkImGui::FilesExploresData& filesExploresData);
 	void rmb_click_render(SceneObject* root, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager);
-	void rmb_click_file_explorer_render( vkImGui::FilesExploresData& filesExploresData);
+
 
 }
