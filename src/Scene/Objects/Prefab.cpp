@@ -39,6 +39,10 @@ void vkPrefab::Prefab::closeWindow() {
 
 }
 
+Scene* vkPrefab::Prefab::getScene() {
+	return this->scene;
+}
+
 vkPrefab::Prefab::Prefab(nlohmann::json serialized, bool debugMode) {
 	build_glfw_window(vkPrefab::data.screenSize ,debugMode);
 

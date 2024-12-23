@@ -9,6 +9,6 @@ namespace fileOperations {
 
     nlohmann::json serialize(ecs::ECS ecs);
 
-    void saveToFile(const std::string& filepath, const std::string& name, const std::string& ext, Scene scene);
+    void saveToFile(const std::string& filepath, Scene* scene);
     nlohmann::json loadFromFile(const std::string& filepath);
 }

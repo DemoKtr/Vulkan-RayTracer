@@ -30,6 +30,7 @@ namespace vkPrefab {
 
 		void closeWindow();
 	public:
+		Scene* getScene();
 		Prefab(nlohmann::json serialized, bool debugMode);
 		Prefab(bool debugMode);
 		~Prefab();

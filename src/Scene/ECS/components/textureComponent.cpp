@@ -10,9 +10,17 @@ TextureComponent::TextureComponent() {
 	type = ComponentType::Texture;
 }
 
-nlohmann::json TextureComponent::serialize() const
-{
-	return nlohmann::json();
+nlohmann::json TextureComponent::serialize() const {
+    nlohmann::json json;
+
+    // Serializacja pola modelIndex
+    json["textureIndex"] = textureIndex;
+    json["normalIndex"] = normalIndex;
+    json["armIndex"] = armIndex;
+    json["depthIndex"] = depthIndex;
+    json["isPBR"] = isPBR;
+
+    return json;
 }
 
 TextureComponent::~TextureComponent() {

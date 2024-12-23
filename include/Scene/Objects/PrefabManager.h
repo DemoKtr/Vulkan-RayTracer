@@ -12,7 +12,7 @@ namespace vkPrefab {
         }
 
         // Tworzy nowe okno, jeśli nie istnieje dla danego pliku
-        std::shared_ptr<vkPrefab::Prefab> createPrefab( bool debugMode) {
+        std::shared_ptr<vkPrefab::Prefab> createPrefab(std::string path ,bool debugMode) {
             /*
             auto it = prefabs.find(filePath);
             if (it != prefabs.end()) {
@@ -20,7 +20,7 @@ namespace vkPrefab {
             }
             */
             auto prefab = std::make_shared<vkPrefab::Prefab>(debugMode);
-            prefabs["ka"] = prefab;
+            prefabs[path] = prefab;
             return prefab;
         }
 
@@ -31,6 +31,7 @@ namespace vkPrefab {
                     it = prefabs.erase(it); // Usuwamy zamknięte okno z mapy
                 }
                 else {
+                    if(!(it->second == nullptr))
                     it->second->render(deltaTime);
                     ++it;
 
@@ -41,6 +42,10 @@ namespace vkPrefab {
         // Zwraca liczbę aktywnych okien
         size_t getActiveWindowCount() const {
             return prefabs.size();
+        }
+
+        std::shared_ptr<vkPrefab::Prefab> getActivePrefab(std::string path) {
+            return prefabs[path];
         }
 
     private:

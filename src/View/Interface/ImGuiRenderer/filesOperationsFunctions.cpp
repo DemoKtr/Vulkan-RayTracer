@@ -6,6 +6,7 @@
 #include <atomic>
 #include "fileOperations/files.h"
 #include <Scene/Objects/PrefabManager.h>
+#include <fileOperations/serializations.h>
 
 void vkImGui::render_file_save_window(std::string path,fileOperations::FileType::Type type,bool& isOpen) {
       // Flaga monitoruj¹ca tworzenie pliku
@@ -36,6 +37,7 @@ void vkImGui::render_file_save_window(std::string path,fileOperations::FileType:
 
         ImGui::EndPopup();
     }
+    std::cout << "oja" << std::endl;
 }
 
 void vkImGui::create_file_function(fileOperations::FileType::Type type, std::string& path, std::string& filename) {
@@ -56,11 +58,15 @@ void vkImGui::create_file_function(fileOperations::FileType::Type type, std::str
                 if (ext == ".cpp") {
                     file << "#include \"\ " + filename + ext;
                 }
-
+                file.close();
             }
             case fileOperations::FileType::Type::Prefab: {
+                file.close();
                 vkPrefab::PrefabManager& prefabManager = vkPrefab::PrefabManager::getInstance();
-                prefabManager.createPrefab(true);
+                prefabManager.createPrefab(fullPath,true);                
+                std::cout << "test1" << std::endl;
+                fileOperations::saveToFile(fullPath, prefabManager.getActivePrefab(fullPath).get()->getScene());
+                std::cout << "test3" << std::endl;
             }
 
             default: {
@@ -70,10 +76,11 @@ void vkImGui::create_file_function(fileOperations::FileType::Type type, std::str
                    if (!file) {
                        std::cerr << "Nie uda³o siê utworzyæ pliku: " << fullPath << std::endl;
                    }
-                   file.close();// Tworzenie pustego pliku
+                   // Tworzenie pustego pliku
             }
         }
 
 
     }
+    std::cout << "jaciesunem" << std::endl;
 }

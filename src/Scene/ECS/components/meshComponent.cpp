@@ -13,7 +13,11 @@ uint64_t MeshComponent::getIndex() {
 	return modelIndex;
 }
 
-nlohmann::json MeshComponent::serialize() const
-{
-	return nlohmann::json();
+nlohmann::json MeshComponent::serialize() const {
+    nlohmann::json json;
+
+    // Serializacja pola modelIndex
+    json["modelIndex"] = modelIndex;
+
+    return json;
 }
