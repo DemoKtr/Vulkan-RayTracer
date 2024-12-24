@@ -7,19 +7,6 @@ Scene::Scene(){
 	ecs = new ecs::ECS();
 	root = new SceneObject(ecs);
 	
-	SceneObject* o1 = new SceneObject(ecs);
-	SceneObject* o2 = new SceneObject(ecs);
-	//SceneObject* o3 = new SceneObject(ecs);
-	//SceneObject* o4 = new SceneObject(ecs);
-
-
-	root->addChild(o1);
-	root->addChild(o2);
-	//root->addChild(o3);
-
-	//root->addChild(o4);
-
-
 	
 }
 

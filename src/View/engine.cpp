@@ -419,7 +419,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	commandBuffer.pushConstants(pipelineInfo.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ProjectionData), &projection);
 
 	prepare_scene(commandBuffer);
-	
+
 	uint32_t startInstance = 0;
 	//Triangles
 
@@ -428,11 +428,17 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 
 		uint32_t k = 0;
 		for (vkMesh::MeshManagerData data : meshDataVector) {
-			if (data.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(data.sceneObject->id))++k;
+			if (data.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(data.sceneObject->id) && scene->ecs->hasComponent<TextureComponent>(data.sceneObject->id))++k;
 		}
-		render_objects(commandBuffer, pipelineInfo.pipelineLayout,key, startInstance, k);
-	}
 
+		if (k > 0) {
+
+			render_objects(commandBuffer, pipelineInfo.pipelineLayout, key, startInstance, k);
+		
+		}
+		
+	}
+	
 	
 	//commandBuffer.endRenderPass();
 
@@ -492,6 +498,7 @@ void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer,vk::Pipeline
 
 	
 	int indexCount = vkResources::meshes->indexCounts.find(objectType)->second;
+	
 	int firstIndex = vkResources::meshes->firstIndices.find(objectType)->second;
 
 
@@ -541,7 +548,7 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 
 	prepare_frame(imageIndex, scene, deltaTime, camera);
-	//render_imgui(imgcommandBuffer,frameNumber,debugMode);
+	
 	record_draw_command(imgcommandBuffer,scene ,imageIndex);
 	
 	
@@ -561,7 +568,7 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	std::cout << prefabsManager.getActiveWindowCount() << std::endl;
+
 	if (prefabsManager.getActiveWindowCount() > 0) {
 		prefabsManager.update(deltaTime); // Aktualizujemy mened¿era
 
@@ -640,6 +647,9 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	ext[1] = ".fbx";
 	list_files_in_directory("\\core", fileOperations::meshesNames,ext);
 	
+	for (const auto& [key, value] : fileOperations::meshesNames.hash) {
+		std::cout << "Key: " << key << ", Value: " << value << std::endl;
+	}
 
 	std::vector<vkMesh::MeshLoader> test;
 	for (std::string path : fileOperations::meshesNames.fullPaths) {
@@ -692,26 +702,21 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
 		for (const auto& meshData : meshDataVector) {
 			if (meshData.modelMatrix && meshData.sceneObject) {  // Sprawdzamy, czy wskaŸnik jest wa¿ny
-				if (meshData.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(meshData.sceneObject->id)){
-
-
-					_frame.modelsData[i].model = *meshData.modelMatrix;//*meshData.modelMatrix;
+				if (meshData.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(meshData.sceneObject->id) && scene->ecs->hasComponent<TextureComponent>(meshData.sceneObject->id)){
 
 					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
-					
 					if (textureComponent != nullptr) {
 						_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(textureComponent->getColorTextureIndex());
-					}
-					else {
-						_frame.modelsData[i].textureID = 0;
+						_frame.modelsData[i++].model = *meshData.modelMatrix;//*meshData.modelMatrix;
+
 						
 					}
-					i++;
+
+					
 				}				
 			}
 		}
 	}
-
 	
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));

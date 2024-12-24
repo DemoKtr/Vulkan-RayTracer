@@ -1,8 +1,9 @@
 #include "Scene/ECS/components/meshComponent.h"
 
 MeshComponent::MeshComponent(){
-	modelIndex = -1;
+
 	type = ComponentType::Mesh;
+	setIndex(17052657060290881606);
 }
 
 void MeshComponent::setIndex(uint64_t index) {

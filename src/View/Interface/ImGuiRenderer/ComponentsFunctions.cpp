@@ -5,7 +5,7 @@
 #include <settings.h>
 
 
-void vkImGui::AddComponent(ecs::ECS* ecs, ecs::Entity entity, ComponentType& selectedComponentType) {
+void vkImGui::AddComponent(ecs::ECS* ecs, SceneObject* selectedObject, vkMesh::MeshesManager* meshesManager, ComponentType& selectedComponentType) {
 	// Wyœwietlenie przycisku do dodania komponentu
 	if (ImGui::Button("Add Component")) {
 		// Prze³¹cz widocznoœæ selektora komponentów
@@ -31,8 +31,33 @@ void vkImGui::AddComponent(ecs::ECS* ecs, ecs::Entity entity, ComponentType& sel
 		// Przycisk do zamkniêcia selektora
 		if (ImGui::Button("Add", ImVec2(100, 0))) {
 
-			vkSettings::showComponentSelector = false; // Ukryj selektor po naciœniêciu
-			ecs->addComponent(entity, createComponent(static_cast<ComponentType>(currentIndex)));
+			
+				switch (selectedComponentType) {
+				case ComponentType::Transform: {
+					std::shared_ptr<TransformComponent> createdComponent = std::make_unique<TransformComponent>();
+					ecs->addComponent(selectedObject->id, createdComponent);
+					break;
+				}
+					
+				case ComponentType::Mesh: {
+					std::shared_ptr<MeshComponent> createdComponent = std::make_unique<MeshComponent>();
+					ecs->addComponent(selectedObject->id, createdComponent);
+					meshesManager->addMesh(selectedObject, ecs);
+					break;
+				}
+					
+				case ComponentType::Texture: {
+					std::shared_ptr<TextureComponent> createdComponent = std::make_unique<TextureComponent>();
+					ecs->addComponent(selectedObject->id, createdComponent);
+					break;
+				}
+					
+				default:
+					std::cerr << "Undefined ComponentType" << std::endl;
+					;
+				}
+	
+			
 
 
 		}

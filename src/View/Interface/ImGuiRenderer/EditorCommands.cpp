@@ -570,7 +570,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 			}
 
 		}
-		AddComponent(ecs, selectedObject->id, selectedComponentType);
+		AddComponent(ecs, selectedObject,meshesManager, selectedComponentType);
 
 	}
 
