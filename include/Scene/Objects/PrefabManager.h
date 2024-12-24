@@ -4,6 +4,7 @@
 
 
 namespace vkPrefab {
+   
     class PrefabManager {
     public:
         static PrefabManager& getInstance() {
@@ -26,12 +27,13 @@ namespace vkPrefab {
 
         // Aktualizuje stan wszystkich okien i usuwa te zamknięte
         void update(float deltaTime) {
+
             for (auto it = prefabs.begin(); it != prefabs.end();) {
                 if (it->second->isClosed()) {
                     it = prefabs.erase(it); // Usuwamy zamknięte okno z mapy
                 }
                 else {
-                    if(!(it->second == nullptr))
+                    
                     it->second->render(deltaTime);
                     ++it;
 

@@ -64,9 +64,8 @@ void vkImGui::create_file_function(fileOperations::FileType::Type type, std::str
                 file.close();
                 vkPrefab::PrefabManager& prefabManager = vkPrefab::PrefabManager::getInstance();
                 prefabManager.createPrefab(fullPath,true);                
-                std::cout << "test1" << std::endl;
                 fileOperations::saveToFile(fullPath, prefabManager.getActivePrefab(fullPath).get()->getScene());
-                std::cout << "test3" << std::endl;
+
             }
 
             default: {

@@ -36,7 +36,14 @@ namespace ecs {
 
         template <typename T>
         bool hasComponent(Entity entity) const {
-            return entityMasks.at(entity).test(componentBitIndex<T>());
+
+            auto it = entityMasks.find(entity);
+            if (it != entityMasks.end()) {
+
+                return it->second.test(componentBitIndex<T>());
+            }
+            std::cout << "Entity not found in masks!" << std::endl;  // Debugging line
+            return false;
         }
 
         template <typename T>
@@ -46,7 +53,7 @@ namespace ecs {
             // Sprawdü, czy istnieje komponent danego typu
             if (components.find(typeIndex) == components.end()) {
                 //throw std::out_of_range("No components of the requested type found");
-                std::cout << "zzzzzzz" << std::endl;
+
                 return nullptr;
             }
 
@@ -56,7 +63,6 @@ namespace ecs {
             if (entityComponents.find(entity) == entityComponents.end()) {
                 //throw std::out_of_range("Entity does not have components of the requested type");
 
-                std::cout << "chuuuj" << std::endl;
                 return nullptr;
             }
 
@@ -65,7 +71,7 @@ namespace ecs {
             // Sprawdü, czy sπ komponenty w wektorze
             if (componentVector.empty()) {
                 //throw std::out_of_range("No components available for the entity
-                std::cout << "kurwyyy" << std::endl;
+
                 return nullptr;
             }
 

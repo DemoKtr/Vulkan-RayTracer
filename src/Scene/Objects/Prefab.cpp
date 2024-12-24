@@ -64,7 +64,7 @@ vkPrefab::Prefab::Prefab( bool debugMode) {
 }
 
 vkPrefab::Prefab::~Prefab() {
-	delete renderer;
+	//delete renderer;
 }
 
 void vkPrefab::Prefab::render(float deltaTime) {

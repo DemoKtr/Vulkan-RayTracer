@@ -1,14 +1,15 @@
 #include "fileOperations/serializations.h"
+#include <Scene/Objects/PrefabManager.h>
 
-nlohmann::json fileOperations::serialize(Scene scene) {
+nlohmann::json fileOperations::serialize(Scene* scene) {
 
     nlohmann::json json;
 
     // Serializacja korzenia sceny
 
-    if (scene.root) {
+    if (scene->root) {
         
-        json["root"] = serialize(*scene.root); // Wywo³uje funkcjê serializuj¹c¹ SceneObject
+        json["root"] = serialize(*scene->root); // Wywo³uje funkcjê serializuj¹c¹ SceneObject
         
     }
     else {
@@ -17,9 +18,9 @@ nlohmann::json fileOperations::serialize(Scene scene) {
     }
 
     // Serializacja ECS
-    if (scene.ecs) {
+    if (scene->ecs) {
         
-        json["ecs"] = serialize(*scene.ecs); // Wywo³uje funkcjê serializuj¹c¹ ECS
+        json["ecs"] = serialize(scene->ecs); // Wywo³uje funkcjê serializuj¹c¹ ECS
        
     }
     else {
@@ -58,25 +59,25 @@ nlohmann::json fileOperations::serialize(SceneObject obj) {
     return json;
 }
 
-nlohmann::json fileOperations::serialize(ecs::ECS ecs) {
+nlohmann::json fileOperations::serialize(ecs::ECS* ecs) {
     nlohmann::json json;
 
     // Serializacja masek komponentów
     nlohmann::json entityMasksJson = nlohmann::json::object();
-    for (const auto& [entity, mask] : ecs.entityMasks) {
+    for (const auto& [entity, mask] : ecs->entityMasks) {
         entityMasksJson[std::to_string(entity)] = mask.to_string();
     }
     json["entityMasks"] = entityMasksJson;
 
     // Serializacja komponentów
     nlohmann::json componentsJson = nlohmann::json::object();
-    for (const auto& [typeIndex, entityMap] : ecs.components) {
+    for (const auto& [typeIndex, entityMap] : ecs->components) {
         std::string typeName = typeIndex.name(); // Nazwa typu komponentu
         nlohmann::json entityComponentsJson = nlohmann::json::object();
 
-        for (const auto& [entity, componentVector] : entityMap) {
+        for (const auto [entity, componentVector] : entityMap) {
             nlohmann::json componentArray = nlohmann::json::array();
-            for (const auto& component : componentVector) {
+            for (const auto component : componentVector) {
                 if (component) {
                     componentArray.push_back(component->serialize()); // Wymaga metody `toJson` w klasie `Component`
                 }
@@ -92,13 +93,14 @@ nlohmann::json fileOperations::serialize(ecs::ECS ecs) {
 }
 
 void fileOperations::saveToFile(const std::string& filepath, Scene* scene) {
+    
     // Utwórz pe³n¹ œcie¿kê do pliku
     std::string fullPath = filepath;
 
     try {
 
         // Serializacja sceny do JSON-a
-        nlohmann::json sceneJson = fileOperations::serialize(*scene);
+        nlohmann::json sceneJson = fileOperations::serialize(scene);
 
         // Zapis JSON-a do pliku
         std::ofstream outFile(fullPath);

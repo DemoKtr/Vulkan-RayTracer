@@ -561,11 +561,14 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 	std::cout << "zabij sie" << std::endl;
+
+	std::cout << prefabsManager.getActiveWindowCount() << std::endl;
 	if (prefabsManager.getActiveWindowCount() > 0) {
 		prefabsManager.update(deltaTime); // Aktualizujemy mened¿era
 
 	}
 	std::cout << "zartowalem sie" << std::endl;
+
 	try {
 		graphicsQueue.submit(submitInfo, swapchainFrames[frameNumber].inFlight);
 	}
