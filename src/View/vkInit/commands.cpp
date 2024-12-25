@@ -12,27 +12,59 @@ vk::CommandPool vkInit::make_command_pool(vk::PhysicalDevice physicalDevice, vk:
 	}
 	catch (vk::SystemError err) {
 		if (debugMode)
-			std::cout << "Failed Create commandPool" << std::endl;
+			std::cout << "Failed Create Main commandPool" << std::endl;
 		return nullptr;
 	}
 }
 
-vkInit::commandBufferOutput vkInit::make_command_buffer(commandBufferInputChunk inputChunk, bool debugMode) {
+vk::CommandPool vkInit::make_compute_command_pool(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode) {
+	vkUtil::QueueFamilyIndices queueFamilyIndices = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode);
+	vk::CommandPoolCreateInfo poolInfo = {};
+	poolInfo.flags = vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.computeFamily.value();
+
+	try {
+		return device.createCommandPool(poolInfo);
+	}
+	catch (vk::SystemError err) {
+		if (debugMode)
+			std::cout << "Failed Create Compute commandPool" << std::endl;
+		return nullptr;
+	}
+}
+
+vk::CommandPool vkInit::make_transfer_command_pool(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode) {
+	vkUtil::QueueFamilyIndices queueFamilyIndices = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode);
+	vk::CommandPoolCreateInfo poolInfo = {};
+	poolInfo.flags = vk::CommandPoolCreateFlags() | vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+	poolInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
+
+	try {
+		return device.createCommandPool(poolInfo);
+	}
+	catch (vk::SystemError err) {
+		if (debugMode)
+			std::cout << "Failed Create Transfer commandPool" << std::endl;
+		return nullptr;
+	}
+}
+
+
+
+vk::CommandBuffer vkInit::make_command_buffer(commandBufferInputChunk inputChunk, bool debugMode) {
 	vk::CommandBufferAllocateInfo allocInfo = {};
 	allocInfo.commandPool = inputChunk.commandPool;
 	allocInfo.level = vk::CommandBufferLevel::ePrimary;
 	allocInfo.commandBufferCount = 1;
-	commandBufferOutput output;
-	try {
-		output.graphicCommandBuffer = inputChunk.device.allocateCommandBuffers(allocInfo)[0];
+
+	try {		
+		
 		if (debugMode) std::cout << "Allocated main command buffer for frame" << std::endl;
-		return output;
-
-
+		return inputChunk.device.allocateCommandBuffers(allocInfo)[0];
 	}
 	catch (vk::SystemError err) {
 		std::cout << "FAILED!!! Allocated  main command buffer for frame" << std::endl;
-		return output;
+		return nullptr;
 	}
 }
 

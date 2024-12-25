@@ -157,9 +157,9 @@ void vkPrefab::PrefabRenderer::cleanup_swapchain() {
 void vkPrefab::PrefabRenderer::create_frame_command_buffer() {
 	CommandPool = vkInit::make_command_pool(physicalDevice, device, surface, debugMode);
 	imguiCommandPool = vkInit::make_command_pool(physicalDevice, device, surface, debugMode);
-	vkInit::commandBufferInputChunk commandBufferInput = { device,CommandPool ,imguiCommandPool, swapchainFrames };
-	vkInit::commandBufferOutput output = vkInit::make_command_buffer(commandBufferInput, debugMode);
-	maincommandBuffer = output.graphicCommandBuffer;
+	vkInit::commandBufferInputChunk commandBufferInput = { device,CommandPool , swapchainFrames };
+	maincommandBuffer  = vkInit::make_command_buffer(commandBufferInput, debugMode);
+	
 	vkInit::make_imgui_frame_command_buffers(commandBufferInput, debugMode);
 }
 

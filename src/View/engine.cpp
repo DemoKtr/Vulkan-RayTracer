@@ -25,7 +25,8 @@
 #include "fileOperations/resources.h"
 #include "View/vkResources/resources.h"
 #include "Scene/Objects/PrefabResources.h"
-
+#include "MultithreatedSystems/TaskManager.h"
+#include "fileOperations/filesTypes.h"
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
 	this->mainWindow = window;
@@ -47,6 +48,8 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	create_pipeline();
 
 	finalize_setup(scene);
+	
+	
 	make_assets(scene);
 
 	vkPrefab::data.physicalDevice = physicalDevice;
@@ -56,6 +59,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	vkPrefab::data.graphicsQueue = this->graphicsQueue;
 	vkPrefab::data.presentQueue = this->presentQueue;
 	vkPrefab::data.computeQueue = this->computeQueue;
+	
 	
 }
 
@@ -73,7 +77,9 @@ GraphicsEngine::~GraphicsEngine() {
 	delete meshesManager;
 	delete vkResources::atlasTextures;
 	device.destroyCommandPool(CommandPool);
-	device.destroyCommandPool(imguiCommandPool);
+	device.destroyCommandPool(computeCommandPool);
+	device.destroyCommandPool(transferCommandPool);
+
 
 	device.destroyDescriptorSetLayout(iconDescriptorSetLayout);
 	device.destroyDescriptorSetLayout(postprocessDescriptorSetLayout);
@@ -100,7 +106,7 @@ GraphicsEngine::~GraphicsEngine() {
 	
 }
 
-void GraphicsEngine::create_frame_resources(Scene* scene) {
+void GraphicsEngine::create_frame_resources(int number_of_models) {
 
 	vkInit::descriptorSetLayoutData bindings;
 	bindings.count = 2;
@@ -115,8 +121,8 @@ void GraphicsEngine::create_frame_resources(Scene* scene) {
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.computeFinished = vkInit::make_semaphore(device, debugMode);
-		frame.inFlight = vkInit::make_fence(device, debugMode);
-		frame.make_descriptors_resources(scene->getSceneObjectNumber(scene->root));
+		frame.inFlight = vkInit::make_fence(device, debugMode); 
+		frame.make_descriptors_resources(number_of_models);
 		frame.postprocessDescriptorSet = vkInit::allocate_descriptor_set(device, postprocessDescriptorPool, postprocessDescriptorSetLayout);
 	}
 }
@@ -175,13 +181,14 @@ void GraphicsEngine::choice_device() {
 	this->physicalDevice = vkInit::choose_physical_device(instance, debugMode);
 	this->device = vkInit::create_logical_device(physicalDevice, surface, debugMode);
 	vkExtensions::Init(device);
-	std::array<vk::Queue, 3> queues = vkInit::get_Queues(physicalDevice, device, surface, debugMode);
+	std::array<vk::Queue, 4> queues = vkInit::get_Queues(physicalDevice, device, surface, debugMode);
 
 	this->graphicsQueue = queues[0];
 
 	this->presentQueue = queues[1];
 
 	this->computeQueue = queues[2];
+	this->transferQueue = queues[3];
 
 
 	this->create_swapchain();
@@ -262,11 +269,18 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 void GraphicsEngine::create_frame_command_buffer() {
 	
 	CommandPool = vkInit::make_command_pool(physicalDevice, device, surface, debugMode);
-	imguiCommandPool = vkInit::make_command_pool(physicalDevice, device, surface, debugMode);
-	vkInit::commandBufferInputChunk commandBufferInput = { device,CommandPool ,imguiCommandPool, swapchainFrames };
-	vkInit::commandBufferOutput output = vkInit::make_command_buffer(commandBufferInput, debugMode);
-	maincommandBuffer = output.graphicCommandBuffer;
+	computeCommandPool = vkInit::make_compute_command_pool(physicalDevice, device, surface, debugMode);
+	transferCommandPool = vkInit::make_transfer_command_pool(physicalDevice, device, surface, debugMode);
+	vkInit::commandBufferInputChunk commandBufferInput = { device,CommandPool, swapchainFrames };
+	maincommandBuffer = vkInit::make_command_buffer(commandBufferInput, debugMode);
 	vkInit::make_imgui_frame_command_buffers(commandBufferInput, debugMode);
+
+	commandBufferInput.commandPool = computeCommandPool;
+	computeCommandBuffer = vkInit::make_command_buffer(commandBufferInput, debugMode);
+	commandBufferInput.commandPool = transferCommandPool;
+	transferCommandBuffer = vkInit::make_command_buffer(commandBufferInput, debugMode);
+
+
 	//vkInit::make_command_buffer(commandBufferInput, debugMode);
 }
 
@@ -310,11 +324,42 @@ void GraphicsEngine::InitImGui(GLFWwindow* window){
 }
 
 void GraphicsEngine::finalize_setup(Scene* scene){
+
+	auto& taskmanager = TaskManager::getInstance();
+	taskmanager.initialize();
+	ThreadSafeResource<std::vector<vkUtil::SwapChainFrame>> sharedFrames;
+	sharedFrames.set(swapchainFrames);
+	/*
+	taskmanager.submitTask(
+		TaskPriority::HIGH,
+		[this](auto&&... args) { create_frame_command_buffer(std::forward<decltype(args)>(args)...); }
+
+	);
+	*/
+	
+	taskmanager.submitTask(
+		TaskPriority::LOW,
+		[this](auto&&... args) { create_frame_resources(std::forward<decltype(args)>(args)...); },
+		scene->getSceneObjectNumber(scene->root)
+	);
 	create_frame_command_buffer();
-	create_frame_resources(scene);
+	//taskmanager.submitTask(TaskPriority::HIGH, create_frame_resources, std::ref(sharedFrames), scene->getSceneObjectNumber(scene->root));
+
 }
 
 
+
+void GraphicsEngine::load_meshes_files() {
+	std::vector<std::string> ext = fileOperations::FileType::getExtensions(fileOperations::FileType::Model);
+	list_files_in_directory("\\core", fileOperations::meshesNames, ext);
+}
+
+void GraphicsEngine::load_textures_files() {
+	
+	std::vector<std::string> ext = fileOperations::FileType::getExtensions(fileOperations::FileType::Image);
+
+	fileOperations::list_files_in_directory("\\core", fileOperations::texturesNames, ext);
+}
 
 void GraphicsEngine::load_scripts() {
 	std::vector<std::string> ext = { ".cpp", };
@@ -613,12 +658,29 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 void GraphicsEngine::make_assets(Scene* scene) {
 
-	//TO DO NAPRAW TO ZJEBIE
-	projection = vkRenderStructs::getProjectionMatrix(swapchainExtent);
-	meshesManager = new vkMesh::MeshesManager(scene->root,scene->ecs);
-
 	
+	auto& taskmanager = TaskManager::getInstance();
 
+
+
+	taskmanager.submitTask(
+		TaskPriority::HIGH,
+		[this](auto&&... args) { load_meshes_files(std::forward<decltype(args)>(args)...); }
+	);
+	taskmanager.submitTask(
+		TaskPriority::HIGH,
+		[this](auto&&... args) { load_textures_files(std::forward<decltype(args)>(args)...); }
+	);
+	taskmanager.submitTask(
+		TaskPriority::HIGH,
+		[this](auto&&... args) { load_scripts(std::forward<decltype(args)>(args)...); }
+	);
+
+
+
+
+	projection = vkRenderStructs::getProjectionMatrix(swapchainExtent);
+	meshesManager = new vkMesh::MeshesManager(scene->root, scene->ecs);
 	vkResources::meshes = new vkMesh::VertexMenagerie();
 	vkInit::descriptorSetLayoutData bindings;
 	bindings.count = 1;
@@ -626,30 +688,24 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	
+
+
 	vkImage::TextureInputChunk info;
-	std::string str = std::string(PROJECT_DIR) + "\\core\\u.png";
+
 	info.queue = graphicsQueue;
 	info.commandBuffer = maincommandBuffer;
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
-	std::vector<std::string> ext = { ".png",".jpg" };
-	
-	fileOperations::list_files_in_directory("\\core", fileOperations::texturesNames,ext);
-	
-	
 	
 	info.descriptorPool = textureDescriptorPool;
 	info.layout = textureDescriptorSetLayout;
 	info.filenames = nullptr;
+
+	taskmanager.waitForPriorityTasks();
 	info.texturesNames = fileOperations::texturesNames;
 	vkResources::atlasTextures = new vkImage::Texture(info);
-	ext[0] = ".obj";
-	ext[1] = ".fbx";
-	list_files_in_directory("\\core", fileOperations::meshesNames,ext);
-	
-	for (const auto& [key, value] : fileOperations::meshesNames.hash) {
-		std::cout << "Key: " << key << ", Value: " << value << std::endl;
-	}
+
 
 	std::vector<vkMesh::MeshLoader> test;
 	for (std::string path : fileOperations::meshesNames.fullPaths) {
@@ -669,15 +725,15 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	vkMesh::FinalizationChunk finalizationInfo;
 	finalizationInfo.logicalDevice = device;
 	finalizationInfo.physicalDevice = physicalDevice;
-	finalizationInfo.queue = graphicsQueue;
-	finalizationInfo.commandBuffer = maincommandBuffer;
+	finalizationInfo.queue = transferQueue;
+	finalizationInfo.commandBuffer = transferCommandBuffer;
 	vkResources::meshes->finalize(finalizationInfo);
-	//this->build_accelerationStructures();
-	//info.texturesNames = texturesNames;
-	info.filenames = str.c_str();
+
+
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
-	load_scripts();
+	
+
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, swapchainFormat, swapchainFrames[0].depthFormat);
 
 

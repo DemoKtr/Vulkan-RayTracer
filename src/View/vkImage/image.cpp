@@ -116,7 +116,7 @@ void vkImage::transition_image_layout(ImageLayoutTransitionJob job)
 		barrier.srcAccessMask = vk::AccessFlagBits::eNoneKHR;
 		barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
 
-		sourceStage = vk::PipelineStageFlagBits::eTopOfPipe;
+		sourceStage = vk::PipelineStageFlagBits::eTransfer;
 		destinationStage = vk::PipelineStageFlagBits::eTransfer;
 	}
 	else {

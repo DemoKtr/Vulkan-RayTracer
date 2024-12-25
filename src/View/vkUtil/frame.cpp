@@ -37,7 +37,7 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	cameraUBODescriptor.offset = 0;
 	cameraUBODescriptor.range = sizeof(CameraUBO);
 
-	int sbo_size = 2048;
+	int sbo_size = number_of_objects+2048;
 	input.size = sbo_size * sizeof(MeshSBO);
 	input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 	modelsDataBuffer = createBuffer(input);

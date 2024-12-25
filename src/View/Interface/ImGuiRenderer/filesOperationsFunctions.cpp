@@ -37,7 +37,6 @@ void vkImGui::render_file_save_window(std::string path,fileOperations::FileType:
 
         ImGui::EndPopup();
     }
-    std::cout << "oja" << std::endl;
 }
 
 void vkImGui::create_file_function(fileOperations::FileType::Type type, std::string& path, std::string& filename) {
@@ -81,5 +80,5 @@ void vkImGui::create_file_function(fileOperations::FileType::Type type, std::str
 
 
     }
-    std::cout << "jaciesunem" << std::endl;
+
 }

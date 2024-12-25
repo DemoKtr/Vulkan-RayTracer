@@ -5,6 +5,7 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <algorithm>
 #include "MultithreatedSystems/Console.h"
+#include <MultithreatedSystems/TaskManager.h>
 
 void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode) {
 	glfwInit();
@@ -75,16 +76,31 @@ App::App(glm::ivec2 screenSize, bool debugMode)
 
 	build_glfw_window(screenSize, debugMode);
 
+	double startTime = glfwGetTime();
+	
 	scene = new Scene();
 
+	
 	graphicsEngine = new GraphicsEngine(screenSize, window, scene, debugMode);
 
 	graphicsEngine->InitImGui(window);
-	
+	double endTime = glfwGetTime();
+	double delta = endTime - startTime;
+
+	std::cout << "Time to Init GraphicEngine: " << delta << std::endl;
+
+	/*
+	* Before
+	1.63
+	1.62
+	1.65
+	*/
 }
 
 App::~App()
 {
+	auto& taskmanager = TaskManager::getInstance();
+	taskmanager.shutdown();
 	delete graphicsEngine;
 	delete scene;
 }

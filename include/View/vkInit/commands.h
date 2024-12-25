@@ -6,18 +6,16 @@ namespace vkInit {
 	struct commandBufferInputChunk {
 		vk::Device device;
 		vk::CommandPool commandPool;
-		vk::CommandPool imguiCommandPool;
 		std::vector<vkUtil::SwapChainFrame>& frames;
 	};
 
-	struct commandBufferOutput {
-		vk::CommandBuffer graphicCommandBuffer;
-		vk::CommandBuffer computeCommandBuffer;
-	};
+
 
 	vk::CommandPool make_command_pool(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode);
+	vk::CommandPool make_compute_command_pool(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode);
+	vk::CommandPool make_transfer_command_pool(vk::PhysicalDevice physicalDevice, vk::Device device, vk::SurfaceKHR surface, bool debugMode);
 
-	commandBufferOutput make_command_buffer(commandBufferInputChunk inputChunk, bool debugMode);
+	vk::CommandBuffer make_command_buffer(commandBufferInputChunk inputChunk, bool debugMode);
 
 	
 

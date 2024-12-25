@@ -7,12 +7,35 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <type_traits>
 
+// Szablon ThreadSafeResource
+template <typename T>
+class ThreadSafeResource {
+    T resource;
+    std::mutex resourceMutex;
+
+public:
+    void set(const T& value) {
+        std::lock_guard<std::mutex> lock(resourceMutex);
+        resource = value;
+    }
+
+    T get() {
+        std::lock_guard<std::mutex> lock(resourceMutex);
+        return resource;
+    }
+};
+
+// Typ priorytetu zadania
 enum class TaskPriority {
     LOW = 0,
     MEDIUM = 1,
     HIGH = 2
 };
+
+
+
 
 class Task {
 public:
@@ -28,15 +51,16 @@ private:
     std::function<void()> taskFunc;
 };
 
+// Komparator do sortowania zadań
 struct TaskComparator {
     bool operator()(const std::shared_ptr<Task>& a, const std::shared_ptr<Task>& b) {
         return static_cast<int>(a->getPriority()) < static_cast<int>(b->getPriority());
     }
 };
 
+// TaskManager
 class TaskManager {
 public:
-    // Singleton getter
     static TaskManager& getInstance() {
         static TaskManager instance;
         return instance;
@@ -66,30 +90,44 @@ public:
         }
     }
 
-    void submitTask(TaskPriority priority, std::function<void()> taskFunc) {
-        auto task = std::make_shared<Task>(priority, std::move(taskFunc));
+    template<typename Func, typename... Args>
+    void submitTask(TaskPriority priority, Func&& func, Args&&... args) {
+        {
+            std::lock_guard<std::mutex> lock(counterMutex);
+            if (priority == TaskPriority::MEDIUM || priority == TaskPriority::HIGH) {
+                ++activePriorityTasks;
+            }
+        }
+
+        auto task = std::make_shared<Task>(priority, [this, priority, func = std::forward<Func>(func), args = std::make_tuple(std::forward<Args>(args)...)]() mutable {
+            syncArgs(args);
+            std::apply(func, std::move(args));
+
+            if (priority == TaskPriority::MEDIUM || priority == TaskPriority::HIGH) {
+                std::lock_guard<std::mutex> lock(counterMutex);
+                --activePriorityTasks;
+                if (activePriorityTasks == 0) {
+                    priorityCondition.notify_all();
+                }
+            }
+            });
+
         {
             std::lock_guard<std::mutex> lock(queueMutex);
             taskQueue.push(task);
-
-            // Zwiększ licznik aktywnych zadań, jeśli priorytet jest HIGH lub MEDIUM
-            if (priority == TaskPriority::HIGH || priority == TaskPriority::MEDIUM) {
-                highAndMediumActiveTasks.fetch_add(1, std::memory_order_relaxed);
-            }
         }
         queueCondition.notify_one();
     }
 
-    // Czekaj na zakończenie wszystkich zadań HIGH i MEDIUM
-    void waitForHighAndMediumTasks() {
-        std::unique_lock<std::mutex> lock(waitMutex);
-        waitCondition.wait(lock, [this]() {
-            return highAndMediumActiveTasks.load(std::memory_order_relaxed) == 0;
+    void waitForPriorityTasks() {
+        std::unique_lock<std::mutex> lock(counterMutex);
+        priorityCondition.wait(lock, [this]() {
+            return activePriorityTasks == 0;
             });
     }
 
 private:
-    TaskManager() : running(false), highAndMediumActiveTasks(0) {}
+    TaskManager() : running(false), activePriorityTasks(0) {}
 
     void workerThread() {
         while (running) {
@@ -107,91 +145,70 @@ private:
             }
 
             if (task) {
-                // Wykonaj zadanie
                 task->execute();
-
-                // Zmniejsz licznik aktywnych zadań HIGH i MEDIUM, jeśli dotyczy
-                if (task->getPriority() == TaskPriority::HIGH || task->getPriority() == TaskPriority::MEDIUM) {
-                    if (highAndMediumActiveTasks.fetch_sub(1, std::memory_order_relaxed) == 1) {
-                        std::lock_guard<std::mutex> lock(waitMutex);
-                        waitCondition.notify_all();
-                    }
-                }
             }
         }
     }
 
-    // Synchronizacja kolejki zadań
-    std::condition_variable queueCondition;
-    std::mutex queueMutex;
+    template<typename T>
+    void syncArgs(T&& arg) {
+        if constexpr (std::is_base_of_v<ThreadSafeResource<typename std::remove_reference<T>::type>, T>) {
+            std::lock_guard<std::mutex> lock(arg.resourceMutex);
+        }
+    }
 
-    // Synchronizacja czekania na zadania HIGH i MEDIUM
-    std::condition_variable waitCondition;
-    std::mutex waitMutex;
-    std::atomic<int> highAndMediumActiveTasks;
+    template<typename T, typename... Rest>
+    void syncArgs(T&& arg, Rest&&... rest) {
+        syncArgs(std::forward<T>(arg));
+        syncArgs(std::forward<Rest>(rest)...);
+    }
 
-    // Wątki i kolejka zadań
     std::vector<std::thread> threads;
     std::priority_queue<std::shared_ptr<Task>, std::vector<std::shared_ptr<Task>>, TaskComparator> taskQueue;
+    std::mutex queueMutex;
+    std::condition_variable queueCondition;
 
     std::atomic<bool> running;
 
-    // Disable copy and assignment
+    std::mutex counterMutex;
+    std::condition_variable priorityCondition;
+    size_t activePriorityTasks;
+
     TaskManager(const TaskManager&) = delete;
     TaskManager& operator=(const TaskManager&) = delete;
 };
 
-
-
-
-// Funkcje symulujące różne zadania
-void highPriorityTask() {
-    std::cout << "High priority task running on thread: " << std::this_thread::get_id() << "\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Symulacja pracy
-    std::cout << "End : " << std::this_thread::get_id() << "\n";
-}
-
-void mediumPriorityTask() {
-    std::cout << "Medium priority task running on thread: " << std::this_thread::get_id() << "\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Symulacja pracy
-    std::cout << "End : " << std::this_thread::get_id() << "\n";
-}
-
-void lowPriorityTask() {
-    std::cout << "Low priority task running on thread: " << std::this_thread::get_id() << "\n";
-    std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Symulacja pracy
-    std::cout << "End : " << std::this_thread::get_id() << "\n";
-}
-
+//EXAMPLE TO USE
 /*
+// Przykładowe zadanie
+void sampleTask(ThreadSafeResource<int>& sharedResource, int taskId, int value) {
+    std::cout << "Task " << taskId << " executing. Shared resource value: " << sharedResource.get() << "\n";
+    sharedResource.set(sharedResource.get() + value);
+    std::cout << "Task " << taskId << " updated shared resource value: " << sharedResource.get() << "\n";
+}
+
 int main() {
     // Inicjalizacja TaskManagera
     auto& taskManager = TaskManager::getInstance();
-    taskManager.initialize();
+    taskManager.initialize(); // Domyślnie liczba wątków = liczbie logicznych rdzeni CPU
 
-    // Dodaj zadania o różnych priorytetach
-    taskManager.submitTask(TaskPriority::HIGH, highPriorityTask);
-    taskManager.submitTask(TaskPriority::MEDIUM, mediumPriorityTask);
-    taskManager.submitTask(TaskPriority::LOW, lowPriorityTask);
-    taskManager.submitTask(TaskPriority::HIGH, highPriorityTask);
-    taskManager.submitTask(TaskPriority::HIGH, highPriorityTask);
-    
-    taskManager.submitTask(TaskPriority::LOW, lowPriorityTask);
-    taskManager.submitTask(TaskPriority::LOW, lowPriorityTask);
-    taskManager.submitTask(TaskPriority::LOW, lowPriorityTask);
-    taskManager.submitTask(TaskPriority::LOW, lowPriorityTask);
-    taskManager.submitTask(TaskPriority::LOW, lowPriorityTask);
-    taskManager.submitTask(TaskPriority::HIGH, highPriorityTask);
+    // Tworzenie zasobu współdzielonego
+    ThreadSafeResource<int> sharedResource;
+    sharedResource.set(5);
 
-    // Główny wątek czeka na zakończenie wszystkich zadań HIGH i MEDIUM
-    std::cout << "Waiting for high and medium priority tasks to complete...\n";
-    taskManager.waitForHighAndMediumTasks();
-    std::cout << "High and medium priority tasks completed.\n";
+    // Dodanie zadań do managera
+    taskManager.submitTask(TaskPriority::HIGH, sampleTask, std::ref(sharedResource), 1, 3);
+    taskManager.submitTask(TaskPriority::MEDIUM, sampleTask, std::ref(sharedResource), 2, 1);
+    taskManager.submitTask(TaskPriority::LOW, sampleTask, std::ref(sharedResource), 3, 2);
+    taskManager.submitTask(TaskPriority::HIGH, sampleTask, std::ref(sharedResource), 4, 6);
+    taskManager.submitTask(TaskPriority::MEDIUM, sampleTask, std::ref(sharedResource), 5, 4);
+
+    // Poczekaj na zakończenie wszystkich zadań
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     // Zakończenie pracy TaskManagera
     taskManager.shutdown();
 
-    std::cout << "All tasks completed. Exiting...\n";
     return 0;
 }
 */

@@ -39,7 +39,7 @@ class editor {
 	
 	
 
-	vkImage::Texture* texture;
+
 
 	void create_miniatures(vk::PhysicalDevice physicalDevice,
 		vk::Device device,

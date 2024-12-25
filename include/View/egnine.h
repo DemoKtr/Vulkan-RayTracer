@@ -37,6 +37,7 @@ class GraphicsEngine {
 	vk::Queue graphicsQueue{ nullptr };
 	vk::Queue presentQueue{ nullptr };
 	vk::Queue computeQueue{ nullptr };
+	vk::Queue transferQueue{ nullptr };
 	
 
 	//swapchain
@@ -56,8 +57,11 @@ class GraphicsEngine {
 
 
 	vk::CommandBuffer maincommandBuffer;
-	vk::CommandPool imguiCommandPool;
+	vk::CommandBuffer transferCommandBuffer;
+	vk::CommandBuffer computeCommandBuffer;
 	vk::CommandPool CommandPool;
+	vk::CommandPool computeCommandPool;
+	vk::CommandPool transferCommandPool;
 
 	vk::DescriptorPool iconDescriptorPool;
 	vk::DescriptorSetLayout iconDescriptorSetLayout;
@@ -84,9 +88,11 @@ class GraphicsEngine {
 	void finalize_setup(Scene* scene);
 	void make_assets(Scene* scene);
 	void create_frame_command_buffer();
-	void create_frame_resources(Scene* scene);
+	void create_frame_resources(int number_of_models);
 
 
+	void load_meshes_files();
+	void load_textures_files();
 	void load_scripts();
 
 	void record_draw_command(vk::CommandBuffer commandBuffer,Scene* scene,uint32_t imageIndex);

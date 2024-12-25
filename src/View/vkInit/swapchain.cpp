@@ -112,7 +112,7 @@ vk::PresentModeKHR vkInit::choose_swapchain_present_mode(std::vector<vk::Present
 			return presentMode;
 		}
 	}
-	return vk::PresentModeKHR::eFifo;
+	return vk::PresentModeKHR::eMailbox;
 }
 
 vk::Extent2D vkInit::choose_swapchain_exten(uint32_t width, uint32_t height, vk::SurfaceCapabilitiesKHR capabilities) {
@@ -153,7 +153,7 @@ vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevi
 	vkUtil::QueueFamilyIndices indices = vkUtil::findQueueFamilies(physicalDevice, surface, debugMode);
 	uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value()};
 
-	if (indices.graphicsFamily != indices.presentFamily) {
+	if (indices.graphicsFamily.value() != indices.presentFamily.value()) {
 		createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		createInfo.queueFamilyIndexCount = 2;
 		createInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -166,7 +166,8 @@ vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevi
 	createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 	createInfo.presentMode = presentMode;
 	createInfo.clipped = VK_TRUE;
-	createInfo.oldSwapchain = vk::SwapchainKHR(nullptr);
+	createInfo.oldSwapchain = VK_NULL_HANDLE;
+
 	try {
 		bundle.swapchain = logicalDevice.createSwapchainKHR(createInfo);
 

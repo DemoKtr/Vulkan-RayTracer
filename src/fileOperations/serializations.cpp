@@ -111,13 +111,13 @@ void fileOperations::saveToFile(const std::string& filepath, Scene* scene) {
         outFile << sceneJson.dump(4); // Zapisujemy JSON w formacie czytelnym (indenty = 4)
         outFile.close();
 
-        std::cout << "Scena zosta³a pomyœlnie zapisana do pliku: " << fullPath << std::endl;
+        std::cout << "Scene saved sucess: " << fullPath << std::endl;
     }
     
     catch (const std::exception& e) {
         std::cerr << "B³¹d podczas zapisywania sceny: " << e.what() << std::endl;
     }
-    std::cout << "test2" << std::endl;
+
 }
 
 nlohmann::json fileOperations::loadFromFile(const std::string& filepath) {

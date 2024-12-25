@@ -44,12 +44,11 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info,
 	this->filesExploresData.baseFolder = path;
 	this->filesExploresData.currentFolder = filesExploresData.baseFolder;
 
-	texture = new vkImage::Texture(info);
 	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, pictureFormat, depthFormat);
 	
 }
 editor::~editor() {
-	delete texture;
+
 	delete miniatureManager;
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();

@@ -166,6 +166,7 @@ vk::DescriptorSet vkInit::allocate_descriptor_set(vk::Device device, vk::Descrip
 
 	try {
 		return device.allocateDescriptorSets(allocationInfo)[0];
+		
 	}
 	catch (vk::SystemError err) {
 		std::cout << ("Failed to allocate descriptor set from pool") << std::endl;
