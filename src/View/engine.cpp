@@ -76,6 +76,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
+	delete cubemap;
 	device.destroyCommandPool(CommandPool);
 	device.destroyCommandPool(computeCommandPool);
 	device.destroyCommandPool(transferCommandPool);
@@ -264,6 +265,7 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
 	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+	cubemapDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
 }
 
 void GraphicsEngine::create_frame_command_buffer() {
@@ -688,6 +690,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	cubemapDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(6)+1, bindings);
 	
 
 
@@ -730,8 +733,14 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	vkResources::meshes->finalize(finalizationInfo);
 
 
+	info.descriptorPool = cubemapDescriptorPool;
+	info.layout = cubemapDescriptorSetLayout;
+	info.filenames = "resources/textures/cubemap.jpg";
+	cubemap = new vkImage::CubemapEctTexture(info);
+
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
+	
 	
 
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, swapchainFormat, swapchainFrames[0].depthFormat);

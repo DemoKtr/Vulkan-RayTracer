@@ -11,7 +11,7 @@
 #include <View/vkMesh/meshesManager.h>
 #include "View/RenderStructs/projection.h"
 #include "Scene/Objects/PrefabManager.h"
-
+#include "View/vkImage/cubemap.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -39,6 +39,8 @@ class GraphicsEngine {
 	vk::Queue computeQueue{ nullptr };
 	vk::Queue transferQueue{ nullptr };
 	
+
+	vkImage::CubemapEctTexture* cubemap;
 
 	//swapchain
 	vk::SwapchainKHR swapchain;
@@ -69,7 +71,8 @@ class GraphicsEngine {
 	vk::DescriptorPool textureDescriptorPool;
 	vk::DescriptorSetLayout textureDescriptorSetLayout;
 
-
+	vk::DescriptorPool cubemapDescriptorPool;
+	vk::DescriptorSetLayout cubemapDescriptorSetLayout;
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
