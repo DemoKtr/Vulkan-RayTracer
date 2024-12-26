@@ -107,6 +107,7 @@ class GraphicsEngine {
 
 	void build_accelerationStructures();
 	
+	void initial_cubemap();
 public:
 	GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode);
 	void render(Scene* scene, int& verticesCounter, float deltaTime, Camera::Camera camera, bool renderIMGUI);

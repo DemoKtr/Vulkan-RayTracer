@@ -92,6 +92,7 @@ void vkImage::ConvertEquirectangularImageToCubemap(const Bitmap& b, std::vector<
                 Cubemap[face].setPixel(x, y, color);
             }   // j loop
         }   // i loop
+
     }   // Face loop
 }
 

@@ -19,7 +19,7 @@ namespace vkImage{
     {
     public:
 
-        CubemapEctTexture(const TextureInputChunk& info);
+        CubemapEctTexture(const std::string filename);
 
         ~CubemapEctTexture() {};
 
@@ -27,7 +27,7 @@ namespace vkImage{
         
 
         virtual void Bind(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout, int layoutIndex);
-
+        void LoadCubemapData(const TextureInputChunk& info);
     private:
         int width, height, channels;
 
@@ -45,9 +45,9 @@ namespace vkImage{
         vk::DeviceMemory imageMemory;
         vk::ImageView imageView;
         vk::Sampler sampler;
-
-        void LoadCubemapData(std::vector<Bitmap>& Cubemap);
-        void populate(std::vector<Bitmap>& Cubemap);
+        std::vector<Bitmap> cubemap;
+        
+        void populate();
         void make_view(int numberOfArray);
         void make_sampler();
         void make_descriptor_set();

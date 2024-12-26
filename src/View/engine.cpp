@@ -34,6 +34,14 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	if (debugMode) {
 		std::cout << "Making a graphics engine\n";
 	}
+	
+	auto& taskmanager = TaskManager::getInstance();
+	taskmanager.initialize();
+
+	taskmanager.submitTask(
+		TaskPriority::HIGH,
+		[this](auto&&... args) { initial_cubemap(std::forward<decltype(args)>(args)...); }
+	);
 
 
 	make_instance();
@@ -328,7 +336,6 @@ void GraphicsEngine::InitImGui(GLFWwindow* window){
 void GraphicsEngine::finalize_setup(Scene* scene){
 
 	auto& taskmanager = TaskManager::getInstance();
-	taskmanager.initialize();
 	ThreadSafeResource<std::vector<vkUtil::SwapChainFrame>> sharedFrames;
 	sharedFrames.set(swapchainFrames);
 	/*
@@ -736,7 +743,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.descriptorPool = cubemapDescriptorPool;
 	info.layout = cubemapDescriptorSetLayout;
 	info.filenames = "resources/textures/cubemap.jpg";
-	cubemap = new vkImage::CubemapEctTexture(info);
+	cubemap->LoadCubemapData(info);
 
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
@@ -793,4 +800,8 @@ void GraphicsEngine::build_accelerationStructures() {
 	
 	vkAcceleration::AccelerationStructuresBuilderInfo info (device, vkResources::meshes);
 	vkAcceleration::build_structures(info);
+}
+
+void GraphicsEngine::initial_cubemap() {
+	cubemap = new vkImage::CubemapEctTexture("resources/textures/cubemap.jpg");
 }

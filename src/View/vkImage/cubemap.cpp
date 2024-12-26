@@ -11,16 +11,10 @@
 
 
 
-vkImage::CubemapEctTexture::CubemapEctTexture(const TextureInputChunk& info) {
+vkImage::CubemapEctTexture::CubemapEctTexture(const std::string filename) {
     
 
-    device = info.logicalDevice;
-    physicalDevice = info.physicalDevice;
-    filename = info.filenames;
-    commandBuffer = info.commandBuffer;
-    queue = info.queue;
-    descriptorLayout = info.layout;
-    descriptorPool = info.descriptorPool;
+	this->filename = filename;
 
     Load();
      
@@ -44,13 +38,21 @@ void vkImage::CubemapEctTexture::Load()
     stbi_image_free((void*)pImg);
 	width = Cubemap[0].w_;
 	height = Cubemap[0].h_;
-    LoadCubemapData(Cubemap);
+	this->cubemap = Cubemap;
+
 
 }
 
 
-void vkImage::CubemapEctTexture::LoadCubemapData( std::vector<Bitmap>& Cubemap) {
+void vkImage::CubemapEctTexture::LoadCubemapData(const TextureInputChunk& info) {
 
+	device = info.logicalDevice;
+	physicalDevice = info.physicalDevice;
+	filename = info.filenames;
+	commandBuffer = info.commandBuffer;
+	queue = info.queue;
+	descriptorLayout = info.layout;
+	descriptorPool = info.descriptorPool;
 
     ImageInputChunk imageInput;
     imageInput.logicalDevice = device;
@@ -58,15 +60,15 @@ void vkImage::CubemapEctTexture::LoadCubemapData( std::vector<Bitmap>& Cubemap) 
     imageInput.width = width;
     imageInput.height = height;
     imageInput.format = vk::Format::eR8G8B8A8Unorm;
-    imageInput.arrayCount = Cubemap.size();
+    imageInput.arrayCount = this->cubemap.size();
     imageInput.tiling = vk::ImageTiling::eOptimal;
     imageInput.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
     imageInput.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
 	imageInput.flags = vk::ImageCreateFlagBits::eCubeCompatible;
     image = make_image(imageInput);
     imageMemory = make_image_memory(imageInput, image);
-	populate(Cubemap);
-	make_view(Cubemap.size());
+	populate();
+	make_view(this->cubemap.size());
 	make_sampler();
 	make_descriptor_set();
 
@@ -74,7 +76,7 @@ void vkImage::CubemapEctTexture::LoadCubemapData( std::vector<Bitmap>& Cubemap) 
 
 }
 
-void vkImage::CubemapEctTexture::populate(std::vector<Bitmap>& Cubemap) {
+void vkImage::CubemapEctTexture::populate() {
 	///color texture
 	//First create a CPU-visible buffer...
 
@@ -86,7 +88,7 @@ void vkImage::CubemapEctTexture::populate(std::vector<Bitmap>& Cubemap) {
 
 	size_t totalSize = 0;
 	size_t sizeOfArray = 0;
-	for (const auto& image : Cubemap) {
+	for (const auto& image : this->cubemap) {
 		totalSize += width * height * 4; // assuming 4 bytes per pixel (e.g., RGBA format)
 		//std::cout << "Hej jestem szerokoscia: " << image.w_ << " i wysokoscia: " << image.h_ << " arraya: " << sizeOfArray++ << std::endl;;
 	}
@@ -95,7 +97,7 @@ void vkImage::CubemapEctTexture::populate(std::vector<Bitmap>& Cubemap) {
 	input.size = totalSize;
 
 	// 3. Skopiuj wszystkie dane z pixels do mergedPixels
-	for (const auto& image : Cubemap) {
+	for (const auto& image : this->cubemap) {
 		for (const auto& value : image.data_) {
 			mergedPixels.insert(mergedPixels.end(), value, value + width * height * channels);
 		}
@@ -121,7 +123,7 @@ void vkImage::CubemapEctTexture::populate(std::vector<Bitmap>& Cubemap) {
 	transitionJob.image = image;
 	transitionJob.oldLayout = vk::ImageLayout::eUndefined;
 	transitionJob.newLayout = vk::ImageLayout::eTransferDstOptimal;
-	transitionJob.arrayCount = Cubemap.size();
+	transitionJob.arrayCount = this->cubemap.size();
 
 	transition_image_layout(transitionJob);
 
@@ -132,7 +134,7 @@ void vkImage::CubemapEctTexture::populate(std::vector<Bitmap>& Cubemap) {
 	copyJob.dstImage = image;
 	copyJob.width = width;
 	copyJob.height = height;
-	copyJob.arrayCount = Cubemap.size();
+	copyJob.arrayCount = this->cubemap.size();
 	copy_buffer_to_image(copyJob);
 
 	transitionJob.oldLayout = vk::ImageLayout::eTransferDstOptimal;
