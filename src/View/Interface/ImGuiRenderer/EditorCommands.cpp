@@ -19,7 +19,7 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	vkImGui::FilesExploresData& filesExploresData, 
 	SceneObject* root, SceneObject* &selectedObj,
 	ComponentType& selectedComponentType, ecs::ECS* ecs,
-	vkMesh::MeshesManager* meshesManager) {
+	RenderObjects* objects) {
 	float screenHeight = ImGui::GetIO().DisplaySize.y;
 	float screenWidth = ImGui::GetIO().DisplaySize.x;
 
@@ -158,7 +158,7 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	ImGui::SetNextWindowSize(leftPanelSize);
 	ImGui::Begin("Left Panel", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 	
-	render_scenegraph(root, selectedObj,ecs,meshesManager);
+	render_scenegraph(root, selectedObj,ecs);
 
 	// Jeśli zmienia się rozmiar panelu lewego:
 	ImVec2 leftPanelActualSize = ImGui::GetWindowSize();
@@ -171,7 +171,7 @@ void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	ImGui::SetNextWindowPos(rightPanelPos);
 	ImGui::SetNextWindowSize(rightPanelSize);
 	ImGui::Begin("Right Panel", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
-	display_scene_object(selectedObj,ecs,meshesManager,miniatureManager,selectedComponentType);
+	display_scene_object(selectedObj,ecs,objects,miniatureManager,selectedComponentType);
 	// Jeśli zmienia się rozmiar panelu prawego:
 	ImVec2 rightPanelActualSize = ImGui::GetWindowSize();
 	vkSettings::rightPanelWidth = rightPanelActualSize.x; // Zaktualizowanie zmiennej rozmiaru prawego panelu
@@ -305,17 +305,17 @@ void vkImGui::render_file_explorator(vkThumbs::ThumbsManager* miniatureManager, 
 		}
 }
 
-void vkImGui::render_scenegraph(SceneObject* root, SceneObject*& selectedObject, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager) {
+void vkImGui::render_scenegraph(SceneObject* root, SceneObject*& selectedObject, ecs::ECS* ecs) {
 	//ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]); // Przykładowo, większa czcionka
 	if (ImGui::TreeNode(root->getName().c_str())) {
 		if (ImGui::IsItemClicked()) {
 			selectedObject = root;	
 		}
 		
-		rmb_click_render(root, ecs, meshesManager);
+		rmb_click_render(root, ecs);
 		// Rekurencyjne rysowanie dzieci obiektu
 		for (auto& child : root->children) {
-			render_scenegraph(child, selectedObject,ecs,meshesManager);
+			render_scenegraph(child, selectedObject,ecs);
 		}
 
 
@@ -326,14 +326,17 @@ void vkImGui::render_scenegraph(SceneObject* root, SceneObject*& selectedObject,
 	
 }
 
-void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager, vkThumbs::ThumbsManager* miniatureManager, ComponentType& selectedComponentType) {
+void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, RenderObjects* objects, vkThumbs::ThumbsManager* miniatureManager, ComponentType& selectedComponentType) {
 	if (selectedObject != nullptr) {
 
 		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());
 		ImGui::Separator();
 		ImGui::Text("Components:");
 		auto components = ecs->getAllComponents(selectedObject->id);
-		ImGui::Checkbox("Active: ", &selectedObject->isActive);
+		if (ImGui::Checkbox("Active: ", &selectedObject->isActive)){
+			selectedObject->renderingDirtyFlag = true;
+			
+		}
 		for (const auto& componentPtr : components) {
 			Component* comp = componentPtr.get();  // Surowy wskaźnik
 
@@ -395,7 +398,8 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 
 								ImGui::SameLine;
 								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
-									meshesManager->updateMeshIndex(selectedObject, fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]], ecs);
+									//meshesManager->updateMeshIndex(selectedObject, fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]], ecs);
+									objects->changeModelId(ecs, fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]],selectedObject);
 
 									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
 
@@ -418,7 +422,10 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 					static char searchQuery[128] = "";
 					TextureComponent* textureComponent = dynamic_cast<TextureComponent*>(comp);
 
-					ImGui::Checkbox("Is PBR Texture", textureComponent->isPBRTexture());
+					if (ImGui::Checkbox("Is PBR Texture", textureComponent->isPBRTexture())) {
+						selectedObject->renderingDirtyFlag = true;
+					}
+					
 
 					// Wyświetl aktualnie przypisany model jako rozwijaną listę
 					std::string currentTexture;
@@ -570,7 +577,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 			}
 
 		}
-		AddComponent(ecs, selectedObject,meshesManager, selectedComponentType);
+		AddComponent(ecs, selectedObject, selectedComponentType);
 
 	}
 
@@ -618,7 +625,7 @@ void vkImGui::rmb_click_render(std::filesystem::path path, vkImGui::FilesExplore
 	}
 }
 
-void vkImGui::rmb_click_render(SceneObject* root, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager) {
+void vkImGui::rmb_click_render(SceneObject* root, ecs::ECS* ecs) {
 
 	SceneObject* obj = root;
 	if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
@@ -630,7 +637,7 @@ void vkImGui::rmb_click_render(SceneObject* root, ecs::ECS* ecs, vkMesh::MeshesM
 		if (ImGui::BeginMenu("Create")) { // Menu "Create"
 			if (ImGui::MenuItem("Object")) {
 
-				vkImGui::AddSceneObject(obj, ecs, meshesManager);
+				vkImGui::AddSceneObject(obj, ecs);
 
 			}
 

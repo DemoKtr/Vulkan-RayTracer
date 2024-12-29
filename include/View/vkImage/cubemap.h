@@ -21,7 +21,7 @@ namespace vkImage{
 
         CubemapEctTexture(const std::string filename);
 
-        ~CubemapEctTexture() {};
+        ~CubemapEctTexture();
 
         virtual void Load();
         

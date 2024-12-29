@@ -7,8 +7,8 @@ void vkImGui::RemoveSceneObject(SceneObject* &obj, SceneObject* &selectedObject)
 	selectedObject = nullptr;
 }
 
-void vkImGui::AddSceneObject(SceneObject* obj, ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager) {
-	SceneObject* newChild = new SceneObject(ecs, meshesManager);
+void vkImGui::AddSceneObject(SceneObject* obj, ecs::ECS* ecs) {
+	SceneObject* newChild = new SceneObject(ecs);
 	
 	obj->addChild(newChild); // Dodaj nowy obiekt do dzieci
 	newChild->updateModelMatrix(ecs);

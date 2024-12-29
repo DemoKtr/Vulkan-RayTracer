@@ -12,6 +12,7 @@
 #include "View/RenderStructs/projection.h"
 #include "Scene/Objects/PrefabManager.h"
 #include "View/vkImage/cubemap.h"
+#include "View/RenderingFlags.h"
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -39,7 +40,7 @@ class GraphicsEngine {
 	vk::Queue computeQueue{ nullptr };
 	vk::Queue transferQueue{ nullptr };
 	
-
+	uint32_t frameFlag = 1000;
 	vkImage::CubemapEctTexture* cubemap;
 
 	//swapchain
@@ -79,7 +80,7 @@ class GraphicsEngine {
 
 
 	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
-	
+	RenderObjects objects_to_rendering;
 
 	void make_instance(); //instance Setup
 	void choice_device();

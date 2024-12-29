@@ -16,9 +16,9 @@ SceneObject::SceneObject(ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager){
 	std::shared_ptr<TransformComponent> transformComponent = std::make_unique<TransformComponent>();
 	std::shared_ptr<MeshComponent> meshcomponent = std::make_unique<MeshComponent>();
 
-	ecs->addComponent(id, transformComponent);
+	ecs->addComponent(id, renderingDirtyFlag,transformComponent);
 
-	ecs->addComponent(id, meshcomponent);
+	ecs->addComponent(id,renderingDirtyFlag, meshcomponent);
 	ecs->getComponent<MeshComponent>(id).get()->setIndex(1600640060211770124);
 
 	meshesManager->addMesh(this,ecs);
@@ -32,7 +32,7 @@ SceneObject::SceneObject(ecs::ECS* ecs) {
 	std::shared_ptr<TransformComponent> transformComponent = std::make_unique<TransformComponent>();
 
 
-	ecs->addComponent(id, transformComponent);
+	ecs->addComponent(id, renderingDirtyFlag,transformComponent);
 
 	name = "SceneObject " + std::to_string(id);
 }

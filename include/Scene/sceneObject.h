@@ -21,7 +21,7 @@ class SceneObject{
 	public:
 		void destroyChilds();
 		bool isActive{ true };
-
+		bool renderingDirtyFlag = true;
 		ecs::Entity id;
 		std::vector<SceneObject*> children;
 		SceneObject* parent = nullptr;

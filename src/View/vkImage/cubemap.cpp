@@ -20,6 +20,13 @@ vkImage::CubemapEctTexture::CubemapEctTexture(const std::string filename) {
      
 }
 
+vkImage::CubemapEctTexture::~CubemapEctTexture() {
+	device.freeMemory(imageMemory);
+	device.destroyImage(image);
+	device.destroyImageView(imageView);
+	device.destroySampler(sampler);
+}
+
 
 void vkImage::CubemapEctTexture::Load()
 {

@@ -56,7 +56,7 @@ editor::~editor() {
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame> swapchainFrames, vkMesh::MeshesManager* meshesManager,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame> swapchainFrames, RenderObjects* objects,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
 
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
@@ -83,7 +83,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::
 	// Wysokoœæ i szerokoœæ ekranu
 	
 
-	vkImGui::render_editor(miniatureManager, filesExploresData, scene->root,selectedObject,selectedComponentType,scene->ecs,meshesManager);
+	vkImGui::render_editor(miniatureManager, filesExploresData, scene->root,selectedObject,selectedComponentType,scene->ecs,objects);
 	
 	
 	

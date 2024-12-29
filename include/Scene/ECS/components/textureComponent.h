@@ -43,6 +43,9 @@ public:
     bool* isPBRTexture() {
         return &isPBR;
     }
+    bool getPBR() {
+        return isPBR;
+    }
     nlohmann::json serialize() const override;
     ~TextureComponent();
 

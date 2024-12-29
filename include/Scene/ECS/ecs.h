@@ -19,7 +19,7 @@ namespace ecs {
         Entity createEntity();
 
         template <typename T>
-        void addComponent(Entity entity, std::shared_ptr<T> component) {
+        void addComponent(Entity entity,bool &flag ,std::shared_ptr<T> component) {
             const std::type_index typeIndex = std::type_index(typeid(T));
 
             // Jeœli dla danego typu nie ma wpisu, utwórz nowy
@@ -29,7 +29,7 @@ namespace ecs {
 
             // Dodaj nowy komponent do listy komponentów dla danego entity
             components[typeIndex][entity].push_back(component);
-
+            flag = true;
             // Zaktualizuj maskê komponentów
             entityMasks[entity].set(componentBitIndex<T>(), true);
         }

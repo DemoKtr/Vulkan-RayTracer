@@ -477,21 +477,14 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	uint32_t startInstance = 0;
 	//Triangles
 
-	
-	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
+	for (const auto & [key, vector] : objects_to_rendering.pbr) {
+		//std::cout << "Key: " << key << ", SceneObject count: " << vector.size() << "\n";
 
-		uint32_t k = 0;
-		for (vkMesh::MeshManagerData data : meshDataVector) {
-			if (data.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(data.sceneObject->id) && scene->ecs->hasComponent<TextureComponent>(data.sceneObject->id))++k;
-		}
-
-		if (k > 0) {
-
-			render_objects(commandBuffer, pipelineInfo.pipelineLayout, key, startInstance, k);
 		
-		}
-		
+
+		render_objects(commandBuffer, pipelineInfo.pipelineLayout, key, startInstance, vector.size());
 	}
+	
 	
 	
 	//commandBuffer.endRenderPass();
@@ -525,7 +518,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 	);
 
 
-	sceneEditor->render_editor(commandBuffer, swapchainFrames, meshesManager,swapchainExtent, imageIndex, debugMode);
+	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode);
 
 	
 	try {
@@ -748,7 +741,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
 	
-	
+
+
 
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, swapchainFormat, swapchainFrames[0].depthFormat);
 
@@ -759,8 +753,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera) {
 	
+	scene->update_objects_to_rendering(objects_to_rendering, scene->root);
 	
-
 	vkUtil::SwapChainFrame& _frame = swapchainFrames[imageIndex];
 	glm::vec3 eye = { 0.0f, 0.0f, -20.0f };
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
@@ -771,27 +765,23 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	_frame.cameraData.camPos = glm::vec4(camera.Position,1.0f);
 	
 	size_t i = 0;
-	for (const auto& [key, meshDataVector] : meshesManager->modelMatrices) {
-		for (const auto& meshData : meshDataVector) {
-			if (meshData.modelMatrix && meshData.sceneObject) {  // Sprawdzamy, czy wskaŸnik jest wa¿ny
-				if (meshData.sceneObject->isActive && scene->ecs->hasComponent<MeshComponent>(meshData.sceneObject->id) && scene->ecs->hasComponent<TextureComponent>(meshData.sceneObject->id)){
-
-					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
-					if (textureComponent != nullptr) {
-						_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(textureComponent->getColorTextureIndex());
-						_frame.modelsData[i++].model = *meshData.modelMatrix;//*meshData.modelMatrix;
-
-						
-					}
-
-					
-				}				
-			}
+	for (auto& [key, vector] : objects_to_rendering.unlit) {
+		for (SceneObject* obj : vector) {
+			_frame.modelsData[i].model = scene->ecs->getComponent<TransformComponent>(obj->id).get()->getTransform().getModelMatrix();
+			_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(scene->ecs->getComponent<TextureComponent>(obj->id).get()->getColorTextureIndex());
+			++i;
 		}
 	}
-	
+	for (auto& [key, vector] : objects_to_rendering.pbr) {
+		for (SceneObject* obj : vector) {
+			_frame.modelsData[i].model = scene->ecs->getComponent<TransformComponent>(obj->id).get()->getTransform().getModelMatrix();
+			_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(scene->ecs->getComponent<TextureComponent>(obj->id).get()->getColorTextureIndex());
+			++i;
+		}
+	}
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
-	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO));
+	//if (i > 0) 
+	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO)); 
 	_frame.write_postprocess_descriptors();
 
 }
