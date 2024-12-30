@@ -443,10 +443,10 @@ void vkPrefab::PrefabRenderer::render(Scene* scene, Camera::Camera camera, float
 
 
 
-		vk::CommandBuffer imgcommandBuffer = swapchainFrames[frameNumber].imguiCommandBuffer;
-		vk::CommandBuffer sceneRenderCommandBuffer = swapchainFrames[frameNumber].commandBuffer;
+		vk::CommandBuffer imgcommandBuffer = swapchainFrames[frameNumber].mainCommandBuffer;
+		//vk::CommandBuffer sceneRenderCommandBuffer = swapchainFrames[frameNumber].commandBuffer;
 		imgcommandBuffer.reset();
-		sceneRenderCommandBuffer.reset();
+		//sceneRenderCommandBuffer.reset();
 
 
 		prepare_frame(imageIndex, scene, deltaTime, camera);

@@ -27,6 +27,7 @@
 #include "Scene/Objects/PrefabResources.h"
 #include "MultithreatedSystems/TaskManager.h"
 #include "fileOperations/filesTypes.h"
+#include <MultithreatedSystems/mutexManager.h>
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
 	this->mainWindow = window;
@@ -43,6 +44,9 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 		[this](auto&&... args) { initial_cubemap(std::forward<decltype(args)>(args)...); }
 	);
 
+	auto& manager = MutexManager::getInstance();
+
+	manager.addMutex("Descriptors");
 
 	make_instance();
 	choice_device();
@@ -467,11 +471,13 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer,Scene* 
 		std::cerr << "Failed to begin rendering: " << err.what() << std::endl;
 		return;
 	}
+	auto& manager = MutexManager::getInstance();
 
+	manager.lock("Descriptors");	
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipeline);
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipelineLayout, 0, swapchainFrames[imageIndex].postprocessDescriptorSet, nullptr);
 	commandBuffer.pushConstants(pipelineInfo.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ProjectionData), &projection);
-
+	manager.unlock("Descriptors");
 	prepare_scene(commandBuffer);
 
 	uint32_t startInstance = 0;
@@ -586,20 +592,25 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 		std::cout << "Failed to acquire swapchain image!" << std::endl;
 	}
 
-
+	auto& taskmanager = TaskManager::getInstance();
+	taskmanager.submitTask(
+		TaskPriority::HIGH,
+		[this](auto&&... args) { prepare_frame(std::forward<decltype(args)>(args)...); },
+		imageIndex, scene, deltaTime, camera
+	);
 	
-	vk::CommandBuffer imgcommandBuffer = swapchainFrames[frameNumber].imguiCommandBuffer;
-	vk::CommandBuffer sceneRenderCommandBuffer = swapchainFrames[frameNumber].commandBuffer;
+	vk::CommandBuffer imgcommandBuffer = swapchainFrames[frameNumber].mainCommandBuffer;
+
 	imgcommandBuffer.reset();
-	sceneRenderCommandBuffer.reset();
 
 
-	prepare_frame(imageIndex, scene, deltaTime, camera);
+
+	//prepare_frame(imageIndex, scene, deltaTime, camera);
 	
 	record_draw_command(imgcommandBuffer,scene ,imageIndex);
 	
 	
-
+	taskmanager.waitForPriorityTasks();
 	vk::SubmitInfo submitInfo = {};
 
 	vk::Semaphore waitSemaphores[] = { swapchainFrames[frameNumber].imageAvailable };
@@ -783,6 +794,8 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	//if (i > 0) 
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO)); 
 	_frame.write_postprocess_descriptors();
+
+	
 
 }
 

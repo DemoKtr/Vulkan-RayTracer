@@ -83,9 +83,9 @@ void vkInit::make_imgui_frame_command_buffers(commandBufferInputChunk inputChunk
 
 	for (int i = 0; i < inputChunk.frames.size(); ++i) {
 		try {
-			inputChunk.frames[i].commandBuffer = inputChunk.device.allocateCommandBuffers(allocInfo)[0];
-			if (debugMode) std::cout << "Allocated Primary command buffer for frame" << i << std::endl;
-			inputChunk.frames[i].imguiCommandBuffer = inputChunk.device.allocateCommandBuffers(igallocInfo)[0];
+			//inputChunk.frames[i].commandBuffer = inputChunk.device.allocateCommandBuffers(allocInfo)[0];
+			// (debugMode) std::cout << "Allocated Primary command buffer for frame" << i << std::endl;
+			inputChunk.frames[i].mainCommandBuffer = inputChunk.device.allocateCommandBuffers(igallocInfo)[0];
 			if (debugMode) std::cout << "Allocated graphic particle command buffer for frame" << i << std::endl;
 			
 		}

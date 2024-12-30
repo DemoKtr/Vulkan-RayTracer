@@ -45,11 +45,9 @@ struct RenderObjects {
             }
             break;
         }
-        std::cout << "Mam grupe: " << static_cast<int>(group) << std::endl;
+
         objectToGroup[obj] = group;
-        std::cout << "Jest Inactive: " << inactive.size() << std::endl;
-        std::cout << "Jest PBR: " << pbr.size() << std::endl;
-        std::cout << "Jest Unlit: " << unlit.size() << std::endl;
+
     }
 
     void removeObjectFromGroup(uint64_t modelId, SceneObject* obj, GroupType group) {

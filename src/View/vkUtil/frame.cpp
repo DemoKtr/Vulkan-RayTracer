@@ -1,7 +1,7 @@
 #include "View/vkUtil/frame.h"
 #include <View/vkUtil/memory.h>
 #include <View/vkImage/image.h>
-
+#include "MultithreatedSystems/mutexManager.h"
 void vkUtil::SwapChainFrame::make_depth_resources() {
 	depthFormat = vkImage::find_supported_format(physicalDevice, { vk::Format::eD32Sfloat,vk::Format::eD24UnormS8Uint }, vk::ImageTiling::eOptimal, vk::FormatFeatureFlagBits::eDepthStencilAttachment);
 
@@ -87,7 +87,8 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	writeInfo.descriptorType = vk::DescriptorType::eUniformBuffer;
 	writeInfo.pBufferInfo = &cameraUBODescriptor;
 
-	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
+	
+	
 
 	vk::WriteDescriptorSet writeInfo2;
 	writeInfo2.dstSet = postprocessDescriptorSet;
@@ -96,8 +97,11 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	writeInfo2.descriptorCount = 1;
 	writeInfo2.descriptorType = vk::DescriptorType::eStorageBuffer;
 	writeInfo2.pBufferInfo = &modelsSBODescriptor;
-
+	auto& manager = MutexManager::getInstance();
+	manager.lock("Descriptors");
+	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo2, nullptr);
+	manager.unlock("Descriptors");
 }
 
 void vkUtil::SwapChainFrame::destroy(){

@@ -1,6 +1,6 @@
 #pragma once
 #include "config.h"
-
+#include <mutex>
 
 namespace vkUtil {
 
@@ -54,14 +54,16 @@ namespace vkUtil {
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
 
-		vk::CommandBuffer commandBuffer;
-		vk::CommandBuffer imguiCommandBuffer;
-		vk::CommandBuffer postprocessCommandBuffer;
+
+		vk::CommandBuffer mainCommandBuffer;
+
 
 
 		//Sync objects
 		vk::Semaphore imageAvailable, renderFinished, computeFinished;
 		vk::Fence inFlight;
+
+		
 
 		void make_depth_resources();
 		void make_descriptors_resources(int number_of_objects);
