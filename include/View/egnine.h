@@ -99,7 +99,9 @@ class GraphicsEngine {
 	void load_textures_files();
 	void load_scripts();
 
-	void record_draw_command(vk::CommandBuffer commandBuffer,Scene* scene,uint32_t imageIndex);
+	void record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene,uint32_t imageIndex);
+	void record_unlit_draw_command(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
+	void record_pbr_draw_command(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
 
 	void prepare_scene(vk::CommandBuffer commandBuffer);
 	void render_objects(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout, uint64_t objectType, uint32_t& startInstance, uint32_t instanceCount);

@@ -157,6 +157,11 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkInit/vkPipeline/pipelineCache.cpp"
     "src/View/vkImage/cubemap.cpp"
     "src/View/vkImage/cubemapConverter.cpp"
+    "src/View/vkRecordCommands/DrawCommands.cpp"
+    "src/Scene/Objects/Lights/Light.cpp"
+    "src/Scene/Objects/Lights/DirectionalLight.cpp"
+    "src/Scene/Objects/Lights/PointLight.cpp"
+    "src/Scene/Objects/Lights/SpotLight.cpp"
 
     )
 

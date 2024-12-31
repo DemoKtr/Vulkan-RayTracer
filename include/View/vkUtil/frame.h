@@ -56,6 +56,10 @@ namespace vkUtil {
 
 
 		vk::CommandBuffer mainCommandBuffer;
+		vk::CommandBuffer unlitCommandBuffer;
+		vk::CommandBuffer pbrCommandBuffer;
+		vk::CommandBuffer skyboxCommandBuffer;
+		vk::CommandBuffer deferedCommandBuffer;
 
 
 

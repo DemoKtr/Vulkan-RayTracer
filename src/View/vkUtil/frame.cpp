@@ -97,11 +97,10 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	writeInfo2.descriptorCount = 1;
 	writeInfo2.descriptorType = vk::DescriptorType::eStorageBuffer;
 	writeInfo2.pBufferInfo = &modelsSBODescriptor;
-	auto& manager = MutexManager::getInstance();
-	manager.lock("Descriptors");
+	
 	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo2, nullptr);
-	manager.unlock("Descriptors");
+
 }
 
 void vkUtil::SwapChainFrame::destroy(){

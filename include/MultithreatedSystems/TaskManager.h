@@ -31,7 +31,9 @@ public:
 enum class TaskPriority {
     LOW = 0,
     MEDIUM = 1,
-    HIGH = 2
+    HIGH = 2,
+    DESCRIPTORS = 3,
+    RECORD_DRAW_COMMAND = 4
 };
 
 
@@ -90,44 +92,52 @@ public:
         }
     }
 
+    // Poprawiona metoda submitTask z bardziej ogólnym zliczaniem aktywnych zadań
     template<typename Func, typename... Args>
     void submitTask(TaskPriority priority, Func&& func, Args&&... args) {
         {
             std::lock_guard<std::mutex> lock(counterMutex);
-            if (priority == TaskPriority::MEDIUM || priority == TaskPriority::HIGH) {
-                ++activePriorityTasks;
-            }
+            ++priorityTaskCount[priority];  // Zwiększ licznik dla danego priorytetu
         }
 
         auto task = std::make_shared<Task>(priority, [this, priority, func = std::forward<Func>(func), args = std::make_tuple(std::forward<Args>(args)...)]() mutable {
             syncArgs(args);
             std::apply(func, std::move(args));
 
-            if (priority == TaskPriority::MEDIUM || priority == TaskPriority::HIGH) {
+            // Zmniejsz licznik po wykonaniu zadania
+            {
                 std::lock_guard<std::mutex> lock(counterMutex);
-                --activePriorityTasks;
-                if (activePriorityTasks == 0) {
-                    priorityCondition.notify_all();
+                --priorityTaskCount[priority];
+                if (priorityTaskCount[priority] == 0) {
+                    priorityCondition.notify_all();  // Powiadom, jeśli wszystkie zadania zostały zakończone
                 }
             }
             });
 
         {
             std::lock_guard<std::mutex> lock(queueMutex);
-            taskQueue.push(task);
+            taskQueue.push(task);  // Dodaj zadanie do kolejki
         }
-        queueCondition.notify_one();
+        queueCondition.notify_one();  // Powiadom, że zadanie zostało dodane
     }
 
-    void waitForPriorityTasks() {
+    // Poprawiona metoda czekania na zadania o danym priorytecie
+    void waitForPriorityTasks(TaskPriority expectedPriority) {
         std::unique_lock<std::mutex> lock(counterMutex);
-        priorityCondition.wait(lock, [this]() {
-            return activePriorityTasks == 0;
+        priorityCondition.wait(lock, [this, expectedPriority]() {
+            return priorityTaskCount[expectedPriority] == 0;  // Czekaj na zakończenie wszystkich zadań o danym priorytecie
             });
     }
 
+
 private:
-    TaskManager() : running(false), activePriorityTasks(0) {}
+    TaskManager() : running(false) {
+        priorityTaskCount[TaskPriority::LOW] = 0;
+        priorityTaskCount[TaskPriority::MEDIUM] = 0;
+        priorityTaskCount[TaskPriority::HIGH] = 0;
+        priorityTaskCount[TaskPriority::DESCRIPTORS] = 0;
+        priorityTaskCount[TaskPriority::RECORD_DRAW_COMMAND] = 0;
+    }
 
     void workerThread() {
         while (running) {
@@ -172,7 +182,7 @@ private:
 
     std::mutex counterMutex;
     std::condition_variable priorityCondition;
-    size_t activePriorityTasks;
+    std::unordered_map<TaskPriority, size_t> priorityTaskCount;  // Śledzenie liczby aktywnych zadań dla każdego priorytetu
 
     TaskManager(const TaskManager&) = delete;
     TaskManager& operator=(const TaskManager&) = delete;

@@ -69,15 +69,15 @@ vk::CommandBuffer vkInit::make_command_buffer(commandBufferInputChunk inputChunk
 }
 
 void vkInit::make_imgui_frame_command_buffers(commandBufferInputChunk inputChunk, bool debugMode){
-	vk::CommandBufferAllocateInfo allocInfo = {};
-	allocInfo.commandPool = inputChunk.commandPool;
-	allocInfo.level = vk::CommandBufferLevel::ePrimary;
-	allocInfo.commandBufferCount = 1;
+	vk::CommandBufferAllocateInfo mainAllocInfo = {};
+	mainAllocInfo.commandPool = inputChunk.commandPool;
+	mainAllocInfo.level = vk::CommandBufferLevel::ePrimary;
+	mainAllocInfo.commandBufferCount = 1;
 
-	vk::CommandBufferAllocateInfo igallocInfo = {};
-	igallocInfo.commandPool = inputChunk.commandPool;
-	igallocInfo.level = vk::CommandBufferLevel::ePrimary;
-	igallocInfo.commandBufferCount = 1;
+	vk::CommandBufferAllocateInfo seccAllocInfo = {};
+	seccAllocInfo.commandPool = inputChunk.commandPool;
+	seccAllocInfo.level = vk::CommandBufferLevel::eSecondary;
+	seccAllocInfo.commandBufferCount = 1;
 
 
 
@@ -85,8 +85,12 @@ void vkInit::make_imgui_frame_command_buffers(commandBufferInputChunk inputChunk
 		try {
 			//inputChunk.frames[i].commandBuffer = inputChunk.device.allocateCommandBuffers(allocInfo)[0];
 			// (debugMode) std::cout << "Allocated Primary command buffer for frame" << i << std::endl;
-			inputChunk.frames[i].mainCommandBuffer = inputChunk.device.allocateCommandBuffers(igallocInfo)[0];
-			if (debugMode) std::cout << "Allocated graphic particle command buffer for frame" << i << std::endl;
+			inputChunk.frames[i].mainCommandBuffer = inputChunk.device.allocateCommandBuffers(mainAllocInfo)[0];
+			inputChunk.frames[i].unlitCommandBuffer = inputChunk.device.allocateCommandBuffers(seccAllocInfo)[0];
+			inputChunk.frames[i].pbrCommandBuffer = inputChunk.device.allocateCommandBuffers(seccAllocInfo)[0];
+			inputChunk.frames[i].deferedCommandBuffer = inputChunk.device.allocateCommandBuffers(seccAllocInfo)[0];
+			inputChunk.frames[i].skyboxCommandBuffer = inputChunk.device.allocateCommandBuffers(seccAllocInfo)[0];
+			if (debugMode) std::cout << "Allocated command buffers for frame" << i << std::endl;
 			
 		}
 		catch (vk::SystemError err) {
