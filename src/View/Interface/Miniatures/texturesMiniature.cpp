@@ -23,8 +23,10 @@ vkThumbs::TextureThumbs::TextureThumbs(ThumbInput input) : Thumb(input) {
 
 
 	info.filenames = nullptr;
-
-	for (std::string filename : fileOperations::texturesNames.fullPaths) {
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	
+	
+	for (std::string filename : filesManager.getTexturesNames().fullPaths) {
 		info.filenames = filename.c_str();
 		vkImage::Texture* icon = new vkImage::Texture(info);
 		this->textures.push_back(icon);

@@ -162,6 +162,8 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/Objects/Lights/DirectionalLight.cpp"
     "src/Scene/Objects/Lights/PointLight.cpp"
     "src/Scene/Objects/Lights/SpotLight.cpp"
+    "src/Memory/MemoryPool.cpp"
+    "src/UI/Font/FontManager.cpp"
 
     )
 

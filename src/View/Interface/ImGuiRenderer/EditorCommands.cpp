@@ -328,7 +328,7 @@ void vkImGui::render_scenegraph(SceneObject* root, SceneObject*& selectedObject,
 
 void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, RenderObjects* objects, vkThumbs::ThumbsManager* miniatureManager, ComponentType& selectedComponentType) {
 	if (selectedObject != nullptr) {
-
+		fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 		ImGui::Text("Object Name: %s", selectedObject->getName().c_str());
 		ImGui::Separator();
 		ImGui::Text("Components:");
@@ -375,7 +375,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 					// Wyświetl aktualnie przypisany model jako rozwijaną listę
 					std::string currentModel;
 					if (mesh->getIndex() >= 0)
-						currentModel = (fileOperations::meshesNames.fileNames[fileOperations::meshesNames.getIndex(mesh->getIndex())]);
+						currentModel = (filesManager.getMeshesNames().fileNames[filesManager.getMeshesNames().getIndex(mesh->getIndex())]);
 					else currentModel = "";
 
 					if (ImGui::BeginCombo("##modelSelector", currentModel.c_str())) { // Combo bez etykiety z lewej strony
@@ -383,14 +383,14 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 						ImGui::InputText("Search Models", searchQuery, IM_ARRAYSIZE(searchQuery));
 
 						// Pętla do wyświetlania wyników wyszukiwania
-						for (size_t i = 0; i < fileOperations::meshesNames.fileNames.size(); ++i) {
-							const std::string& modelName = fileOperations::meshesNames.fileNames[i];
+						for (size_t i = 0; i < filesManager.getMeshesNames().fileNames.size(); ++i) {
+							const std::string& modelName = filesManager.getMeshesNames().fileNames[i];
 							if (modelName.find(searchQuery) != std::string::npos) {
 
 								ImGui::PushID(i);
 
 								// Połączony tekst nazwy modelu i ścieżki
-								std::string displayText = modelName + "\nPath: " + fileOperations::meshesNames.fullPaths[i];
+								std::string displayText = modelName + "\nPath: " + filesManager.getMeshesNames().fullPaths[i];
 								ImVec2 imageSize(64, 64);
 								// Wybór modelu
 
@@ -399,7 +399,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 								ImGui::SameLine;
 								if (ImGui::Selectable(displayText.c_str(), mesh->getIndex() == i)) {
 									//meshesManager->updateMeshIndex(selectedObject, fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]], ecs);
-									objects->changeModelId(ecs, fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]],selectedObject);
+									objects->changeModelId(ecs, filesManager.getMeshesNames().hash[filesManager.getMeshesNames().fullPaths[i]],selectedObject);
 
 									std::cout << "Wybrano indeks: " << mesh->getIndex() << std::endl;
 
@@ -430,7 +430,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 					// Wyświetl aktualnie przypisany model jako rozwijaną listę
 					std::string currentTexture;
 					if (textureComponent->getColorTextureIndex() >= 0)
-						currentTexture = fileOperations::texturesNames.fileNames[fileOperations::texturesNames.getIndex(textureComponent->getColorTextureIndex())];
+						currentTexture = filesManager.getTexturesNames().fileNames[filesManager.getTexturesNames().getIndex(textureComponent->getColorTextureIndex())];
 					else currentTexture = "";
 
 					if (ImGui::BeginCombo("##textureSelector", currentTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -438,14 +438,14 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 						ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
 
 						// Pętla do wyświetlania wyników wyszukiwania
-						for (size_t i = 0; i < fileOperations::texturesNames.fileNames.size(); ++i) {
-							const std::string& textureName = fileOperations::texturesNames.fileNames[i];
+						for (size_t i = 0; i < filesManager.getTexturesNames().fileNames.size(); ++i) {
+							const std::string& textureName = filesManager.getTexturesNames().fileNames[i];
 							if (textureName.find(searchQuery) != std::string::npos) {
 
 								ImGui::PushID(i);
 
 								// Połączony tekst nazwy modelu i ścieżki
-								std::string displayText = textureName + "\nPath: " + fileOperations::texturesNames.fullPaths[i];
+								std::string displayText = textureName + "\nPath: " + filesManager.getTexturesNames().fullPaths[i];
 
 
 								ImVec2 imageSize(64, 64);
@@ -453,8 +453,8 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 								// Wybór modelu
 								ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 								ImGui::SameLine;
-								if (ImGui::Selectable(displayText.c_str(), fileOperations::texturesNames.getIndex(textureComponent->getColorTextureIndex()) == i)) {
-									textureComponent->setColorTextureIndex(fileOperations::texturesNames.hash[fileOperations::texturesNames.fullPaths[i]]);  // Zapisz wybrany indeks
+								if (ImGui::Selectable(displayText.c_str(), filesManager.getTexturesNames().getIndex(textureComponent->getColorTextureIndex()) == i)) {
+									textureComponent->setColorTextureIndex(filesManager.getTexturesNames().hash[filesManager.getTexturesNames().fullPaths[i]]);  // Zapisz wybrany indeks
 									std::cout << "Wybrano indeks: " << textureComponent->getColorTextureIndex() << std::endl;
 								}
 
@@ -467,7 +467,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 					if (*textureComponent->isPBRTexture()) {
 						std::string currentNormalTexture;
 						if (textureComponent->getNormalTextureIndex() >= 0)
-							currentNormalTexture = fileOperations::texturesNames.fileNames[fileOperations::texturesNames.getIndex(textureComponent->getNormalTextureIndex())];
+							currentNormalTexture = filesManager.getTexturesNames().fileNames[filesManager.getTexturesNames().getIndex(textureComponent->getNormalTextureIndex())];
 						else currentNormalTexture = "";
 
 						if (ImGui::BeginCombo("##normalSelector", currentNormalTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -475,22 +475,22 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 							ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
 
 							// Pętla do wyświetlania wyników wyszukiwania
-							for (size_t i = 0; i < fileOperations::texturesNames.fileNames.size(); ++i) {
-								const std::string& textureName = fileOperations::texturesNames.fileNames[i];
+							for (size_t i = 0; i < filesManager.getTexturesNames().fileNames.size(); ++i) {
+								const std::string& textureName = filesManager.getTexturesNames().fileNames[i];
 								if (textureName.find(searchQuery) != std::string::npos) {
 
 									ImGui::PushID(i);
 
 									// Połączony tekst nazwy modelu i ścieżki
-									std::string displayText = textureName + "\nPath: " + fileOperations::texturesNames.fullPaths[i];
+									std::string displayText = textureName + "\nPath: " + filesManager.getTexturesNames().fullPaths[i];
 
 									ImVec2 imageSize(64, 64);
 
 									// Wybór modelu
 									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 									ImGui::SameLine;
-									if (ImGui::Selectable(displayText.c_str(), fileOperations::texturesNames.getIndex(textureComponent->getNormalTextureIndex()) == i)) {
-										textureComponent->setNormalTextureIndex(fileOperations::texturesNames.hash[fileOperations::texturesNames.fullPaths[i]]);  // Zapisz wybrany indeks
+									if (ImGui::Selectable(displayText.c_str(), filesManager.getTexturesNames().getIndex(textureComponent->getNormalTextureIndex()) == i)) {
+										textureComponent->setNormalTextureIndex(filesManager.getTexturesNames().hash[filesManager.getTexturesNames().fullPaths[i]]);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getNormalTextureIndex() << std::endl;
 									}
 
@@ -502,7 +502,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 
 						std::string currentARMTexture;
 						if (textureComponent->getARMTextureIndex() >= 0)
-							currentARMTexture = fileOperations::texturesNames.fileNames[fileOperations::texturesNames.getIndex(textureComponent->getARMTextureIndex())];
+							currentARMTexture = filesManager.getTexturesNames().fileNames[filesManager.getTexturesNames().getIndex(textureComponent->getARMTextureIndex())];
 						else currentARMTexture = "";
 
 						if (ImGui::BeginCombo("##ARMtextureSelector", currentARMTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -510,22 +510,22 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 							ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
 
 							// Pętla do wyświetlania wyników wyszukiwania
-							for (size_t i = 0; i < fileOperations::texturesNames.fileNames.size(); ++i) {
-								const std::string& textureName = fileOperations::texturesNames.fileNames[i];
+							for (size_t i = 0; i < filesManager.getTexturesNames().fileNames.size(); ++i) {
+								const std::string& textureName = filesManager.getTexturesNames().fileNames[i];
 								if (textureName.find(searchQuery) != std::string::npos) {
 
 									ImGui::PushID(i);
 
 									// Połączony tekst nazwy modelu i ścieżki
-									std::string displayText = textureName + "\nPath: " + fileOperations::texturesNames.fullPaths[i];
+									std::string displayText = textureName + "\nPath: " + filesManager.getTexturesNames().fullPaths[i];
 
 									
 									ImVec2 imageSize(64, 64);
 									// Wybór modelu
 									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 									ImGui::SameLine;
-									if (ImGui::Selectable(displayText.c_str(), fileOperations::texturesNames.getIndex(textureComponent->getARMTextureIndex()) == i)) {
-										textureComponent->setARMTextureIndex(fileOperations::texturesNames.hash[fileOperations::texturesNames.fullPaths[i]]);  // Zapisz wybrany indeks
+									if (ImGui::Selectable(displayText.c_str(), filesManager.getTexturesNames().getIndex(textureComponent->getARMTextureIndex()) == i)) {
+										textureComponent->setARMTextureIndex(filesManager.getTexturesNames().hash[filesManager.getTexturesNames().fullPaths[i]]);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getARMTextureIndex() << std::endl;
 									}
 
@@ -537,7 +537,7 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 
 						std::string currentDepthTexture;
 						if (textureComponent->getDepthTextureIndex() >= 0)
-							currentDepthTexture = fileOperations::texturesNames.fileNames[fileOperations::texturesNames.getIndex(textureComponent->getDepthTextureIndex())];
+							currentDepthTexture = filesManager.getTexturesNames().fileNames[filesManager.getTexturesNames().getIndex(textureComponent->getDepthTextureIndex())];
 						else currentDepthTexture = "";
 
 						if (ImGui::BeginCombo("##DepthtextureSelector", currentDepthTexture.c_str())) { // Combo bez etykiety z lewej strony
@@ -545,21 +545,21 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 							ImGui::InputText("Search Textures", searchQuery, IM_ARRAYSIZE(searchQuery));
 
 							// Pętla do wyświetlania wyników wyszukiwania
-							for (size_t i = 0; i < fileOperations::texturesNames.fileNames.size(); ++i) {
-								const std::string& textureName = fileOperations::texturesNames.fileNames[i];
+							for (size_t i = 0; i < filesManager.getTexturesNames().fileNames.size(); ++i) {
+								const std::string& textureName = filesManager.getTexturesNames().fileNames[i];
 								if (textureName.find(searchQuery) != std::string::npos) {
 
 									ImGui::PushID(i);
 
 									// Połączony tekst nazwy modelu i ścieżki
-									std::string displayText = textureName + "\nPath: " + fileOperations::texturesNames.fullPaths[i];
+									std::string displayText = textureName + "\nPath: " + filesManager.getTexturesNames().fullPaths[i];
 
 									ImVec2 imageSize(64, 64);
 									// Wybór modelu
 									ImGui::Image(miniatureManager->get_texture_icon(i), imageSize);
 									ImGui::SameLine;
-									if (ImGui::Selectable(displayText.c_str(), fileOperations::texturesNames.getIndex(textureComponent->getDepthTextureIndex()) == i)) {
-										textureComponent->setDepthTextureIndex(fileOperations::texturesNames.hash[fileOperations::texturesNames.fullPaths[i]]);  // Zapisz wybrany indeks
+									if (ImGui::Selectable(displayText.c_str(), filesManager.getTexturesNames().getIndex(textureComponent->getDepthTextureIndex()) == i)) {
+										textureComponent->setDepthTextureIndex(filesManager.getTexturesNames().hash[filesManager.getTexturesNames().fullPaths[i]]);  // Zapisz wybrany indeks
 										std::cout << "Wybrano indeks: " << textureComponent->getDepthTextureIndex() << std::endl;
 									}
 

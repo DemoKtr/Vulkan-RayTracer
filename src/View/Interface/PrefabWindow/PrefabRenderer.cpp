@@ -164,7 +164,7 @@ void vkPrefab::PrefabRenderer::create_frame_command_buffer() {
 }
 
 void vkPrefab::PrefabRenderer::prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera) {
-
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 	vkUtil::SwapChainFrame& _frame = swapchainFrames[imageIndex];
 	glm::vec3 eye = { 0.0f, 0.0f, -20.0f };
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
@@ -186,7 +186,7 @@ void vkPrefab::PrefabRenderer::prepare_frame(uint32_t imageIndex, Scene* scene, 
 					TextureComponent* textureComponent = scene->ecs->getComponent<TextureComponent>(meshData.sceneObject->id).get();
 
 					if (textureComponent != nullptr) {
-						_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(textureComponent->getColorTextureIndex());
+						_frame.modelsData[i].textureID = filesManager.getTexturesNames().getIndex(textureComponent->getColorTextureIndex());
 					}
 					else {
 						_frame.modelsData[i].textureID = 0;

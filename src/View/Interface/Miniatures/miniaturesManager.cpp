@@ -10,7 +10,8 @@ void vkThumbs::ThumbsManager::make_descriptor_layout() {
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eFragment);
 	descriptorLayout = vkInit::make_descriptor_set_layout(logicalDevice, bindings);
-	descriptorPool = vkInit::make_descriptor_pool(logicalDevice,fileOperations::meshesNames.fileNames.size() + fileOperations::texturesNames.fileNames.size() + 15 + 1, bindings);
+    fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	descriptorPool = vkInit::make_descriptor_pool(logicalDevice,filesManager.getMeshesNames().fileNames.size() + filesManager.getTexturesNames().fileNames.size() + 15 + 1, bindings);
 }
 
 

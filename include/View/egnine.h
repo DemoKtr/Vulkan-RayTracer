@@ -13,7 +13,7 @@
 #include "Scene/Objects/PrefabManager.h"
 #include "View/vkImage/cubemap.h"
 #include "View/RenderingFlags.h"
-
+#include "UI/UIManagers.h"
 class GraphicsEngine {
 	glm::ivec2 screenSize;
 	const char* appName{ "RayTracer" };
@@ -54,9 +54,11 @@ class GraphicsEngine {
 
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::DescriptorPool postprocessDescriptorPool;
+	vk::DescriptorPool UIDescriptorPool;
 
 	//DESCRIPTOR SET LAYOUT
 	vk::DescriptorSetLayout postprocessDescriptorSetLayout;
+	vk::DescriptorSetLayout UIDescriptorSetLayout;
 
 
 	vk::CommandBuffer maincommandBuffer;
@@ -77,7 +79,8 @@ class GraphicsEngine {
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
-
+	UI::UIManager UImanager;
+	UI::UIButton* test;
 
 	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
 	RenderObjects objects_to_rendering;
@@ -98,6 +101,7 @@ class GraphicsEngine {
 	void load_meshes_files();
 	void load_textures_files();
 	void load_scripts();
+	void load_fonts();
 
 	void record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene,uint32_t imageIndex);
 	void record_unlit_draw_command(vk::CommandBuffer commandBuffer,uint32_t imageIndex);

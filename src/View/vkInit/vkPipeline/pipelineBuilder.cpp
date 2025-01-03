@@ -102,8 +102,10 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swap
 		pipeline_rendering_create_info.sType = vk::StructureType::ePipelineRenderingCreateInfoKHR,
 		pipeline_rendering_create_info.colorAttachmentCount = 1,
 		pipeline_rendering_create_info.pColorAttachmentFormats = &swapchainFormat;
-		pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eD32Sfloat;
-		
+		if (useDepthTest)
+			pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eD32Sfloat;
+		else
+			pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eUndefined;
 		pipelineInfo.renderPass = nullptr;
 		pipelineInfo.pNext = &pipeline_rendering_create_info;
 	}
@@ -159,7 +161,7 @@ void vkInit::PipelineBuilder::configure_input_assembly(vk::PrimitiveTopology top
 }
 
 void vkInit::PipelineBuilder::set_depth() {
-	if (1==1) {
+	if (useDepthTest) {
 		depthState.flags = vk::PipelineDepthStencilStateCreateFlags();
 		depthState.depthTestEnable = true;
 		depthState.depthWriteEnable = true;
@@ -169,7 +171,12 @@ void vkInit::PipelineBuilder::set_depth() {
 		pipelineInfo.pDepthStencilState = &depthState;
 	}
 	else {
-		//depthState = nullptr;
+		depthState.flags = vk::PipelineDepthStencilStateCreateFlags();
+		depthState.depthTestEnable = false;
+		depthState.depthWriteEnable = false;
+		depthState.depthCompareOp = vk::CompareOp::eAlways;
+		depthState.depthBoundsTestEnable = false;
+		depthState.stencilTestEnable = false;
 		pipelineInfo.pDepthStencilState = nullptr;
 	}
 }

@@ -41,7 +41,7 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 	int heigh;
 	int number_of_models;
 };*/
-	
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 	ThumbRendererInput input;
 	input.physicalDevice = physicalDevice;
 	input.device = device;
@@ -93,7 +93,7 @@ void vkThumbs::MeshesTumbs::make_descrptor_set(MeshesThumbInput meshesInput) {
 		std::cout << "Failed to make sampler." << std::endl;
 	}
 	
-	for (uint32_t i = 0; i < fileOperations::meshesNames.fileNames.size(); ++i) {
+	for (uint32_t i = 0; i < filesManager.getMeshesNames().fileNames.size(); ++i) {
 
 		vk::DescriptorImageInfo imageDescriptorInfo;
 		imageDescriptorInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;

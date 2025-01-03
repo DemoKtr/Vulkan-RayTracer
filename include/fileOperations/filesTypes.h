@@ -14,8 +14,9 @@ namespace fileOperations {
             Video,     // Plik wideo
             Binary,    // Plik binarny
             Script,    // Typ pliku skryptu (np. .cpp, .h)
-            Model,    // Typ pliku skryptu (np. .cpp, .h)
-            Prefab,    // Typ pliku skryptu (np. .cpp, .h)
+            Model,    //
+            Prefab,    // 
+            Font,    //TTF
             Unknown    // Nieznany typ pliku
         };
 
@@ -29,6 +30,7 @@ namespace fileOperations {
             case Script: return "Script";
             case Model: return  "Model";
             case Prefab: return  "Prefab";
+            case Font: return  "Font";
             case Unknown:return "Unknown";
             default:     return "Invalid Type";
             }
@@ -46,6 +48,7 @@ namespace fileOperations {
             case Script: return { ".cpp", ".h" };
             case Model: return { ".obj", ".fbx" };
             case Prefab: return { ".prefab" };
+            case Font: return { ".ttf" };
             case Unknown:return { ".unknown" };
             default:     return { "invalid Type" };
             }

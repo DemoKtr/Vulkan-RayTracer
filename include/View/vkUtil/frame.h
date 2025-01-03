@@ -18,6 +18,7 @@ namespace vkUtil {
 
 
 
+
 	class SwapChainFrame {
 
 	public:
@@ -42,17 +43,22 @@ namespace vkUtil {
 		/// DATA
 		CameraUBO cameraData;
 		std::vector<MeshSBO> modelsData;
+		std::vector<glm::vec4> UIPositionSize;
 		//Buffer
 		Buffer cameraDataBuffer;
 		Buffer modelsDataBuffer;
+		Buffer UIPositionSizeDataBuffer;
 		//Data Write Location
 		void* cameraDataWriteLocation;
 		void* modelsDataWriteLocation;
+		void* UIPositionSizeDataWriteLocation;
 		//DESCRIPTOR BUFFER INFO
 		vk::DescriptorBufferInfo cameraUBODescriptor;
 		vk::DescriptorBufferInfo modelsSBODescriptor;
+		vk::DescriptorBufferInfo UIPositionSizeDescriptor;
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
+		vk::DescriptorSet UIDescriptorSet;
 
 
 		vk::CommandBuffer mainCommandBuffer;
@@ -72,6 +78,7 @@ namespace vkUtil {
 		void make_depth_resources();
 		void make_descriptors_resources(int number_of_objects);
 		void write_postprocess_descriptors();
+		void write_UI_descriptors();
 		void destroy();
 
 	};

@@ -15,8 +15,8 @@ ThumbRenderer::ThumbRenderer(ThumbRendererInput input,bool debugMode) {
 	device = input.device;
 	height = input.heigh;
 
-	
-	number_of_images = fileOperations::meshesNames.fileNames.size();
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	number_of_images = filesManager.getMeshesNames().fileNames.size();
 	physicalDevice = input.physicalDevice;
 	imageFormat = input.pictureFormat;
 	queue = input.queue;
@@ -249,9 +249,9 @@ void ThumbRenderer::render(bool debugMode) {
 		commandBuffer.beginRenderPass(&renderpassInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 		commandBuffer.pushConstants(pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ViewProjectionData), &vpData);
-
+		fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 		prepare_scene();
-		uint64_t k = fileOperations::meshesNames.hash[fileOperations::meshesNames.fullPaths[i]];
+		uint64_t k = filesManager.getMeshesNames().hash[filesManager.getMeshesNames().fullPaths[i]];
 		//debugAccess(meshes->firstIndices, meshes->indexCounts, k);
 		int indexCount = vkResources::meshes->indexCounts.find(k)->second;
 		int firstIndex = vkResources::meshes->firstIndices.find(k)->second;

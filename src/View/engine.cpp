@@ -28,6 +28,8 @@
 #include "MultithreatedSystems/TaskManager.h"
 #include "fileOperations/filesTypes.h"
 #include <MultithreatedSystems/mutexManager.h>
+
+
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
 	this->mainWindow = window;
@@ -54,6 +56,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	vkResources::scenePipelines = new vkUtil::PipelineCache(device);
 	vkResources::editorPipelines = new vkUtil::PipelineCache(device);
 
+	test = UImanager.create_button(glm::vec2(0,0), glm::vec2(300, 200));
 
 	create_descriptor_set_layouts();
 
@@ -76,7 +79,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 }
 
 GraphicsEngine::~GraphicsEngine() {
-	
+	UImanager.remove_button(test);
 	device.waitIdle();
 	if (debugMode) {
 		std::cout << "End!\n";
@@ -88,7 +91,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
-	delete cubemap;
+	//delete cubemap;
 	device.destroyCommandPool(CommandPool);
 	device.destroyCommandPool(computeCommandPool);
 	device.destroyCommandPool(transferCommandPool);
@@ -130,17 +133,19 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	postprocessDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+	bindings.count = 1;
+	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
+	UIDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
-		
-
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.computeFinished = vkInit::make_semaphore(device, debugMode);
 		frame.inFlight = vkInit::make_fence(device, debugMode); 
 		frame.make_descriptors_resources(number_of_models);
 		frame.postprocessDescriptorSet = vkInit::allocate_descriptor_set(device, postprocessDescriptorPool, postprocessDescriptorSetLayout);
+		frame.UIDescriptorSet = vkInit::allocate_descriptor_set(device, UIDescriptorPool, UIDescriptorSetLayout);
 	}
 }
 
@@ -151,7 +156,7 @@ void GraphicsEngine::create_pipeline() {
 
 	vkInit::PipelineBuilder pipelineBuilder(device);
 
-	//Sky
+
 	pipelineBuilder.set_overwrite_mode(true);
 	pipelineBuilder.specify_vertex_format(
 		vkMesh::getVertexInputBindingDescription(),
@@ -171,7 +176,23 @@ void GraphicsEngine::create_pipeline() {
 	pipeline.pipeline = output.pipeline;
 
 	vkResources::scenePipelines->addPipeline("Unlit Pipeline", pipeline);
+	pipelineBuilder.reset();
 
+
+
+	pipelineBuilder.set_overwrite_mode(true);
+	pipelineBuilder.specify_vertex_shader("resources/shaders/UIvert.spv");
+	pipelineBuilder.specify_fragment_shader("resources/shaders/UIfrag.spv");
+	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
+	pipelineBuilder.clear_depth_attachment();
+	pipelineBuilder.add_descriptor_set_layout(UIDescriptorSetLayout);
+	pipelineBuilder.use_depth_test(false);
+	pipelineBuilder.use_projection_matrix(false);
+	pipelineBuilder.dynamicRendering = true;
+	output = pipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
+	pipeline.pipelineLayout = output.layout;
+	pipeline.pipeline = output.pipeline;
+	vkResources::scenePipelines->addPipeline("UI Pipeline", pipeline);
 	pipelineBuilder.reset();
 }
 
@@ -282,6 +303,13 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	cubemapDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
+
+	bindings.count = 1;
+	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eVertex;
+	UIDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
+
 }
 
 void GraphicsEngine::create_frame_command_buffer() {
@@ -368,20 +396,26 @@ void GraphicsEngine::finalize_setup(Scene* scene){
 
 void GraphicsEngine::load_meshes_files() {
 	std::vector<std::string> ext = fileOperations::FileType::getExtensions(fileOperations::FileType::Model);
-	list_files_in_directory("\\core", fileOperations::meshesNames, ext);
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	list_files_in_directory("\\core", filesManager.getMeshesNames(), ext);
 }
 
 void GraphicsEngine::load_textures_files() {
 	
 	std::vector<std::string> ext = fileOperations::FileType::getExtensions(fileOperations::FileType::Image);
-
-	fileOperations::list_files_in_directory("\\core", fileOperations::texturesNames, ext);
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	fileOperations::list_files_in_directory("\\core", filesManager.getTexturesNames(), ext);
 }
 
 void GraphicsEngine::load_scripts() {
 	std::vector<std::string> ext = { ".cpp", };
-	fileOperations::list_files_in_directory("\\core",fileOperations::cppNames, ext);
-	scripts::compileAllScripts(fileOperations::cppNames, fileOperations::dllNames);
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	fileOperations::list_files_in_directory("\\core",filesManager.getCppNames(), ext);
+	scripts::compileAllScripts(filesManager.getCppNames(), filesManager.getDllNames());
+}
+
+void GraphicsEngine::load_fonts() {
+
 }
 
 void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene ,uint32_t imageIndex) {
@@ -436,6 +470,8 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
 		barrier // wskaŸnik do bariery obrazu
 	);
+
+	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet);
 
 
 	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode);
@@ -858,12 +894,14 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.filenames = nullptr;
 
 	taskmanager.waitForPriorityTasks(TaskPriority::HIGH);
-	info.texturesNames = fileOperations::texturesNames;
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	
+	info.texturesNames = filesManager.getTexturesNames();
 	vkResources::atlasTextures = new vkImage::Texture(info);
 
 
 	std::vector<vkMesh::MeshLoader> test;
-	for (std::string path : fileOperations::meshesNames.fullPaths) {
+	for (std::string path : filesManager.getMeshesNames().fullPaths) {
 		vkMesh::MeshLoader m(path.c_str());
 		test.push_back(m);
 	}
@@ -871,7 +909,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
-		vkResources::meshes->consume(fileOperations::meshesNames.hash[m.path], buffer.vertices, buffer.indicies);
+		vkResources::meshes->consume(filesManager.getMeshesNames().hash[m.path], buffer.vertices, buffer.indicies);
 	
 	}
 
@@ -888,7 +926,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.descriptorPool = cubemapDescriptorPool;
 	info.layout = cubemapDescriptorSetLayout;
 	info.filenames = "resources/textures/cubemap.jpg";
-	cubemap->LoadCubemapData(info);
+	//cubemap->LoadCubemapData(info);
 
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
@@ -907,6 +945,9 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	
 	scene->update_objects_to_rendering(objects_to_rendering, scene->root);
 	
+
+	
+
 	
 	glm::vec3 eye = { 0.0f, 0.0f, -20.0f };
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
@@ -917,17 +958,22 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	size_t i = 0;
 
 	vkUtil::SwapChainFrame& _frame = swapchainFrames[imageIndex];
+
+	size_t j = 0;
+
+	UImanager.update(_frame.UIPositionSize,j);
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 	for (auto& [key, vector] : objects_to_rendering.unlit) {
 		for (SceneObject* obj : vector) {
 			_frame.modelsData[i].model = scene->ecs->getComponent<TransformComponent>(obj->id).get()->getTransform().getModelMatrix();
-			_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(scene->ecs->getComponent<TextureComponent>(obj->id).get()->getColorTextureIndex());
+			_frame.modelsData[i].textureID = filesManager.getTexturesNames().getIndex(scene->ecs->getComponent<TextureComponent>(obj->id).get()->getColorTextureIndex());
 			++i;
 		}
 	}
 	for (auto& [key, vector] : objects_to_rendering.pbr) {
 		for (SceneObject* obj : vector) {
 			_frame.modelsData[i].model = scene->ecs->getComponent<TransformComponent>(obj->id).get()->getTransform().getModelMatrix();
-			_frame.modelsData[i].textureID = fileOperations::texturesNames.getIndex(scene->ecs->getComponent<TextureComponent>(obj->id).get()->getColorTextureIndex());
+			_frame.modelsData[i].textureID = filesManager.getTexturesNames().getIndex(scene->ecs->getComponent<TextureComponent>(obj->id).get()->getColorTextureIndex());
 			++i;
 		}
 	}
@@ -937,8 +983,13 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
 	//if (i > 0) 
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO)); 
+
+	memcpy(_frame.UIPositionSizeDataWriteLocation, _frame.UIPositionSize.data(), j * sizeof(glm::vec4));
 	
+	//std::cout << _frame.UIPositionSize[0].x << " " << _frame.UIPositionSize[0].y << " " << _frame.UIPositionSize[0].z << " " << _frame.UIPositionSize[0].w << std::endl;
+
 	_frame.write_postprocess_descriptors();
+	_frame.write_UI_descriptors();
 	
 
 

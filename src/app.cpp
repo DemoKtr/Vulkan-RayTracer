@@ -6,7 +6,8 @@
 #include <algorithm>
 #include "MultithreatedSystems/Console.h"
 #include <MultithreatedSystems/TaskManager.h>
-
+#include "UI/UIStructures/UIElements.h"
+#include "UI/UIManagers.h"
 void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode) {
 	glfwInit();
 
@@ -58,7 +59,7 @@ void App::calculateFrameRate()
 
 App::App(glm::ivec2 screenSize, bool debugMode)
 {
-	
+
 	vkSettings::lastX = screenSize.x / 2.0f;
 	vkSettings::lastY = screenSize.y / 2.0f;
 	//console::ImGuiConsoleBuffer coutBuffer(std::cout, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bia³y dla std::cout

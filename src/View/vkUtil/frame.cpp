@@ -44,6 +44,10 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	modelsDataWriteLocation = logicalDevice.mapMemory(modelsDataBuffer.bufferMemory,0, sbo_size *sizeof(MeshSBO));
 
 
+	input.size = 2048 * sizeof(glm::vec4);
+	UIPositionSizeDataBuffer = createBuffer(input);
+	UIPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIPositionSizeDataBuffer.bufferMemory, 0, 2048 * sizeof(glm::vec4));
+
 	modelsData.reserve(sbo_size);
 
 	for (uint32_t i = 0; i < sbo_size; ++i) {
@@ -57,9 +61,21 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 		modelsData.push_back(meshSBO);
 	}
 
+	UIPositionSize.reserve(2048);
+
+	for (uint32_t i = 0; i < 2048; ++i) {
+		
+		UIPositionSize.push_back(glm::vec4(1.0f));
+	}
+		
+
 	modelsSBODescriptor.buffer = modelsDataBuffer.buffer;
 	modelsSBODescriptor.offset = 0;
 	modelsSBODescriptor.range = sbo_size *sizeof(MeshSBO);
+
+	UIPositionSizeDescriptor.buffer = UIPositionSizeDataBuffer.buffer;
+	UIPositionSizeDescriptor.offset = 0;
+	UIPositionSizeDescriptor.range = 2048 * sizeof(glm::vec4);
 
 }
 
@@ -103,6 +119,23 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 
 }
 
+void vkUtil::SwapChainFrame::write_UI_descriptors() {
+
+	vk::WriteDescriptorSet writeInfo;
+
+	writeInfo.dstSet = UIDescriptorSet;
+	writeInfo.dstBinding = 0;
+	writeInfo.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+	writeInfo.descriptorCount = 1;
+	writeInfo.descriptorType = vk::DescriptorType::eStorageBuffer;
+	writeInfo.pBufferInfo = &UIPositionSizeDescriptor;
+
+
+	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
+
+
+}
+
 void vkUtil::SwapChainFrame::destroy(){
 
 	//logicalDevice.destroyImage(mainimage);
@@ -119,6 +152,10 @@ void vkUtil::SwapChainFrame::destroy(){
 	logicalDevice.unmapMemory(modelsDataBuffer.bufferMemory);
 	logicalDevice.freeMemory(modelsDataBuffer.bufferMemory);
 	logicalDevice.destroyBuffer(modelsDataBuffer.buffer);
+
+	logicalDevice.unmapMemory(UIPositionSizeDataBuffer.bufferMemory);
+	logicalDevice.freeMemory(UIPositionSizeDataBuffer.bufferMemory);
+	logicalDevice.destroyBuffer(UIPositionSizeDataBuffer.buffer);
 
 
 	logicalDevice.destroySemaphore(imageAvailable);
