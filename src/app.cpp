@@ -32,6 +32,9 @@ void App::build_glfw_window(glm::ivec2 screenSize, bool debugMode) {
 	glfwSetCursorPosCallback(window, mouse_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	glfwSetKeyCallback(window, keyCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
 }
 
 void App::calculateFrameRate()
@@ -57,8 +60,7 @@ void App::calculateFrameRate()
 
 
 
-App::App(glm::ivec2 screenSize, bool debugMode)
-{
+App::App(glm::ivec2 screenSize, bool debugMode) : inputManager() {
 
 	vkSettings::lastX = screenSize.x / 2.0f;
 	vkSettings::lastY = screenSize.y / 2.0f;
@@ -90,12 +92,6 @@ App::App(glm::ivec2 screenSize, bool debugMode)
 
 	std::cout << "Time to Init GraphicEngine: " << delta << std::endl;
 
-	/*
-	* Before
-	1.63
-	1.62
-	1.65
-	*/
 }
 
 App::~App()
@@ -114,15 +110,19 @@ void App::run()
 
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-		processInput(window);
+		//processInput(window);
 		glfwPollEvents();
 		scene->updateScene(deltaTime);
 	
 		graphicsEngine->render(scene, verticesCounter, deltaTime, camera,f12_button[1]);
 		calculateFrameRate();
 		
-
 	}
+}
+
+input::InputManager& App::getInputManager()
+{
+	return this->inputManager;
 }
 
 void processInput(GLFWwindow* window)
@@ -186,6 +186,22 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	//App* referenceApp = static_cast<App*>(glfwGetWindowUserPointer(window));
 	//referenceApp->camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+	App* referenceApp = static_cast<App*>(glfwGetWindowUserPointer(window));
+	auto it = input::keyMapping.find(key);
+	if (it != input::keyMapping.end()) {
+		referenceApp->getInputManager().updateKeyboardState(it->second, action != GLFW_RELEASE);
+	}
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+	App* referenceApp = static_cast<App*>(glfwGetWindowUserPointer(window));
+	auto it = input::mouseMapping.find(button);
+	if (it != input::mouseMapping.end()) {
+		referenceApp->getInputManager().updateMouseState(it->second, action != GLFW_RELEASE);
+	}
 }
 
 int myMax(int a, int b) {

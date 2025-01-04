@@ -7,8 +7,11 @@
 #include <Scene/scene.h>
 #include "View/egnine.h"
 
+#include "Input/inputManager.h"
+
 class App
 {
+	input::InputManager inputManager;
 	GraphicsEngine* graphicsEngine;
 	GLFWwindow* window;
 	Scene* scene;
@@ -30,13 +33,14 @@ public:
 	Camera::Camera camera;
 	float deltaTime = 0.0f;
 	bool f12_button[2] = { {false }, { true } };
+	input::InputManager& getInputManager();
 };
 
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow* window);
-
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
 int myMax(int a, int b);
 
 #endif // !APP_H

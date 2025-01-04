@@ -176,6 +176,8 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/UI/UIStructures/UIButton.cpp"
     "src/UI/UIStructures/UIText.cpp"
     "src/fileOperations/FontLoader.cpp"
+    "src/Input/inputManager.cpp"
+    "src/Input/keyMapping.cpp"
 
     )
 
