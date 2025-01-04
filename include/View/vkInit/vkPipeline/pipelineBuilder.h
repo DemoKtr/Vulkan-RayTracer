@@ -47,13 +47,16 @@ namespace vkInit {
 		void clear_depth_attachment();
 
 		void use_depth_test(bool is);
-		void use_projection_matrix(bool is);
-		void use_view_matrix(bool is);
+		
+
+		void setPushConstants(size_t size, int count);
+
 
 	private:
 		vk::Device device;
 		vk::GraphicsPipelineCreateInfo pipelineInfo = {};
-
+		vk::PushConstantRange pushConstantInfo;
+		int pushConstantCount = 0;
 		vk::VertexInputBindingDescription bindingDescription;
 		std::vector<vk::VertexInputAttributeDescription> attributeDescriptions;
 		vk::PipelineVertexInputStateCreateInfo vertexInputInfo = {};
@@ -84,8 +87,7 @@ namespace vkInit {
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 
 		vk::RenderPass renderPass;
-
-		bool overwrite, useDepthTest, useProjectionMatrix, useViewMatrix;
+		bool overwrite, useDepthTest;
 
 		void reset_vertex_format();
 

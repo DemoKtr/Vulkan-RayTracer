@@ -39,6 +39,7 @@ namespace vkImage {
 		vk::Sampler getSampler();
 
 		Texture(TextureInputChunk info);
+		Texture(TextureDataInputChunk info);
 		~Texture();
 
 		void useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout);

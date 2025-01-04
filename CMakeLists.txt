@@ -56,6 +56,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
+# Pobierz FreeType
+FetchContent_Declare(
+  freetype
+  GIT_REPOSITORY https://github.com/freetype/freetype.git
+  GIT_TAG master # Wybierz odpowiednią wersję
+)
+
+FetchContent_MakeAvailable(freetype)
+
 # Źródła projektu
 set(SOURCES
     src/main.cpp
@@ -164,6 +173,9 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/Objects/Lights/SpotLight.cpp"
     "src/Memory/MemoryPool.cpp"
     "src/UI/Font/FontManager.cpp"
+    "src/UI/UIStructures/UIButton.cpp"
+    "src/UI/UIStructures/UIText.cpp"
+    "src/fileOperations/FontLoader.cpp"
 
     )
 
@@ -175,6 +187,7 @@ target_link_libraries(${PROJECT_NAME}
   glm
   assimp
   nlohmann_json::nlohmann_json
+  freetype
 )
 # Ustawienia dla kompilacji w systemie Linux
 if(UNIX)
@@ -185,7 +198,9 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE 
     ${Vulkan_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/include
-    PRIVATE ${imgui_SOURCE_DIR})
+    PRIVATE ${imgui_SOURCE_DIR}
+     
+)
 
 # Zdefiniuj ścieżki do folderów 'resource' i 'core'
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")

@@ -16,6 +16,17 @@ namespace vkImage {
 		vk::DescriptorPool descriptorPool;
 
 	};
+	struct TextureDataInputChunk {
+		vk::Device logicalDevice;
+		vk::PhysicalDevice physicalDevice;
+		vk::CommandBuffer commandBuffer;
+		vk::Queue queue;
+		vk::DescriptorSetLayout layout;
+		vk::DescriptorPool descriptorPool;
+		int width;
+		int height;
+		std::vector<unsigned char*> data;
+	};
 
 	struct skyBoxTextureInputChunk {
 		vk::Device logicalDevice;

@@ -16,7 +16,11 @@ namespace vkUtil {
 		uint32_t padding[3];
 	};
 
-
+	struct alignas(16) FontSBO {
+		glm::vec4 PosSize;
+		glm::vec4 UVBounds;
+		glm::uvec4 textures;
+	};
 
 
 	class SwapChainFrame {
@@ -44,21 +48,26 @@ namespace vkUtil {
 		CameraUBO cameraData;
 		std::vector<MeshSBO> modelsData;
 		std::vector<glm::vec4> UIPositionSize;
+		std::vector<FontSBO> UIFontPositionSize;
 		//Buffer
 		Buffer cameraDataBuffer;
 		Buffer modelsDataBuffer;
 		Buffer UIPositionSizeDataBuffer;
+		Buffer UIFontPositionSizeDataBuffer;
 		//Data Write Location
 		void* cameraDataWriteLocation;
 		void* modelsDataWriteLocation;
 		void* UIPositionSizeDataWriteLocation;
+		void* UIFontPositionSizeDataWriteLocation;
 		//DESCRIPTOR BUFFER INFO
 		vk::DescriptorBufferInfo cameraUBODescriptor;
 		vk::DescriptorBufferInfo modelsSBODescriptor;
 		vk::DescriptorBufferInfo UIPositionSizeDescriptor;
+		vk::DescriptorBufferInfo UIFontPositionSizeDescriptor;
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
 		vk::DescriptorSet UIDescriptorSet;
+		vk::DescriptorSet UIFontDescriptorSet;
 
 
 		vk::CommandBuffer mainCommandBuffer;

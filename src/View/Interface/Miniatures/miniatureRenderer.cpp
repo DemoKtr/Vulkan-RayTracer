@@ -162,8 +162,7 @@ void ThumbRenderer::create_pipeline(){
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(descriptorLayout);
 	pipelineBuilder.use_depth_test(true);
-	pipelineBuilder.use_projection_matrix(true);
-	pipelineBuilder.use_view_matrix(true);
+	pipelineBuilder.setPushConstants(sizeof(vkRenderStructs::ViewProjectionData),1);
 
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(imageFormat, depthFormat);
 

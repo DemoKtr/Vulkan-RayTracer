@@ -24,11 +24,7 @@ namespace UI {
             return element;
         }
 
-        void renderAll(vk::CommandBuffer commandBuffer, vk::Extent2D swapchainExtent, vk::ImageView& imageView, vk::DescriptorSet dset) const {
-            for (const auto& element : elements) {
-                element->Render(commandBuffer, swapchainExtent, imageView,dset);
-            }
-        }
+        
 
         void updateAll(std::vector<glm::vec4>& PosSize, size_t& count) {
    

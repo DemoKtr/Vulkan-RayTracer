@@ -14,6 +14,10 @@
 #include "View/vkImage/cubemap.h"
 #include "View/RenderingFlags.h"
 #include "UI/UIManagers.h"
+#include "UI/Font/FontManager.h"
+#include "UI/UIInput.h"
+
+
 class GraphicsEngine {
 	glm::ivec2 screenSize;
 	const char* appName{ "RayTracer" };
@@ -55,10 +59,12 @@ class GraphicsEngine {
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::DescriptorPool postprocessDescriptorPool;
 	vk::DescriptorPool UIDescriptorPool;
+	vk::DescriptorPool UIFontDescriptorPool;
 
 	//DESCRIPTOR SET LAYOUT
 	vk::DescriptorSetLayout postprocessDescriptorSetLayout;
 	vk::DescriptorSetLayout UIDescriptorSetLayout;
+	vk::DescriptorSetLayout UIFontDescriptorSetLayout;
 
 
 	vk::CommandBuffer maincommandBuffer;
@@ -80,7 +86,13 @@ class GraphicsEngine {
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
 	UI::UIManager UImanager;
+	
+	// TO DO DELETE THIS:
 	UI::UIButton* test;
+
+	UI::FontManager* fontManager;
+
+	UI::UIRenderingDrawData uiRenderingDrawData;
 
 	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
 	RenderObjects objects_to_rendering;

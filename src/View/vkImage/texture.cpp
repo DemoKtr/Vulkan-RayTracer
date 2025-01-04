@@ -189,6 +189,7 @@ vkImage::Texture::Texture(TextureInputChunk info) {
 	layout = info.layout;
 	descriptorPool = info.descriptorPool;
 
+	
 	load();
 	
 	ImageInputChunk imageInput;
@@ -210,6 +211,46 @@ vkImage::Texture::Texture(TextureInputChunk info) {
 		free(pix);
 	}
 	
+
+	make_view();
+
+	make_sampler();
+
+	make_descriptor_set();
+
+}
+
+vkImage::Texture::Texture(TextureDataInputChunk info) {
+	logicalDevice = info.logicalDevice;
+	physicalDevice = info.physicalDevice;
+	commandBuffer = info.commandBuffer;
+	queue = info.queue;
+	layout = info.layout;
+	descriptorPool = info.descriptorPool;
+	this->width = info.width;
+	this->height = info.height;
+
+	pixels = info.data;
+
+	ImageInputChunk imageInput;
+	imageInput.logicalDevice = logicalDevice;
+	imageInput.physicalDevice = physicalDevice;
+	imageInput.width = width;
+	imageInput.height = height;
+	imageInput.format = vk::Format::eR8G8B8A8Unorm;
+	imageInput.arrayCount = pixels.size();
+	imageInput.tiling = vk::ImageTiling::eOptimal;
+	imageInput.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+	imageInput.memoryProperties = vk::MemoryPropertyFlagBits::eDeviceLocal;
+	image = make_image(imageInput);
+	imageMemory = make_image_memory(imageInput, image);
+
+	populate();
+
+	for (stbi_uc* pix : pixels) {
+		free(pix);
+	}
+
 
 	make_view();
 

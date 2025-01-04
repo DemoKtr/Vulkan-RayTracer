@@ -44,9 +44,12 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	modelsDataWriteLocation = logicalDevice.mapMemory(modelsDataBuffer.bufferMemory,0, sbo_size *sizeof(MeshSBO));
 
 
-	input.size = 2048 * sizeof(glm::vec4);
+	input.size = 1024 * sizeof(glm::vec4);
 	UIPositionSizeDataBuffer = createBuffer(input);
-	UIPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIPositionSizeDataBuffer.bufferMemory, 0, 2048 * sizeof(glm::vec4));
+	UIPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIPositionSizeDataBuffer.bufferMemory, 0, 1024 * sizeof(glm::vec4));
+	input.size = 2048 * sizeof(FontSBO);
+	UIFontPositionSizeDataBuffer = createBuffer(input);
+	UIFontPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIFontPositionSizeDataBuffer.bufferMemory, 0, 2048 * sizeof(FontSBO));
 
 	modelsData.reserve(sbo_size);
 
@@ -61,11 +64,22 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 		modelsData.push_back(meshSBO);
 	}
 
-	UIPositionSize.reserve(2048);
+	UIPositionSize.reserve(1024);
 
-	for (uint32_t i = 0; i < 2048; ++i) {
+	for (uint32_t i = 0; i < 1024; ++i) {
 		
 		UIPositionSize.push_back(glm::vec4(1.0f));
+	}
+
+	UIFontPositionSize.reserve(2048);
+
+	for (uint32_t i = 0; i < 2048; ++i) {
+		FontSBO font;
+		font.PosSize = glm::vec4(1.0f);
+		font.UVBounds = glm::vec4(1.0f);
+		font.textures = glm::uvec4(1);
+		UIFontPositionSize.push_back(font);
+		
 	}
 		
 
@@ -75,7 +89,11 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 
 	UIPositionSizeDescriptor.buffer = UIPositionSizeDataBuffer.buffer;
 	UIPositionSizeDescriptor.offset = 0;
-	UIPositionSizeDescriptor.range = 2048 * sizeof(glm::vec4);
+	UIPositionSizeDescriptor.range = 1024 * sizeof(glm::vec4);
+
+	UIFontPositionSizeDescriptor.buffer = UIPositionSizeDataBuffer.buffer;
+	UIFontPositionSizeDescriptor.offset = 0;
+	UIFontPositionSizeDescriptor.range = 2048 * sizeof(FontSBO);
 
 }
 
@@ -131,6 +149,15 @@ void vkUtil::SwapChainFrame::write_UI_descriptors() {
 	writeInfo.pBufferInfo = &UIPositionSizeDescriptor;
 
 
+	vk::WriteDescriptorSet writeInfo2;
+
+	writeInfo2.dstSet = UIFontDescriptorSet;
+	writeInfo2.dstBinding = 0;
+	writeInfo2.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+	writeInfo2.descriptorCount = 1;
+	writeInfo2.descriptorType = vk::DescriptorType::eStorageBuffer;
+	writeInfo2.pBufferInfo = &UIFontPositionSizeDescriptor;
+
 	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 
 
@@ -156,6 +183,10 @@ void vkUtil::SwapChainFrame::destroy(){
 	logicalDevice.unmapMemory(UIPositionSizeDataBuffer.bufferMemory);
 	logicalDevice.freeMemory(UIPositionSizeDataBuffer.bufferMemory);
 	logicalDevice.destroyBuffer(UIPositionSizeDataBuffer.buffer);
+
+	logicalDevice.unmapMemory(UIFontPositionSizeDataBuffer.bufferMemory);
+	logicalDevice.freeMemory(UIFontPositionSizeDataBuffer.bufferMemory);
+	logicalDevice.destroyBuffer(UIFontPositionSizeDataBuffer.buffer);
 
 
 	logicalDevice.destroySemaphore(imageAvailable);

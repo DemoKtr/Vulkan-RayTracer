@@ -105,7 +105,7 @@ void vkPrefab::PrefabRenderer::create_pipeline() {
 	pipelineBuilder.add_descriptor_set_layout(MVPDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
 	pipelineBuilder.use_depth_test(true);
-	pipelineBuilder.use_projection_matrix(true);
+	pipelineBuilder.setPushConstants(sizeof(vkRenderStructs::ProjectionData),1);
 	pipelineBuilder.dynamicRendering = true;
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
 

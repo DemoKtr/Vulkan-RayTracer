@@ -168,7 +168,7 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
 	pipelineBuilder.use_depth_test(true);
-	pipelineBuilder.use_projection_matrix(true);
+	pipelineBuilder.setPushConstants(sizeof(vkRenderStructs::ProjectionData),1);
 	pipelineBuilder.dynamicRendering = true;
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(swapchainFormat,swapchainFrames[0].depthFormat);
 
@@ -187,8 +187,8 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(UIDescriptorSetLayout);
 	pipelineBuilder.use_depth_test(false);
-	pipelineBuilder.use_projection_matrix(false);
 	pipelineBuilder.dynamicRendering = true;
+	pipelineBuilder.setPushConstants(sizeof(glm::vec2), 1);
 	output = pipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
 	pipeline.pipelineLayout = output.layout;
 	pipeline.pipeline = output.pipeline;
@@ -303,6 +303,7 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	cubemapDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
+	UIFontDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
 
 	bindings.count = 1;
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
@@ -471,7 +472,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 		barrier // wskaŸnik do bariery obrazu
 	);
 
-	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet);
+	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, uiRenderingDrawData);
 
 
 	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode);
@@ -553,7 +554,6 @@ void GraphicsEngine::record_unlit_draw_command(vk::CommandBuffer commandBuffer, 
 	manager.lock("Descriptors");
 	// Pipeline i layout
 	vkUtil::PipelineCacheChunk pipelineInfo = vkResources::scenePipelines->getPipeline("Unlit Pipeline");
-	;
 
 	// Rozpoczêcie renderowania
 	try {
@@ -878,6 +878,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	UIFontDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	cubemapDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(6)+1, bindings);
 	
 
@@ -936,7 +937,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, swapchainFormat, swapchainFrames[0].depthFormat);
 
-
+	//fontManager = new UI::FontManager(physicalDevice, device, graphicsQueue, layout, descriptorPool, maincommandBuffer);
 
 }
 
@@ -945,7 +946,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	
 	scene->update_objects_to_rendering(objects_to_rendering, scene->root);
 	
-
+	uiRenderingDrawData.reset();
 	
 
 	
@@ -959,9 +960,10 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 
 	vkUtil::SwapChainFrame& _frame = swapchainFrames[imageIndex];
 
-	size_t j = 0;
+	
 
-	UImanager.update(_frame.UIPositionSize,j);
+	UImanager.update(_frame.UIPositionSize, uiRenderingDrawData, _frame.UIFontPositionSize);
+	
 	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 	for (auto& [key, vector] : objects_to_rendering.unlit) {
 		for (SceneObject* obj : vector) {
@@ -984,7 +986,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	//if (i > 0) 
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO)); 
 
-	memcpy(_frame.UIPositionSizeDataWriteLocation, _frame.UIPositionSize.data(), j * sizeof(glm::vec4));
+	memcpy(_frame.UIPositionSizeDataWriteLocation, _frame.UIPositionSize.data(), uiRenderingDrawData.UIinstanceCount * sizeof(glm::vec4));
 	
 	//std::cout << _frame.UIPositionSize[0].x << " " << _frame.UIPositionSize[0].y << " " << _frame.UIPositionSize[0].z << " " << _frame.UIPositionSize[0].w << std::endl;
 

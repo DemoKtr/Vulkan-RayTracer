@@ -10,8 +10,7 @@ protected:
     bool interactive = false; // Czy element może reagować na zdarzenia
 
 public:
-    virtual void Render(vk::CommandBuffer commandBuffer, vk::Extent2D swapchainExtent, vk::ImageView& imageView, vk::DescriptorSet dset) = 0;   // Wirtualna metoda renderowania
-   // virtual void OnEvent(Event e) {}; // Obsługa zdarzeń (np. kliknięcia)
+   
     
     // Metody wspólne dla wszystkich elementów
     void SetPosition(glm::vec2 newPosition) { position = newPosition; }
@@ -21,5 +20,6 @@ public:
     glm::vec2& GetSize() { return size; }
     bool GetVisibility() { return visible; }
     bool GetInteractive() { return  interactive; }
+    
 };
 }
