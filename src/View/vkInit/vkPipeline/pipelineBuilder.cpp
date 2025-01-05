@@ -184,6 +184,10 @@ void vkInit::PipelineBuilder::set_depth() {
 	}
 }
 
+void vkInit::PipelineBuilder::set_color_blending(bool is) {
+	useColorBlending = is;
+}
+
 
 vk::PipelineShaderStageCreateInfo vkInit::PipelineBuilder::make_shader_info(const vk::ShaderModule& shaderModule, const vk::ShaderStageFlagBits& stage) {
 	vk::PipelineShaderStageCreateInfo shaderInfo = {};
@@ -239,7 +243,19 @@ void vkInit::PipelineBuilder::configure_multisampling() {
 void vkInit::PipelineBuilder::configure_color_blending() {
 	
 	colorBlendAttachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
-	colorBlendAttachment.blendEnable = VK_FALSE;
+	if (!useColorBlending) {
+		colorBlendAttachment.blendEnable = VK_FALSE;
+	}
+	else {
+		colorBlendAttachment.blendEnable = VK_TRUE;
+		colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+		colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+		colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
+		colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+		colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+		colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
+	}
+	
 
 	colorBlending.flags = vk::PipelineColorBlendStateCreateFlags();
 	colorBlending.logicOpEnable = VK_FALSE;

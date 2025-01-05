@@ -20,6 +20,25 @@ namespace vkUtil {
 		glm::vec4 PosSize;
 		glm::vec4 UVBounds;
 		glm::uvec4 textures;
+		void printFontSBO() {
+			std::cout << "PosSize: ("
+				<< PosSize.x << ", "
+				<< PosSize.y << ", "
+				<< PosSize.z << ", "
+				<< PosSize.w << ")\n";
+
+			std::cout << "UVBounds: ("
+				<< UVBounds.x << ", "
+				<< UVBounds.y << ", "
+				<< UVBounds.z << ", "
+				<< UVBounds.w << ")\n";
+
+			std::cout << "Textures: ("
+				<< textures.x << ", "
+				<< textures.y << ", "
+				<< textures.z << ", "
+				<< textures.w << ")\n";
+		}
 	};
 
 

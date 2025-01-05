@@ -34,7 +34,7 @@ void vkImage::Texture::populate() {
 	input.usage = vk::BufferUsageFlagBits::eTransferSrc;
 	size_t totalSize = 0;
 	for (const auto& image : pixels) {
-		totalSize += width * height * 4; // assuming 4 bytes per pixel (e.g., RGBA format)
+		totalSize += width * height * channels; // assuming 4 bytes per pixel (e.g., RGBA format)
 	}
 	std::vector<stbi_uc> mergedPixels;
 	mergedPixels.reserve(totalSize);
@@ -42,7 +42,7 @@ void vkImage::Texture::populate() {
 
 	// 3. Skopiuj wszystkie dane z pixels do mergedPixels
 	for (const auto& image : pixels) {
-		mergedPixels.insert(mergedPixels.end(), image, image + width * height * 4);
+		mergedPixels.insert(mergedPixels.end(), image, image + width * height * channels);
 	}
 
 	Buffer stagingBuffer = vkUtil::createBuffer(input);
@@ -96,6 +96,11 @@ void vkImage::Texture::make_view(){
 	imageView = make_image_view(logicalDevice, image, vk::Format::eR8G8B8A8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, pixels.size());
 	}
 	
+}
+
+void vkImage::Texture::make_gray_scale_view()
+{
+	imageView = make_image_view(logicalDevice, image, vk::Format::eR8Unorm, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2DArray, pixels.size());
 }
 
 void vkImage::Texture::make_sampler() {	/*
@@ -191,7 +196,7 @@ vkImage::Texture::Texture(TextureInputChunk info) {
 
 	
 	load();
-	
+	channels = 4;
 	ImageInputChunk imageInput;
 	imageInput.logicalDevice = logicalDevice;
 	imageInput.physicalDevice = physicalDevice;
@@ -229,6 +234,7 @@ vkImage::Texture::Texture(TextureDataInputChunk info) {
 	descriptorPool = info.descriptorPool;
 	this->width = info.width;
 	this->height = info.height;
+	this->channels = 1;
 
 	pixels = info.data;
 
@@ -237,7 +243,7 @@ vkImage::Texture::Texture(TextureDataInputChunk info) {
 	imageInput.physicalDevice = physicalDevice;
 	imageInput.width = width;
 	imageInput.height = height;
-	imageInput.format = vk::Format::eR8G8B8A8Unorm;
+	imageInput.format = vk::Format::eR8Unorm;
 	imageInput.arrayCount = pixels.size();
 	imageInput.tiling = vk::ImageTiling::eOptimal;
 	imageInput.usage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
@@ -252,7 +258,7 @@ vkImage::Texture::Texture(TextureDataInputChunk info) {
 	}
 
 
-	make_view();
+	make_gray_scale_view();
 
 	make_sampler();
 

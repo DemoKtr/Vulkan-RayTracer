@@ -50,7 +50,7 @@ namespace vkInit {
 		
 
 		void setPushConstants(size_t size, int count);
-
+		void set_color_blending(bool is);
 
 	private:
 		vk::Device device;
@@ -87,7 +87,7 @@ namespace vkInit {
 		std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 
 		vk::RenderPass renderPass;
-		bool overwrite, useDepthTest;
+		bool overwrite, useDepthTest, useColorBlending;
 
 		void reset_vertex_format();
 
@@ -115,6 +115,7 @@ namespace vkInit {
 
 
 		void set_depth();
+		
 		
 		/**
 			Configure a programmable shader stage.

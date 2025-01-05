@@ -163,6 +163,7 @@ void ThumbRenderer::create_pipeline(){
 	pipelineBuilder.add_descriptor_set_layout(descriptorLayout);
 	pipelineBuilder.use_depth_test(true);
 	pipelineBuilder.setPushConstants(sizeof(vkRenderStructs::ViewProjectionData),1);
+	pipelineBuilder.set_color_blending(false);
 
 	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(imageFormat, depthFormat);
 

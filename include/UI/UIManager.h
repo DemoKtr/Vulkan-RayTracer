@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include "Memory/MemoryPool.h"
+#include "UI/Font/FontManager.h"
 namespace UI {
 
 
@@ -26,10 +27,18 @@ namespace UI {
 
         
 
-        void updateAll(std::vector<glm::vec4>& PosSize, size_t& count) {
+        void update(std::vector<glm::vec4>& PosSize, size_t& count) {
    
             for (auto& element : elements) {
                 element->Update(PosSize,count++);
+            }
+        }
+
+        void update(std::vector<vkUtil::FontSBO>& sbo, FontManager* fontManager , size_t& count) {
+
+            for (auto& element : elements) {
+                element->Update(sbo,fontManager ,count);
+                
             }
         }
 

@@ -47,6 +47,7 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	input.size = 1024 * sizeof(glm::vec4);
 	UIPositionSizeDataBuffer = createBuffer(input);
 	UIPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIPositionSizeDataBuffer.bufferMemory, 0, 1024 * sizeof(glm::vec4));
+
 	input.size = 2048 * sizeof(FontSBO);
 	UIFontPositionSizeDataBuffer = createBuffer(input);
 	UIFontPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIFontPositionSizeDataBuffer.bufferMemory, 0, 2048 * sizeof(FontSBO));
@@ -91,7 +92,7 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	UIPositionSizeDescriptor.offset = 0;
 	UIPositionSizeDescriptor.range = 1024 * sizeof(glm::vec4);
 
-	UIFontPositionSizeDescriptor.buffer = UIPositionSizeDataBuffer.buffer;
+	UIFontPositionSizeDescriptor.buffer = UIFontPositionSizeDataBuffer.buffer;
 	UIFontPositionSizeDescriptor.offset = 0;
 	UIFontPositionSizeDescriptor.range = 2048 * sizeof(FontSBO);
 
@@ -159,6 +160,7 @@ void vkUtil::SwapChainFrame::write_UI_descriptors() {
 	writeInfo2.pBufferInfo = &UIFontPositionSizeDescriptor;
 
 	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
+	logicalDevice.updateDescriptorSets(writeInfo2, nullptr);
 
 
 }

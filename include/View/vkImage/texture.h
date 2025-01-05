@@ -28,6 +28,7 @@ namespace vkImage {
 		void load();
 		void populate();
 		void make_view();
+		void make_gray_scale_view();
 		void make_sampler();
 		void make_descriptor_set();
 

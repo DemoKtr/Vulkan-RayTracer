@@ -59,12 +59,14 @@ class GraphicsEngine {
 	vk::DescriptorPool imguiDescriptorPool;
 	vk::DescriptorPool postprocessDescriptorPool;
 	vk::DescriptorPool UIDescriptorPool;
-	vk::DescriptorPool UIFontDescriptorPool;
+	vk::DescriptorPool UIFontSBODescriptorPool;
+	vk::DescriptorPool UIFontTextureDescriptorPool;
 
 	//DESCRIPTOR SET LAYOUT
 	vk::DescriptorSetLayout postprocessDescriptorSetLayout;
 	vk::DescriptorSetLayout UIDescriptorSetLayout;
-	vk::DescriptorSetLayout UIFontDescriptorSetLayout;
+	vk::DescriptorSetLayout UIFontSBODescriptorSetLayout;
+	vk::DescriptorSetLayout UIFontTextureDescriptorSetLayout;
 
 
 	vk::CommandBuffer maincommandBuffer;
@@ -89,7 +91,7 @@ class GraphicsEngine {
 	
 	// TO DO DELETE THIS:
 	UI::UIButton* test;
-
+	UI::UIText* testText;
 	UI::FontManager* fontManager;
 
 	UI::UIRenderingDrawData uiRenderingDrawData;

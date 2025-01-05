@@ -2,6 +2,13 @@
 #include <fileOperations/fontLoader.h>
 
 
+UI::UIText::UIText(glm::vec2 pos, glm::vec2 size) {
+    fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+    font = filesManager.getFontNames().hash[filesManager.getFontNames().fullPaths[0]];
+    this->position = pos;
+    this->size = size;
+}
+
 std::string& UI::UIText::GetText() {
 	return text;
 }
@@ -22,35 +29,54 @@ glm::vec3& UI::UIText::GetColor() {
 	return color;
 }
 
-void UI::UIText::Update(vkUtil::FontSBO sbo, std::map<char, fileOperations::GlyphInfo>& glyphMap) {
-     // Wierzcho³ki (pozycja + UV)
-    float penX = this->position.x;
-    float penY = this->position.y;
-    for (const char& c : text) {
-        
+void UI::UIText::Update(std::vector<vkUtil::FontSBO>& sbo, FontManager* fontManager, size_t& lettterOffset) {
+    float penX = 0;
+    float penY = 0;
+
+    std::map<char, fileOperations::GlyphInfo> glyphMap = fontManager->GetFontData(font);
+
+    float atlasWidth = 1024.0f;
+    float atlasHeight = 1024.0f;
+
+    for (char& c : text) {
+        if (glyphMap.find(c) == glyphMap.end()) {
+            // Obs³uga brakuj¹cych znaków
+            penX += glyphMap[' '].advanceX;  // Mo¿na u¿yæ szerokoœci spacji
+            continue;
+        }
+
         fileOperations::GlyphInfo glyph = glyphMap[c];
 
-        float x0 = penX + glyph.offsetX;              // Pozycja X lewego górnego wierzcho³ka
-        float y0 = penY - glyph.offsetY;              // Pozycja Y lewego górnego wierzcho³ka
-        float x1 = x0 + glyph.width;                  // Pozycja X prawego dolnego wierzcho³ka
-        float y1 = y0 - glyph.height;                 // Pozycja Y prawego dolnego wierzcho³ka
+        // Oblicz rozmiary w pikselach
+        float glyphPixelWidth = glyph.width * atlasWidth;
+        float glyphPixelHeight = glyph.height * atlasHeight;
 
-        float uvLeft = glyph.x;                       // UV lewego boku
-        float uvTop = glyph.y;                        // UV górnego boku
-        float uvRight = glyph.x + glyph.width;        // UV prawego boku
-        float uvBottom = glyph.y + glyph.height;      // UV dolnego boku
-        /*
-        // Dodawanie prostok¹ta (quad) do danych wierzcho³ków
-        vertexData.insert(vertexData.end(), {
-            x0, y0, uvLeft, uvTop,    // LT
-            x1, y0, uvRight, uvTop,   // RT
-            x1, y1, uvRight, uvBottom,// RB
-            x0, y1, uvLeft, uvBottom  // LB
-            });
+        // Wype³nianie FontSBO
+        vkUtil::FontSBO fontSBO;
+        fontSBO.PosSize = glm::vec4(
+            this->position.x + penX + glyph.offsetX,  // Pozycja X z uwzglêdnieniem offsetu
+            this->position.y + penY - glyph.offsetY,  // Pozycja Y (odwróæ dla FreeType)
+            glyphPixelWidth * 1,
+            glyphPixelHeight * 1
+        );
+        fontSBO.UVBounds = glm::vec4(
+            glyph.x,
+            glyph.y,
+            glyph.x + glyph.width,
+            glyph.y + glyph.height
+        );
+        fontSBO.textures = glm::uvec4(0, 0, 0, 0);  // Dostosuj, jeœli u¿ywasz wielu atlasów
 
-        // Przesuniêcie "pióra" do nastêpnego znaku
+        sbo[lettterOffset++] = fontSBO;
+
+        // Przesuniêcie "pióra"
         penX += glyph.advanceX;
-        */
+
+        // Obs³uga ³amania linii
+        if (penX > this->size.x) {
+            penX = 0;
+            penY += this->size.y;
+        }
     }
 }
 

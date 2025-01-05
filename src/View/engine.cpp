@@ -80,6 +80,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 
 GraphicsEngine::~GraphicsEngine() {
 	UImanager.remove_button(test);
+	UImanager.remove_text(testText);
 	device.waitIdle();
 	if (debugMode) {
 		std::cout << "End!\n";
@@ -91,6 +92,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
+
 	//delete cubemap;
 	device.destroyCommandPool(CommandPool);
 	device.destroyCommandPool(computeCommandPool);
@@ -136,6 +138,7 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 	bindings.count = 1;
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
 	UIDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+	UIFontSBODescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
@@ -146,6 +149,7 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 		frame.make_descriptors_resources(number_of_models);
 		frame.postprocessDescriptorSet = vkInit::allocate_descriptor_set(device, postprocessDescriptorPool, postprocessDescriptorSetLayout);
 		frame.UIDescriptorSet = vkInit::allocate_descriptor_set(device, UIDescriptorPool, UIDescriptorSetLayout);
+		frame.UIFontDescriptorSet = vkInit::allocate_descriptor_set(device, UIFontSBODescriptorPool, UIFontSBODescriptorSetLayout);
 	}
 }
 
@@ -165,6 +169,7 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.specify_fragment_shader("resources/shaders/frag.spv");
 	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
 	pipelineBuilder.clear_depth_attachment();
+	pipelineBuilder.set_color_blending(false);
 	pipelineBuilder.add_descriptor_set_layout(postprocessDescriptorSetLayout);
 	pipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
 	pipelineBuilder.use_depth_test(true);
@@ -187,6 +192,7 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.clear_depth_attachment();
 	pipelineBuilder.add_descriptor_set_layout(UIDescriptorSetLayout);
 	pipelineBuilder.use_depth_test(false);
+	pipelineBuilder.set_color_blending(false);
 	pipelineBuilder.dynamicRendering = true;
 	pipelineBuilder.setPushConstants(sizeof(glm::vec2), 1);
 	output = pipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
@@ -194,6 +200,24 @@ void GraphicsEngine::create_pipeline() {
 	pipeline.pipeline = output.pipeline;
 	vkResources::scenePipelines->addPipeline("UI Pipeline", pipeline);
 	pipelineBuilder.reset();
+
+	pipelineBuilder.set_overwrite_mode(true);
+	pipelineBuilder.specify_vertex_shader("resources/shaders/UIFontvert.spv");
+	pipelineBuilder.specify_fragment_shader("resources/shaders/UIFontfrag.spv");
+	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
+	pipelineBuilder.clear_depth_attachment();
+	pipelineBuilder.add_descriptor_set_layout(UIFontSBODescriptorSetLayout);
+	pipelineBuilder.add_descriptor_set_layout(UIFontTextureDescriptorSetLayout);
+	pipelineBuilder.use_depth_test(false);
+	pipelineBuilder.dynamicRendering = true;
+	pipelineBuilder.setPushConstants(sizeof(glm::vec2), 1);
+	pipelineBuilder.set_color_blending(true);
+	output = pipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
+	pipeline.pipelineLayout = output.layout;
+	pipeline.pipeline = output.pipeline;
+	vkResources::scenePipelines->addPipeline("UIFont Pipeline", pipeline);
+	pipelineBuilder.reset();
+	//pipelineInfo = vkResources::scenePipelines->getPipeline("UIFont Pipeline");
 }
 
 void GraphicsEngine::make_instance() {
@@ -303,12 +327,13 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	cubemapDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
-	UIFontDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
+	UIFontTextureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
 
 	bindings.count = 1;
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eVertex;
 	UIDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+	UIFontSBODescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 
 
 }
@@ -406,6 +431,7 @@ void GraphicsEngine::load_textures_files() {
 	std::vector<std::string> ext = fileOperations::FileType::getExtensions(fileOperations::FileType::Image);
 	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 	fileOperations::list_files_in_directory("\\core", filesManager.getTexturesNames(), ext);
+	this->load_fonts();
 }
 
 void GraphicsEngine::load_scripts() {
@@ -416,7 +442,9 @@ void GraphicsEngine::load_scripts() {
 }
 
 void GraphicsEngine::load_fonts() {
-
+	std::vector<std::string> ext = fileOperations::FileType::getExtensions(fileOperations::FileType::Font);
+	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
+	fileOperations::list_files_in_directory("\\core", filesManager.getFontNames(), ext);
 }
 
 void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene ,uint32_t imageIndex) {
@@ -472,7 +500,7 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 		barrier // wskaŸnik do bariery obrazu
 	);
 
-	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, uiRenderingDrawData);
+	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, swapchainFrames[imageIndex].UIFontDescriptorSet, uiRenderingDrawData, fontManager);
 
 
 	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode);
@@ -878,7 +906,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
-	UIFontDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	UIFontTextureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	cubemapDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(6)+1, bindings);
 	
 
@@ -938,7 +966,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	sceneEditor = new editor(scene, std::string(PROJECT_DIR), info, swapchainFormat, swapchainFrames[0].depthFormat);
 
 	//fontManager = new UI::FontManager(physicalDevice, device, graphicsQueue, layout, descriptorPool, maincommandBuffer);
-
+	testText = UImanager.create_text(glm::vec2(400, 400), glm::vec2(400, 400));
+	fontManager = new UI::FontManager(physicalDevice,device, graphicsQueue, UIFontTextureDescriptorSetLayout, UIFontTextureDescriptorPool, maincommandBuffer);
 }
 
 
@@ -962,7 +991,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 
 	
 
-	UImanager.update(_frame.UIPositionSize, uiRenderingDrawData, _frame.UIFontPositionSize);
+	UImanager.update(_frame.UIPositionSize, uiRenderingDrawData, _frame.UIFontPositionSize, fontManager);
 	
 	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
 	for (auto& [key, vector] : objects_to_rendering.unlit) {
@@ -979,6 +1008,8 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 			++i;
 		}
 	}
+	
+
 	_frame.cameraData.view = view;//camera.GetViewMatrix();
 
 	_frame.cameraData.camPos = glm::vec4(camera.Position, 1.0f);
@@ -987,6 +1018,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO)); 
 
 	memcpy(_frame.UIPositionSizeDataWriteLocation, _frame.UIPositionSize.data(), uiRenderingDrawData.UIinstanceCount * sizeof(glm::vec4));
+	memcpy(_frame.UIFontPositionSizeDataWriteLocation, _frame.UIFontPositionSize.data(), uiRenderingDrawData.UILettersinstanceCount * sizeof(vkUtil::FontSBO));
 	
 	//std::cout << _frame.UIPositionSize[0].x << " " << _frame.UIPositionSize[0].y << " " << _frame.UIPositionSize[0].z << " " << _frame.UIPositionSize[0].w << std::endl;
 
