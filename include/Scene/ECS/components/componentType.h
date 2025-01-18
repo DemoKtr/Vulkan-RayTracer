@@ -8,6 +8,7 @@ enum class ComponentType {
     Render = 3,
     Physics = 4,
     Script = 5,
+    Particle = 6,
     // Dodaj inne typy komponentów
     Count // Licznik wszystkich typów
 };

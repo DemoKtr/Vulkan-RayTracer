@@ -21,6 +21,7 @@ public:
             case ComponentType::Mesh: label = "Mesh"; break;
             case ComponentType::Texture: label = "Texture"; break;
             case ComponentType::Script: label = "Script"; break;
+            case ComponentType::Particle: label = "Particle"; break;
             default: label = "Unknown Component"; break;
         }
 		return label;

@@ -38,6 +38,8 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 		std::cout << "Making a graphics engine\n";
 	}
 	
+
+	particleManager = new vkParticle::ParticleManager();
 	auto& taskmanager = TaskManager::getInstance();
 	taskmanager.initialize();
 
@@ -92,6 +94,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
+	delete particleManager;
 
 	//delete cubemap;
 	device.destroyCommandPool(CommandPool);
@@ -103,6 +106,9 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyDescriptorSetLayout(postprocessDescriptorSetLayout);
 	device.destroyDescriptorSetLayout(textureDescriptorSetLayout);
 	device.destroyDescriptorSetLayout(cubemapDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(UIDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(UIFontSBODescriptorSetLayout);
+	device.destroyDescriptorSetLayout(UIFontTextureDescriptorSetLayout);
 
 	
 
@@ -111,6 +117,9 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyDescriptorPool(imguiDescriptorPool);
 	device.destroyDescriptorPool(textureDescriptorPool);
 	device.destroyDescriptorPool(cubemapDescriptorPool);
+	device.destroyDescriptorPool(UIDescriptorPool);
+	device.destroyDescriptorPool(UIFontSBODescriptorPool);
+	device.destroyDescriptorPool(UIFontTextureDescriptorPool);
 	
 	
 	cleanup_swapchain();
@@ -1038,5 +1047,5 @@ void GraphicsEngine::build_accelerationStructures() {
 }
 
 void GraphicsEngine::initial_cubemap() {
-	cubemap = new vkImage::CubemapEctTexture("resources/textures/cubemap.jpg");
+	//cubemap = new vkImage::CubemapEctTexture("resources/textures/cubemap.jpg");
 }

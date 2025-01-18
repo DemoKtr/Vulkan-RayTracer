@@ -116,6 +116,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Scene/ECS/components/meshComponent.cpp"
     "src/Scene/ECS/components/renderComponent.cpp"
     "src/Scene/ECS/components/physicsComponent.cpp"
+    "src/Scene/ECS/components/particleComponent.cpp"
     "src/View/vkVertexData/vertexMenagerie.cpp"
     "src/MultithreatedSystems/ThumbnailTask.cpp"
     "src/MultithreatedSystems/Console.cpp"
@@ -178,6 +179,12 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/fileOperations/FontLoader.cpp"
     "src/Input/inputManager.cpp"
     "src/Input/keyMapping.cpp"
+    "src/View/vkParticle/Particle.cpp"
+    "src/View/vkParticle/ParticleEmitter.cpp"
+    "src/View/vkParticle/ParticleGenerator.cpp"
+    "src/View/vkParticle/ParticleManager.cpp"
+    "src/View/vkParticle/DynamicParticleManager.cpp"
+    "src/View/vkParticle/StaticParticleManager.cpp"
 
     )
 

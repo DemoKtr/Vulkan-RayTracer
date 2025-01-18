@@ -16,6 +16,7 @@
 #include "UI/UIManagers.h"
 #include "UI/Font/FontManager.h"
 #include "UI/UIInput.h"
+#include "vkParticle/ParticleManager.h"
 
 
 class GraphicsEngine {
@@ -98,6 +99,9 @@ class GraphicsEngine {
 
 	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
 	RenderObjects objects_to_rendering;
+
+
+	vkParticle::ParticleManager* particleManager;
 
 	void make_instance(); //instance Setup
 	void choice_device();

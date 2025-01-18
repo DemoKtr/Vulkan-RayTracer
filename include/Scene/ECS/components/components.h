@@ -3,3 +3,4 @@
 #include "Scene/ECS/components/meshComponent.h"
 #include "Scene/ECS/components/transformComponent.h"
 #include "Scene/ECS/components/textureComponent.h"
+#include "Scene/ECS/components/particleComponent.h"
