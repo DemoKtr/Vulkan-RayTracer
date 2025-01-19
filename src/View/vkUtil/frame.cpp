@@ -37,6 +37,23 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	cameraUBODescriptor.offset = 0;
 	cameraUBODescriptor.range = sizeof(CameraUBO);
 
+	input.size = sizeof(glm::mat4);
+	particleUBODataBuffer = createBuffer(input);
+	particleUBODataWriteLocation = logicalDevice.mapMemory(particleUBODataBuffer.bufferMemory, 0, sizeof(glm::mat4));
+
+	ParticleUBODescriptor.buffer = particleUBODataBuffer.buffer;
+	ParticleUBODescriptor.offset = 0;
+	ParticleUBODescriptor.range = sizeof(glm::mat4);
+
+	
+	input.size = sizeof(glm::vec4);
+	DeltaTimeDataBuffer = createBuffer(input);
+	DeltaTimeDataWriteLocation = logicalDevice.mapMemory(DeltaTimeDataBuffer.bufferMemory, 0, sizeof(glm::vec4));
+
+	DeltaTimeDescriptor.buffer = DeltaTimeDataBuffer.buffer;
+	DeltaTimeDescriptor.offset = 0;
+	DeltaTimeDescriptor.range = sizeof(glm::vec4);
+	
 	int sbo_size = number_of_objects+2048;
 	input.size = sbo_size * sizeof(MeshSBO);
 	input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
@@ -48,9 +65,15 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	UIPositionSizeDataBuffer = createBuffer(input);
 	UIPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIPositionSizeDataBuffer.bufferMemory, 0, 1024 * sizeof(glm::vec4));
 
+
+
 	input.size = 2048 * sizeof(FontSBO);
 	UIFontPositionSizeDataBuffer = createBuffer(input);
 	UIFontPositionSizeDataWriteLocation = logicalDevice.mapMemory(UIFontPositionSizeDataBuffer.bufferMemory, 0, 2048 * sizeof(FontSBO));
+
+	
+
+	//dt = glm::vec4(1.0f);
 
 	modelsData.reserve(sbo_size);
 
@@ -82,7 +105,10 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 		UIFontPositionSize.push_back(font);
 		
 	}
-		
+	
+
+
+	viewProjection = glm::mat4(1.0f);
 
 	modelsSBODescriptor.buffer = modelsDataBuffer.buffer;
 	modelsSBODescriptor.offset = 0;
@@ -95,6 +121,8 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	UIFontPositionSizeDescriptor.buffer = UIFontPositionSizeDataBuffer.buffer;
 	UIFontPositionSizeDescriptor.offset = 0;
 	UIFontPositionSizeDescriptor.range = 2048 * sizeof(FontSBO);
+
+	
 
 }
 
@@ -132,10 +160,40 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	writeInfo2.descriptorCount = 1;
 	writeInfo2.descriptorType = vk::DescriptorType::eStorageBuffer;
 	writeInfo2.pBufferInfo = &modelsSBODescriptor;
+
+	vk::WriteDescriptorSet writeInfo4;
+	writeInfo4.dstSet = particleSBODescriptorSet;
+	writeInfo4.dstBinding = 1;
+	writeInfo4.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+	writeInfo4.descriptorCount = 1;
+	writeInfo4.descriptorType = vk::DescriptorType::eUniformBuffer;
+	writeInfo4.pBufferInfo = &ParticleUBODescriptor;
+	
+	vk::WriteDescriptorSet writeInfo5;
+	writeInfo5.dstSet = particleSBODescriptorSet;
+	writeInfo5.dstBinding = 2;
+	writeInfo5.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+	writeInfo5.descriptorCount = 1;
+	writeInfo5.descriptorType = vk::DescriptorType::eUniformBuffer;
+	writeInfo5.pBufferInfo = &DeltaTimeDescriptor;
 	
 	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo2, nullptr);
+	logicalDevice.updateDescriptorSets(writeInfo4, nullptr);
+	logicalDevice.updateDescriptorSets(writeInfo5, nullptr);
 
+	if (!isParticleInit) {
+		isParticleInit = true;
+		vk::WriteDescriptorSet writeInfo3;
+		writeInfo3.dstSet = particleSBODescriptorSet;
+		writeInfo3.dstBinding = 0;
+		writeInfo3.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+		writeInfo3.descriptorCount = 1;
+		writeInfo3.descriptorType = vk::DescriptorType::eStorageBuffer;
+		writeInfo3.pBufferInfo = &particleDescriptor->descriptorInfo;
+
+		logicalDevice.updateDescriptorSets(writeInfo3, nullptr);
+	}
 }
 
 void vkUtil::SwapChainFrame::write_UI_descriptors() {
@@ -165,7 +223,7 @@ void vkUtil::SwapChainFrame::write_UI_descriptors() {
 
 }
 
-void vkUtil::SwapChainFrame::destroy(){
+void vkUtil::SwapChainFrame::destroy(uint32_t index){
 
 	//logicalDevice.destroyImage(mainimage);
 	logicalDevice.destroyImage(depthBuffer);
@@ -191,11 +249,18 @@ void vkUtil::SwapChainFrame::destroy(){
 	logicalDevice.destroyBuffer(UIFontPositionSizeDataBuffer.buffer);
 
 
+	//logicalDevice.unmapMemory(particleSBODataBuffer.bufferMemory);
+	//logicalDevice.freeMemory(particleSBODataBuffer.bufferMemory);
+	//logicalDevice.destroyBuffer(particleSBODataBuffer.buffer);
+
 	logicalDevice.destroySemaphore(imageAvailable);
 	logicalDevice.destroySemaphore(renderFinished);
 	logicalDevice.destroySemaphore(computeFinished);
 	logicalDevice.destroyFence(inFlight);
 	//logicalDevice.destroyFramebuffer(mainframebuffer);
+	if (index ==0) {
+		delete particleDescriptor;
+	}
 
-
+	
 }

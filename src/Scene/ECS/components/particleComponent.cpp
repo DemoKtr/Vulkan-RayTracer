@@ -5,6 +5,10 @@ ParticleComponent::ParticleComponent() {
 
 }
 
+vkParticle::ParticleEmmiter& ParticleComponent::getEmiter() {
+	return emiter;
+}
+
 void ParticleComponent::update(float deltaTime) {
 	emiter.update();
 }

@@ -19,6 +19,11 @@
 #include "vkParticle/ParticleManager.h"
 
 
+struct PushDataStructure {
+	
+	glm::vec4 frustumPlanes[6];
+};
+
 class GraphicsEngine {
 	glm::ivec2 screenSize;
 	const char* appName{ "RayTracer" };
@@ -47,6 +52,10 @@ class GraphicsEngine {
 	
 	uint32_t frameFlag = 1000;
 	vkImage::CubemapEctTexture* cubemap;
+
+
+
+	PushDataStructure frustum;
 
 	//swapchain
 	vk::SwapchainKHR swapchain;
@@ -85,6 +94,10 @@ class GraphicsEngine {
 
 	vk::DescriptorPool cubemapDescriptorPool;
 	vk::DescriptorSetLayout cubemapDescriptorSetLayout;
+
+	vk::DescriptorPool particleDescriptorPool;
+	vk::DescriptorSetLayout particleDescriptorSetLayout;
+
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;

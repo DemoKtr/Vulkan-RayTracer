@@ -6,7 +6,7 @@
 namespace vkParticle {
 	class ParticleGenerator {
     private:
-        size_t particleCount;
+        size_t particleCount =1500;
         std::vector<Particle> particles;
         bool* dirty_flag;
 
@@ -69,6 +69,7 @@ namespace vkParticle {
         // Generate particles
         void GenerateParticles();
 
+        std::vector<Particle>& GetParticles();
 
         void update();
 

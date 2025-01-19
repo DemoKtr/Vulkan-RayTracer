@@ -2,6 +2,10 @@
 
 vkParticle::ParticleEmmiter::ParticleEmmiter() {
     dirtyflag = new bool(true);
+	AddGenerator(dirtyflag);
+	generators[0].update();
+	generators[0].GenerateParticles();
+
 }
 
 vkParticle::ParticleEmmiter::~ParticleEmmiter() {

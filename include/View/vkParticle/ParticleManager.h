@@ -8,49 +8,31 @@ namespace vkParticle {
     class ParticleManager {
     public:
         // Konstruktor
-        ParticleManager() = default;
+        ParticleManager();
+        ~ParticleManager();
 
         // Dodaj komponent cz¹steczek do mened¿era
-        void AddParticleComponent(ecs::ECS* ecs,SceneObject* sceneObject) {
-            if (sceneObject && ecs->hasComponent<ParticleComponent>(sceneObject->id)) {
-                particleComponents.push_back(ecs->getComponent<ParticleComponent>(sceneObject->id));
-            }
-        }
+        void AddParticleComponent(ecs::ECS* ecs, SceneObject* sceneObject);
+        void AddParticleComponent();
+    
 
         // Usuñ komponent cz¹steczek z mened¿era
-        void RemoveParticleComponent(ecs::ECS* ecs, SceneObject* sceneObject) {
-            if (!sceneObject) return;
-
-            auto it = std::remove_if(particleComponents.begin(), particleComponents.end(),
-                [&](std::shared_ptr<ParticleComponent> component) {
-                    return component == ecs->getComponent<ParticleComponent>(sceneObject->id);
-                });
-
-            if (it != particleComponents.end()) {
-                particleComponents.erase(it, particleComponents.end());
-            }
-        }
+        void RemoveParticleComponent(ecs::ECS* ecs, SceneObject* sceneObject);
 
         // Aktualizuj wszystkie komponenty cz¹steczek
-        void Update(float deltaTime) {
-            for (auto& component : particleComponents) {
-                if (component) {
-                    component->update(deltaTime);
-                }
-            }
-        }
+        void Update(float deltaTime, void* memory, std::vector<vkParticle::Particle>& particles);
 
         // Renderuj wszystkie komponenty cz¹steczek
-        void Render() {
-           
-        }
+        void Render();
 
         // Usuñ wszystkie komponenty
         void Clear() {
-            particleComponents.clear();
+            for (vkParticle::ParticleEmmiter* emiter : particleEmiters) {
+                delete emiter;
+            }
         }
 
     private:
-        std::vector<std::shared_ptr<ParticleComponent>> particleComponents;
+        std::vector<vkParticle::ParticleEmmiter*> particleEmiters;
     };
 }

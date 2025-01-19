@@ -28,7 +28,7 @@
 #include "MultithreatedSystems/TaskManager.h"
 #include "fileOperations/filesTypes.h"
 #include <MultithreatedSystems/mutexManager.h>
-
+#include "View/vkInit/vkPipeline/meshPipelineBuilder.h"
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -63,12 +63,12 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	create_descriptor_set_layouts();
 
 	create_pipeline();
-
+	
 	finalize_setup(scene);
 	
 	
 	make_assets(scene);
-
+	
 	vkPrefab::data.physicalDevice = physicalDevice;
 	vkPrefab::data.device = this->device;
 	vkPrefab::data.instance = this->instance;
@@ -109,6 +109,7 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyDescriptorSetLayout(UIDescriptorSetLayout);
 	device.destroyDescriptorSetLayout(UIFontSBODescriptorSetLayout);
 	device.destroyDescriptorSetLayout(UIFontTextureDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(particleDescriptorSetLayout);
 
 	
 
@@ -120,6 +121,7 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyDescriptorPool(UIDescriptorPool);
 	device.destroyDescriptorPool(UIFontSBODescriptorPool);
 	device.destroyDescriptorPool(UIFontTextureDescriptorPool);
+	device.destroyDescriptorPool(particleDescriptorPool);
 	
 	
 	cleanup_swapchain();
@@ -148,17 +150,23 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
 	UIDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 	UIFontSBODescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+	bindings.count = 3;
+	bindings.types[1] = vk::DescriptorType::eUniformBuffer;
+	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	particleDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
 		frame.renderFinished = vkInit::make_semaphore(device, debugMode);
 		frame.computeFinished = vkInit::make_semaphore(device, debugMode);
-		frame.inFlight = vkInit::make_fence(device, debugMode); 
+		frame.inFlight = vkInit::make_fence(device, debugMode); 		
 		frame.make_descriptors_resources(number_of_models);
 		frame.postprocessDescriptorSet = vkInit::allocate_descriptor_set(device, postprocessDescriptorPool, postprocessDescriptorSetLayout);
 		frame.UIDescriptorSet = vkInit::allocate_descriptor_set(device, UIDescriptorPool, UIDescriptorSetLayout);
 		frame.UIFontDescriptorSet = vkInit::allocate_descriptor_set(device, UIFontSBODescriptorPool, UIFontSBODescriptorSetLayout);
+		frame.particleSBODescriptorSet = vkInit::allocate_descriptor_set(device, particleDescriptorPool, particleDescriptorSetLayout);
+		
 	}
 }
 
@@ -227,6 +235,27 @@ void GraphicsEngine::create_pipeline() {
 	vkResources::scenePipelines->addPipeline("UIFont Pipeline", pipeline);
 	pipelineBuilder.reset();
 	//pipelineInfo = vkResources::scenePipelines->getPipeline("UIFont Pipeline");
+
+
+	vkInit::MeshPipelineBuilder meshPipelineBuilder(device);
+	meshPipelineBuilder.set_overwrite_mode(true);
+	meshPipelineBuilder.specify_task_shader("resources/shaders/particleTask.spv");
+	meshPipelineBuilder.specify_mesh_shader("resources/shaders/particleMesh.spv");
+	meshPipelineBuilder.specify_fragment_shader("resources/shaders/particleFrag.spv");
+	meshPipelineBuilder.specify_swapchain_extent(swapchainExtent);
+	//meshPipelineBuilder.clear_depth_attachment();
+	meshPipelineBuilder.set_color_blending(false);
+	meshPipelineBuilder.add_descriptor_set_layout(particleDescriptorSetLayout);
+	meshPipelineBuilder.setPushConstants(sizeof(PushDataStructure), 1, 0,vk::ShaderStageFlagBits::eTaskEXT);
+	//meshPipelineBuilder.setPushConstants(sizeof(glm::uvec4), 1, sizeof(vkRenderStructs::ProjectionData), vk::ShaderStageFlagBits::eTaskEXT);
+
+
+	output = meshPipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
+
+	pipeline.pipelineLayout = output.layout;
+	pipeline.pipeline = output.pipeline;
+
+	vkResources::scenePipelines->addPipeline("mesh Pipeline", pipeline);
 }
 
 void GraphicsEngine::make_instance() {
@@ -308,9 +337,9 @@ void GraphicsEngine::recreate_swapchain(Scene* scene){
 }
 
 void GraphicsEngine::cleanup_swapchain() {
-
+	uint32_t i = 0;
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) {
-		frame.destroy();
+		frame.destroy(i++);
 	}
 	device.destroySwapchainKHR(swapchain);
 }
@@ -343,6 +372,15 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	bindings.stages[0] = vk::ShaderStageFlagBits::eVertex;
 	UIDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	UIFontSBODescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+	bindings.count = 3;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eTaskEXT | vk::ShaderStageFlagBits::eMeshEXT;
+	bindings.stages[1] = vk::ShaderStageFlagBits::eMeshEXT;
+	bindings.types[1] = vk::DescriptorType::eUniformBuffer;
+	bindings.indices.push_back(2);
+	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eTaskEXT);
+	particleDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 
 
 }
@@ -422,7 +460,11 @@ void GraphicsEngine::finalize_setup(Scene* scene){
 		[this](auto&&... args) { create_frame_resources(std::forward<decltype(args)>(args)...); },
 		scene->getSceneObjectNumber(scene->root)
 	);
+	
 	create_frame_command_buffer();
+	
+	//create_frame_resources(scene->getSceneObjectNumber(scene->root));
+	
 	//taskmanager.submitTask(TaskPriority::HIGH, create_frame_resources, std::ref(sharedFrames), scene->getSceneObjectNumber(scene->root));
 
 }
@@ -509,12 +551,70 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 		barrier // wskaŸnik do bariery obrazu
 	);
 
-	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, swapchainFrames[imageIndex].UIFontDescriptorSet, uiRenderingDrawData, fontManager);
 
+	vk::RenderingAttachmentInfoKHR colorAttachment = {};
+	colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
+	colorAttachment.imageView = swapchainFrames[imageIndex].mainimageView; // Widok obrazu.
+	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
+	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+
+
+
+
+	vk::RenderingAttachmentInfoKHR depthAttachment = {};
+	depthAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
+	depthAttachment.imageView = swapchainFrames[imageIndex].depthBufferView; // Widok obrazu dla g³êbi.
+	depthAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+	depthAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
+	depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
+
+	// Debugging attachmentów g³êbi
+
+
+	vk::RenderingInfoKHR renderingInfo = {};
+	renderingInfo.sType = vk::StructureType::eRenderingInfoKHR;
+	renderingInfo.renderArea.extent.width = swapchainExtent.width;
+	renderingInfo.renderArea.extent.height = swapchainExtent.height;
+	renderingInfo.layerCount = 1;
+	renderingInfo.colorAttachmentCount = 1;
+	renderingInfo.pColorAttachments = &colorAttachment;
+	renderingInfo.pDepthAttachment = &depthAttachment;
+
+
+	// Pipeline i layout
+	vkUtil::PipelineCacheChunk pipelineInfo = vkResources::scenePipelines->getPipeline("mesh Pipeline");
+	
+
+
+	
+
+	// Rozpoczêcie renderowania
+	try {
+		commandBuffer.beginRendering(&renderingInfo);
+
+	}
+	catch (vk::SystemError err) {
+		std::cerr << "Failed to begin rendering: " << err.what() << std::endl;
+		return;
+	}
+
+	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipeline);
+	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipelineLayout, 0, swapchainFrames[imageIndex].particleSBODescriptorSet, nullptr);
+	commandBuffer.pushConstants(pipelineInfo.pipelineLayout,vk::ShaderStageFlagBits::eTaskEXT, 0, sizeof(PushDataStructure), &frustum);
+
+	commandBuffer.drawMeshTasksEXT(3, 1, 1, dldi);
+
+
+
+	commandBuffer.endRendering();
+	
+	
+	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, swapchainFrames[imageIndex].UIFontDescriptorSet, uiRenderingDrawData, fontManager);
+	
 
 	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode);
 
-	
 	try {
 		commandBuffer.end();
 	}
@@ -805,13 +905,17 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 		imageIndex, scene, deltaTime, camera
 	);
 	*/
+	
 	prepare_frame(imageIndex, scene, deltaTime, camera);
+	
 	vk::CommandBuffer MainCommandBuffer = swapchainFrames[frameNumber].mainCommandBuffer;
 	vk::CommandBuffer unlitCommandBuffer = swapchainFrames[frameNumber].unlitCommandBuffer;
 
 	MainCommandBuffer.reset();
 	unlitCommandBuffer.reset();
+	
 
+	
 	taskmanager.submitTask(
 		TaskPriority::RECORD_DRAW_COMMAND,
 		[this](auto&&... args) { record_unlit_draw_command(std::forward<decltype(args)>(args)...); },
@@ -820,9 +924,10 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 
 	taskmanager.waitForPriorityTasks(TaskPriority::RECORD_DRAW_COMMAND);
+	
+	
 	record_draw_command(MainCommandBuffer,unlitCommandBuffer,scene ,imageIndex);
-	
-	
+
 	
 	//taskmanager.waitForPriorityTasks(TaskPriority::DESCRIPTORS);
 	vk::SubmitInfo submitInfo = {};
@@ -885,11 +990,11 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 
 void GraphicsEngine::make_assets(Scene* scene) {
 
-	
+
 	auto& taskmanager = TaskManager::getInstance();
 
 
-
+	/*
 	taskmanager.submitTask(
 		TaskPriority::HIGH,
 		[this](auto&&... args) { load_meshes_files(std::forward<decltype(args)>(args)...); }
@@ -902,9 +1007,10 @@ void GraphicsEngine::make_assets(Scene* scene) {
 		TaskPriority::HIGH,
 		[this](auto&&... args) { load_scripts(std::forward<decltype(args)>(args)...); }
 	);
-
-
-
+	*/
+	load_scripts();
+	load_textures_files();
+	load_meshes_files();
 
 	projection = vkRenderStructs::getProjectionMatrix(swapchainExtent);
 	meshesManager = new vkMesh::MeshesManager(scene->root, scene->ecs);
@@ -916,8 +1022,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	UIFontTextureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
-	cubemapDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(6)+1, bindings);
-	
+	cubemapDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(6) + 1, bindings);
+
 
 
 	vkImage::TextureInputChunk info;
@@ -926,14 +1032,16 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	info.commandBuffer = maincommandBuffer;
 	info.logicalDevice = device;
 	info.physicalDevice = physicalDevice;
-	
+
 	info.descriptorPool = textureDescriptorPool;
 	info.layout = textureDescriptorSetLayout;
 	info.filenames = nullptr;
 
 	taskmanager.waitForPriorityTasks(TaskPriority::HIGH);
+	taskmanager.waitForPriorityTasks(TaskPriority::LOW);
+
 	fileOperations::FilesManager& filesManager = fileOperations::FilesManager::getInstance();
-	
+
 	info.texturesNames = filesManager.getTexturesNames();
 	vkResources::atlasTextures = new vkImage::Texture(info);
 
@@ -943,16 +1051,16 @@ void GraphicsEngine::make_assets(Scene* scene) {
 		vkMesh::MeshLoader m(path.c_str());
 		test.push_back(m);
 	}
-	
+
 	size_t index = 0;
 	for (vkMesh::MeshLoader m : test) {
 		vkMesh::VertexBuffers buffer = m.getData();
 		vkResources::meshes->consume(filesManager.getMeshesNames().hash[m.path], buffer.vertices, buffer.indicies);
-	
+
 	}
 
 
-	
+
 	vkMesh::FinalizationChunk finalizationInfo;
 	finalizationInfo.logicalDevice = device;
 	finalizationInfo.physicalDevice = physicalDevice;
@@ -968,7 +1076,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	info.descriptorPool = iconDescriptorPool;
 	info.layout = iconDescriptorSetLayout;
-	
+
 
 
 
@@ -976,7 +1084,20 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	//fontManager = new UI::FontManager(physicalDevice, device, graphicsQueue, layout, descriptorPool, maincommandBuffer);
 	testText = UImanager.create_text(glm::vec2(400, 400), glm::vec2(400, 400));
-	fontManager = new UI::FontManager(physicalDevice,device, graphicsQueue, UIFontTextureDescriptorSetLayout, UIFontTextureDescriptorPool, maincommandBuffer);
+	fontManager = new UI::FontManager(physicalDevice, device, graphicsQueue, UIFontTextureDescriptorSetLayout, UIFontTextureDescriptorPool, maincommandBuffer);
+	vkUtil::DescriptorData<vkParticle::Particle>*  pDesc = new vkUtil::DescriptorData<vkParticle::Particle>(physicalDevice,device);
+	vkUtil::DescriptorDataInput input;
+	input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+	input.count = 1000000;
+
+	pDesc->make_descriptors_resources(input);
+	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
+	{
+		frame.particleDescriptor = pDesc;
+		particleManager->Update(0.0f, pDesc->dataWriteLocation, pDesc->data);
+		
+	}
+	
 }
 
 
@@ -1018,18 +1139,80 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 		}
 	}
 	
+	_frame.viewProjection = projection.projection * view;
+
+	
+	frustum.frustumPlanes[0] = glm::vec4(
+		_frame.viewProjection[0][3] + _frame.viewProjection[0][0],
+		_frame.viewProjection[1][3] + _frame.viewProjection[1][0],
+		_frame.viewProjection[2][3] + _frame.viewProjection[2][0],
+		_frame.viewProjection[3][3] + _frame.viewProjection[3][0]
+		);
+
+	// Right plane
+	frustum.frustumPlanes[1] = glm::vec4(
+		_frame.viewProjection[0][3] - _frame.viewProjection[0][0],
+		_frame.viewProjection[1][3] - _frame.viewProjection[1][0],
+		_frame.viewProjection[2][3] - _frame.viewProjection[2][0],
+		_frame.viewProjection[3][3] - _frame.viewProjection[3][0]
+	);
+
+	// Bottom plane
+	frustum.frustumPlanes[2] = glm::vec4(
+		_frame.viewProjection[0][3] + _frame.viewProjection[0][1],
+		_frame.viewProjection[1][3] + _frame.viewProjection[1][1],
+		_frame.viewProjection[2][3] + _frame.viewProjection[2][1],
+		_frame.viewProjection[3][3] + _frame.viewProjection[3][1]
+	);
+
+	// Top plane
+	frustum.frustumPlanes[3] = glm::vec4(
+		_frame.viewProjection[0][3] - _frame.viewProjection[0][1],
+		_frame.viewProjection[1][3] - _frame.viewProjection[1][1],
+		_frame.viewProjection[2][3] - _frame.viewProjection[2][1],
+		_frame.viewProjection[3][3] - _frame.viewProjection[3][1]
+	);
+
+	// Near plane
+	frustum.frustumPlanes[4] = glm::vec4(
+		_frame.viewProjection[0][3] + _frame.viewProjection[0][2],
+		_frame.viewProjection[1][3] + _frame.viewProjection[1][2],
+		_frame.viewProjection[2][3] + _frame.viewProjection[2][2],
+		_frame.viewProjection[3][3] + _frame.viewProjection[3][2]
+	);
+
+	// Far plane
+	frustum.frustumPlanes[5] = glm::vec4(
+		_frame.viewProjection[0][3] - _frame.viewProjection[0][2],
+		_frame.viewProjection[1][3] - _frame.viewProjection[1][2],
+		_frame.viewProjection[2][3] - _frame.viewProjection[2][2],
+		_frame.viewProjection[3][3] - _frame.viewProjection[3][2]
+	);
+
+	// Normalize the planes
+	for (int i = 0; i < 6; ++i) {
+		glm::vec3 normal = glm::vec3(frustum.frustumPlanes[i]);
+		float length = glm::length(normal);
+		frustum.frustumPlanes[i] /= length;
+	}
 
 	_frame.cameraData.view = view;//camera.GetViewMatrix();
-
+	_frame.dt = glm::vec4(deltaTime);
 	_frame.cameraData.camPos = glm::vec4(camera.Position, 1.0f);
+	//size_t particleCounter = 0;
+	
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
+	memcpy(_frame.particleUBODataWriteLocation, &(_frame.viewProjection), sizeof(glm::mat4));
 	//if (i > 0) 
 	memcpy(_frame.modelsDataWriteLocation, _frame.modelsData.data(), i * sizeof(vkUtil::MeshSBO)); 
 
 	memcpy(_frame.UIPositionSizeDataWriteLocation, _frame.UIPositionSize.data(), uiRenderingDrawData.UIinstanceCount * sizeof(glm::vec4));
 	memcpy(_frame.UIFontPositionSizeDataWriteLocation, _frame.UIFontPositionSize.data(), uiRenderingDrawData.UILettersinstanceCount * sizeof(vkUtil::FontSBO));
-	
+
+	//memcpy(_frame.particleSBODataWriteLocation, _frame.particlesData.data(), particleCounter * sizeof(vkParticle::Particle));
+	memcpy(_frame.DeltaTimeDataWriteLocation, &_frame.dt, sizeof(glm::vec4));
 	//std::cout << _frame.UIPositionSize[0].x << " " << _frame.UIPositionSize[0].y << " " << _frame.UIPositionSize[0].z << " " << _frame.UIPositionSize[0].w << std::endl;
+
 
 	_frame.write_postprocess_descriptors();
 	_frame.write_UI_descriptors();

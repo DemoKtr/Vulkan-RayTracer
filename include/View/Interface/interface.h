@@ -58,7 +58,7 @@ class editor {
 			vk::Format pictureFormat,
 			vk::Format depthFormat);
 		~editor();
-		void render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame> swapchainFrames, RenderObjects* objects, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
+		void render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame>& swapchainFrames, RenderObjects* objects, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
 		
 
 };

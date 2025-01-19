@@ -1,0 +1,134 @@
+#version 460
+#extension GL_EXT_mesh_shader : require
+
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
+
+layout(triangles) out;
+layout(max_vertices = 192, max_primitives=64) out;
+
+layout(location = 0) out VertexOutput {
+    vec4 color;
+} vertexOutput[];
+
+
+struct Task {
+   // uint indices[64];
+   // uint particleCount[8];
+  //  uint particleCountOffset[8];
+	uint i[8];
+	uint o[8];
+};
+
+struct Particle {
+    vec4 position;           // Pozycja (x, y, z, w)
+	
+    vec4 velocity;           // Prędkość (vx, vy, vz, vw)
+    vec4 acceleration;       // Przyspieszenie (ax, ay, az, aw)
+    vec4 size;               // Rozmiar (scale_x, scale_y, scale_z, scale_w)
+    vec4 color;              // Kolor (r, g, b, a)
+    vec4 lifeRotationRSpeed; // (life, rotation, rSpeed, ...)
+    uvec4 textureIndex;      // Indeksy tekstur
+	
+};
+
+
+const vec4 positions[3] = {
+    vec4(-0.25, -0.4, 0.0, 1.0),
+    vec4(0.25, -0.4, 0.0, 1.0),
+    vec4(0.0, 0.0, 0.0, 1.0)
+};
+
+const vec4 colors[3] = {
+    vec4(0.0, 1.0, 0.0, 1.0),
+    vec4(0.0, 0.0, 1.0, 1.0),
+    vec4(1.0, 0.0, 0.0, 1.0)
+};
+
+taskPayloadSharedEXT Task IN;
+
+layout(std430,set=0 ,binding = 0) readonly buffer ParticleBuffer {
+    Particle particles[];
+};
+
+layout(set = 0, binding = 1) uniform UBO {
+    mat4 vp;
+} UboData;
+
+
+void main() {
+/*
+    uint threadIndex = gl_LocalInvocationID.x;
+	if(IN.particleCount[threadIndex]<=0) return;
+    // Liczba cząsteczek do przetworzenia przez ten wątek
+    uint count = IN.particleCount[threadIndex];
+	uint offset = IN.particleCountOffset[threadIndex];
+	 SetMeshOutputsEXT(count*8*3, count*8); // 48 wierzchołków i 16 trójkątów
+    for (uint i = 0; i < count; ++i) {
+        uint particleIndex = IN.indices[offset + i];
+        Particle particle = particles[particleIndex];
+
+        // Pozycja cząsteczki
+        vec3 pos = particle.position.xyz;
+        vec2 size = particle.size.xy;
+
+        // Kolor cząsteczki
+        vec4 color = particle.color;
+
+        // Wyznacz wierzchołki trójkąta w przestrzeni lokalnej
+        vec3 vertex1 = vec3(-0.5 * size.x, -0.5 * size.y, 0.0);
+        vec3 vertex2 = vec3( 0.5 * size.x, -0.5 * size.y, 0.0);
+        vec3 vertex3 = vec3( 0.0,  0.5 * size.y, 0.0);
+
+        // Transformacja wierzchołków do przestrzeni świata
+        mat4 modelMatrix = mat4(1.0); // Możesz dodać obrót, skalowanie lub inne transformacje
+        vec4 worldVertex1 = modelMatrix * vec4(pos + vertex1, 1.0);
+        vec4 worldVertex2 = modelMatrix * vec4(pos + vertex2, 1.0);
+        vec4 worldVertex3 = modelMatrix * vec4(pos + vertex3, 1.0);
+
+        // Transformacja do przestrzeni widoku-projekcji
+        vec4 clipVertex1 = UboData.vp * worldVertex1; //viewProjMatrix * worldVertex1;
+        vec4 clipVertex2 = UboData.vp * worldVertex2; // viewProjMatrix * worldVertex2;
+        vec4 clipVertex3 = UboData.vp * worldVertex3; //viewProjMatrix * worldVertex3;
+
+        // Emitowanie trójkąta
+        uint baseVertex = (offset + i)*3;
+        gl_MeshVerticesEXT[baseVertex + 0].gl_Position = clipVertex1;
+        gl_MeshVerticesEXT[baseVertex + 1].gl_Position = clipVertex2;
+        gl_MeshVerticesEXT[baseVertex + 2].gl_Position = clipVertex3;
+
+        gl_PrimitiveTriangleIndicesEXT[gl_LocalInvocationID.x] = uvec3(baseVertex,baseVertex + 1, baseVertex + 2);
+
+    }
+
+  */
+  
+	uint iid = gl_LocalInvocationID.x; // Unikalny ID wątku
+
+	vec4 col1 = particles[IN.i[iid]].color;
+	vec4 col2 = particles[IN.i[iid]-1].color;
+	vec4 col3 = particles[IN.i[iid]+1].color;
+    // Oblicz offset na podstawie Task Shadera
+    vec4 offset = vec4(float(iid) * 0.5,  IN.o[iid], 0.0, 0.0);
+
+    // Oblicz wartość na podstawie indeksów
+    //float value = float(IN.i[iid]) / 255.0;
+
+    SetMeshOutputsEXT(48, 16); // 48 wierzchołków i 16 trójkątów
+
+    // MVP transformacja
+    mat4 mvp = UboData.vp;
+
+    // Wierzchołki trójkąta
+    gl_MeshVerticesEXT[iid * 3 + 0].gl_Position = mvp * (particles[IN.i[iid]].position + positions[0] + offset);
+    gl_MeshVerticesEXT[iid * 3 + 1].gl_Position = mvp * (particles[IN.i[iid]].position + positions[1] + offset);
+    gl_MeshVerticesEXT[iid * 3 + 2].gl_Position = mvp * (particles[IN.i[iid]].position + positions[2] + offset);
+
+    // Kolory
+    vertexOutput[iid * 3 + 0].color = col1;
+    vertexOutput[iid * 3 + 1].color = col2;
+    vertexOutput[iid * 3 + 2].color = col3;
+
+    // Indeksy trójkąta
+    gl_PrimitiveTriangleIndicesEXT[iid] = uvec3(iid * 3 + 0, iid * 3 + 1, iid * 3 + 2);
+   
+}

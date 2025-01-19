@@ -1,0 +1,132 @@
+#version 460
+#extension GL_EXT_mesh_shader : require
+
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
+shared int s_outMeshletsCount;
+
+shared uint globalIndexOffset; // Wspólny licznik indeksów w grupie roboczej.
+struct Task {
+   // uint indices[64];
+   // uint particleCount[8];
+  //  uint particleCountOffset[8];
+	uint i[8];
+	uint o[8];
+};
+
+struct Particle {
+    vec4 position;
+   
+    vec4 velocity;           // Prędkość (vx, vy, vz, vw)
+    vec4 acceleration;       // Przyspieszenie (ax, ay, az, aw)
+    vec4 size;               // Rozmiar (scale_x, scale_y, scale_z, scale_w)
+    vec4 color;              // Kolor (r, g, b, a)
+    vec4 lifeRotationRSpeed; // (life, rotation, rSpeed, ...)
+    uvec4 textureIndex;      // Indeksy tekstur
+	
+};
+
+layout(std430,set=0 ,binding = 0)  buffer ParticleBuffer {
+    Particle particles[];
+};
+
+layout(push_constant) uniform CameraData {
+    vec4 frustumPlanes[6];
+};
+
+taskPayloadSharedEXT Task OUT;
+
+layout(set = 0, binding = 2) uniform UBO {
+    vec4 deltaTime;
+} Ubodt;
+
+void main() {
+/*
+    if (gl_LocalInvocationID.x == 0) {
+        globalIndexOffset = 0;
+    }
+    memoryBarrierShared();
+    barrier();
+	
+	
+
+    uint localParticleCount = 0;
+    const uint particlesPerThread = 8;
+    uint startIndex = (gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x) * particlesPerThread;
+    uint endIndex = min(startIndex + particlesPerThread, particles.length());
+    bool isVisible = false;
+
+    for (uint i = startIndex; i < endIndex; i++) {
+        if (i >= particles.length()) {
+            break;
+        }
+
+        Particle particle = particles[i];
+        vec3 halfSize = particle.size.xyz * 0.5;
+        vec3 minBounds = particle.position.xyz - halfSize;
+        vec3 maxBounds = particle.position.xyz + halfSize;
+
+        bool insideFrustum = true;
+        for (int j = 0; j < 6; j++) {
+            vec4 plane = frustumPlanes[j];
+            vec3 planeNormal = plane.xyz;
+            float planeD = plane.w;
+
+            float minDist = dot(minBounds, planeNormal) + planeD;
+            float maxDist = dot(maxBounds, planeNormal) + planeD;
+
+            if (minDist > 0 && maxDist > 0) {
+                insideFrustum = false;
+                break;
+            }
+        }
+
+        if (insideFrustum) {
+			uint index = atomicAdd(globalIndexOffset, 1); // Pobranie unikalnego, ciągłego indeksu.
+			if (index < 64) { // Sprawdzenie, czy mieścimy się w tablicy OUT.indices.
+				OUT.indices[index] = i; // Zapis widocznego indeksu.
+				++localParticleCount;   // Zliczanie lokalnych cząsteczek.
+				isVisible = true;       // Ustawienie flagi widoczności.
+			}
+		}
+	}
+	OUT.particleCount[gl_LocalInvocationID.x] = localParticleCount;
+	memoryBarrierShared();
+	barrier();
+
+    if (gl_LocalInvocationID.x == 0) {
+        uint offset = 0;
+        for (int i = 0; i < 8; ++i) {
+            OUT.particleCountOffset[i] = offset;
+            offset += OUT.particleCount[i];
+        }
+
+        if (globalIndexOffset > 0) {
+            EmitMeshTasksEXT(1, 1, 1);
+        }
+    }
+	*/
+	
+	
+	if(gl_LocalInvocationID.x == 0){
+		s_outMeshletsCount = 0;
+		
+	}
+	memoryBarrierShared(); 
+    barrier();
+	
+	uint globalThreadIndex = gl_GlobalInvocationID.x;
+	particles[globalThreadIndex].position += Ubodt.deltaTime.x* particles[globalThreadIndex].velocity;
+	//particles[globalThreadIndex].velocity += Ubodt.deltaTime.x* particles[globalThreadIndex].acceleration;
+	
+	OUT.i[gl_LocalInvocationID.x] = globalThreadIndex;
+	OUT.o[gl_LocalInvocationID.x] = gl_WorkGroupID.x*2;
+	atomicAdd(s_outMeshletsCount,1);
+	
+	memoryBarrierShared(); 
+    barrier();
+	if(gl_LocalInvocationID.x == 0){
+		EmitMeshTasksEXT(s_outMeshletsCount/8, 1, 1);
+		
+	}
+	
+}

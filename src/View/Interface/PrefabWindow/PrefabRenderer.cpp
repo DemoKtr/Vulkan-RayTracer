@@ -148,8 +148,9 @@ void vkPrefab::PrefabRenderer::recreate_swapchain(Scene* scene) {
 }
 
 void vkPrefab::PrefabRenderer::cleanup_swapchain() {
+	uint32_t i = 0;
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) {
-		frame.destroy();
+		frame.destroy(i);
 	}
 	device.destroySwapchainKHR(swapchain);
 }

@@ -1,7 +1,8 @@
 #pragma once
 #include "config.h"
 #include <mutex>
-
+#include "View/vkParticle/Particle.h"
+#include "descriptorsBuffers.h"
 namespace vkUtil {
 
 
@@ -47,7 +48,7 @@ namespace vkUtil {
 	public:
 		vk::Device logicalDevice;
 		vk::PhysicalDevice physicalDevice;
-
+		DescriptorData<vkParticle::Particle>* particleDescriptor;
 		//Swapchain-type stuff
 		vk::Image mainimage;
 		vk::ImageView mainimageView;
@@ -68,23 +69,39 @@ namespace vkUtil {
 		std::vector<MeshSBO> modelsData;
 		std::vector<glm::vec4> UIPositionSize;
 		std::vector<FontSBO> UIFontPositionSize;
+
+
+		//std::vector<vkParticle::Particle> particlesData;
+
+		glm::vec4 dt;
+
 		//Buffer
 		Buffer cameraDataBuffer;
 		Buffer modelsDataBuffer;
+		//Buffer particleSBODataBuffer;
+		Buffer particleUBODataBuffer;
 		Buffer UIPositionSizeDataBuffer;
 		Buffer UIFontPositionSizeDataBuffer;
+		Buffer DeltaTimeDataBuffer;
 		//Data Write Location
 		void* cameraDataWriteLocation;
 		void* modelsDataWriteLocation;
+		//void* particleSBODataWriteLocation;
+		void* particleUBODataWriteLocation;
+		void* DeltaTimeDataWriteLocation;
 		void* UIPositionSizeDataWriteLocation;
 		void* UIFontPositionSizeDataWriteLocation;
 		//DESCRIPTOR BUFFER INFO
 		vk::DescriptorBufferInfo cameraUBODescriptor;
+		//vk::DescriptorBufferInfo ParticleSBODescriptor;
+		vk::DescriptorBufferInfo ParticleUBODescriptor;
+		vk::DescriptorBufferInfo DeltaTimeDescriptor;
 		vk::DescriptorBufferInfo modelsSBODescriptor;
 		vk::DescriptorBufferInfo UIPositionSizeDescriptor;
 		vk::DescriptorBufferInfo UIFontPositionSizeDescriptor;
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
+		vk::DescriptorSet particleSBODescriptorSet;
 		vk::DescriptorSet UIDescriptorSet;
 		vk::DescriptorSet UIFontDescriptorSet;
 
@@ -96,18 +113,19 @@ namespace vkUtil {
 		vk::CommandBuffer deferedCommandBuffer;
 
 
+		glm::mat4 viewProjection;
 
 		//Sync objects
 		vk::Semaphore imageAvailable, renderFinished, computeFinished;
 		vk::Fence inFlight;
 
-		
+		bool isParticleInit = false;
 
 		void make_depth_resources();
 		void make_descriptors_resources(int number_of_objects);
 		void write_postprocess_descriptors();
 		void write_UI_descriptors();
-		void destroy();
+		void destroy(uint32_t index);
 
 	};
 }
