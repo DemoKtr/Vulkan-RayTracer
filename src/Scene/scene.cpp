@@ -1,7 +1,7 @@
 #include "Scene/scene.h"
 
 #include <Scene/ECS/components/components.h>
-#
+#include "Scene/sceneObjectFlagBits.h"
 Scene::Scene() {
 
 	ecs = new ecs::ECS();
@@ -41,7 +41,7 @@ void Scene::update_objects_to_rendering(RenderObjects& objects_to_rendering, Sce
 	for (SceneObject* child : obj->children) {
 		update_objects_to_rendering(objects_to_rendering, child);
 	}
-	if (obj->renderingDirtyFlag) {
+	if (scene::isComponentUpdated(scene::SceneObjectFlagBits::rendering,obj->dirtyFlagBits)) {
 		if (this->ecs->hasComponent<MeshComponent>(obj->id)) {
 			if (this->ecs->hasComponent<TextureComponent>(obj->id) && obj->isActive) {
 				if (this->ecs->getComponent<TextureComponent>(obj->id).get()->getPBR()) {
@@ -60,8 +60,26 @@ void Scene::update_objects_to_rendering(RenderObjects& objects_to_rendering, Sce
 		else {
 			objects_to_rendering.addObjectToGroup(0, obj, GroupType::INACTIVE);
 		}
-		
-		obj->renderingDirtyFlag = false;
+		scene::resetComponent(scene::SceneObjectFlagBits::rendering, obj->dirtyFlagBits);
+		//obj->renderingDirtyFlag = false;
+
+	}
+}
+
+void Scene::update_particles_to_rendering(vkParticle::ParticleManager* manager, SceneObject* obj) {
+	for (SceneObject* child : obj->children) {
+		update_particles_to_rendering(manager, child);
+	}
+	if (scene::isComponentUpdated(scene::SceneObjectFlagBits::particle, obj->dirtyFlagBits) && obj->isActive) {
+		if (this->ecs->hasComponent<ParticleComponent>(obj->id)) {	
+
+			manager->AddParticleComponent(ecs,obj);
+		}
+		else {
+			std::cout << "chujowe test" << std::endl;
+		}
+		scene::resetComponent(scene::SceneObjectFlagBits::particle, obj->dirtyFlagBits);
+		//obj->renderingDirtyFlag = false;
 
 	}
 }

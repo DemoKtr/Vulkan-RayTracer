@@ -13,7 +13,7 @@ glslangValidator -V FragmentShader.frag -o frag.spv
 glslangValidator -V UIFragmentShader.frag -o UIfrag.spv
 glslangValidator -V UIFontFragmentShader.frag -o UIFontfrag.spv
 glslangValidator -V UIFontFragmentShader.frag -o UIFontfrag.spv
-glslangValidator -V ParticleFragmentShader.frag -o particleFrag.spv
+glslangValidator -V --target-env vulkan1.3  ParticleFragmentShader.frag -o particleFrag.spv
 
 
 pause

@@ -273,6 +273,22 @@ vkImage::Texture::~Texture() {
 	logicalDevice.destroySampler(sampler);
 }
 
+void vkImage::Texture::wrie_to_descriptor_set(vk::DescriptorSet& desc) {
+	vk::DescriptorImageInfo imageDescriptor;
+	imageDescriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	imageDescriptor.imageView = imageView;
+	imageDescriptor.sampler = sampler;
+
+	vk::WriteDescriptorSet descriptorWrite;
+	descriptorWrite.dstSet = desc;
+	descriptorWrite.dstBinding = 3;
+	descriptorWrite.dstArrayElement = 0;
+	descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+	descriptorWrite.descriptorCount = 1;
+	descriptorWrite.pImageInfo = &imageDescriptor;
+	logicalDevice.updateDescriptorSets(descriptorWrite, nullptr);
+}
+
 void vkImage::Texture::useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout) {
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineLayout, 1, descriptorSet, nullptr);
 }

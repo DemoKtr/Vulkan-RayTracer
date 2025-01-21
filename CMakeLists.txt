@@ -2,10 +2,26 @@
 
 # Nazwa projektu
 project(VulkanApp)
-
+include(CheckCXXCompilerFlag)
 # Ustawienie standardu C++
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+# Włącz optymalizacje na poziomie kompilatora
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -ffast-math")
+
+
+
+# Sprawdź, czy kompilator obsługuje AVX2
+check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
+if(COMPILER_SUPPORTS_AVX2)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mavx2")
+endif()
+
+# Sprawdź, czy kompilator obsługuje SSE4.2
+check_cxx_compiler_flag("-msse4.2" COMPILER_SUPPORTS_SSE4_2)
+if(COMPILER_SUPPORTS_SSE4_2)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse4.2")
+endif()
 
 # Znajdowanie pakietu Vulkan
 find_package(Vulkan REQUIRED)
@@ -80,6 +96,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Player/camera.cpp" 
     "src/Scene/scene.cpp" 
     "src/Scene/sceneObject.cpp" 
+    "src/Scene/sceneObjectFlagBits.cpp" 
     "src/View/vkInit/instance.cpp" 
     "src/View/vkInit/logging.cpp"
     "src/View/vkInit/descriptors.cpp"
@@ -121,6 +138,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkVertexData/vertexMenagerie.cpp"
     "src/MultithreatedSystems/ThumbnailTask.cpp"
     "src/MultithreatedSystems/Console.cpp"
+    "src/MultithreatedSystems/SimdInstructions/simdRandom.cpp"
     "src/View/Interface/Miniatures/miniatureRenderer.cpp"
     "src/View/vkInit/vkPipeline/meshPipelineBuilder.cpp"
     "src/View/vkInit/vkPipeline/pipelineBuilder.cpp"
@@ -131,6 +149,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/Converters/assimpConverter.cpp"
     "src/Scene/ECS/components/componentFabric.cpp"
     "src/View/vkImage/texture.cpp"
+    "src/View/vkImage/textureStorage.cpp"
     "src/View/Interface/Commands/command.cpp"
     "src/View/Interface/Commands/commandHistory.cpp"
     "src/View/Interface/Commands/filesystemCommand.cpp"
@@ -228,7 +247,7 @@ add_definitions(-DPROJECT_DIR="${CMAKE_SOURCE_DIR}")
 
 # Opcjonalne: Ustawienia kompilatora (dodatkowe flagi)
 if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
+    target_compile_options(${PROJECT_NAME} PRIVATE /O3 /arch:AVX2 /fp:fast /W4)
 else()
-    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic)
+    target_compile_options(${PROJECT_NAME} PRIVATE -O3 -march=native -ffast-math -mavx2 -Wall -Wextra -pedantic)
 endif()

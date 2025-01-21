@@ -1,4 +1,5 @@
 #include "View/vkParticle/ParticleGenerator.h"
+#include <MultithreatedSystems/SimdInstructions/simdRandom.h>
 
 
 // Konstruktor
@@ -82,15 +83,18 @@ uint32_t vkParticle::ParticleGenerator::GetTextureIndex() const {
 }
 
 // Generate particles
-void vkParticle::ParticleGenerator::GenerateParticles()  {
+
+void vkParticle::ParticleGenerator::GenerateParticles() {
+    auto start = std::chrono::high_resolution_clock::now();
     for (auto& particle : particles) {
+        
         particle.position = glm::vec4(
             Random(positionMin.x, positionMax.x),
             Random(positionMin.y, positionMax.y),
             Random(positionMin.z, positionMax.z),
             1.0f // czwarta wspó³rzêdna (a) zawsze ustawiona na 1.0f
         );
-        
+
         particle.velocity = glm::vec4(
             Random(velocityMin.x, velocityMax.x),
             Random(velocityMin.y, velocityMax.y),
@@ -125,10 +129,93 @@ void vkParticle::ParticleGenerator::GenerateParticles()  {
             Random(rotationSpeedMin, rotationSpeedMax), // rotation speed
             0.0f // lub inna domyœlna wartoœæ, jeœli ta wspó³rzêdna nie jest u¿ywana
         );
+
+    }
+    /*
+        size_t count = particles.size();
+        size_t simdCount = count / 8; // Liczba cz¹steczek przetwarzanych w grupach po 4
+        #pragma omp parallel for
+        for (size_t i = 0; i < simdCount; ++i) {
+            // SIMD dla pozycji
+            __m256 posX = RandomSIMD8(positionMin.x, positionMax.x);
+            __m256 posY = RandomSIMD8(positionMin.y, positionMax.y);
+            __m256 posZ = RandomSIMD8(positionMin.z, positionMax.z);
+
+            // SIMD dla prêdkoœci
+            __m256 velX = RandomSIMD8(velocityMin.x, velocityMax.x);
+            __m256 velY = RandomSIMD8(velocityMin.y, velocityMax.y);
+            __m256 velZ = RandomSIMD8(velocityMin.z, velocityMax.z);
+
+            // SIMD dla przyspieszenai
+            __m256 accX = RandomSIMD8(accelerationMin.x, accelerationMax.x);
+            __m256 accY = RandomSIMD8(accelerationMin.y, accelerationMax.y);
+            __m256 accZ = RandomSIMD8(accelerationMin.z, accelerationMax.z);
+
+            __m256 sizeX = RandomSIMD8(sizeMin.x, sizeMax.x);
+            __m256 sizeY = RandomSIMD8(sizeMin.y, sizeMax.y);
+            __m256 sizeZ = RandomSIMD8(sizeMin.z, sizeMax.z);
+
+            // SIMD dla koloru
+            __m256 colR = RandomSIMD8(colorMin.r, colorMax.r);
+            __m256 colG = RandomSIMD8(colorMin.g, colorMax.g);
+            __m256 colB = RandomSIMD8(colorMin.b, colorMax.b);
+
+            __m256 lrsX = RandomSIMD8(lifetimeMin, lifetimeMax);
+            __m256 lrsY = RandomSIMD8(lifetimeMin, lifetimeMax);
+            __m256 lrsZ = RandomSIMD8(lifetimeMin, lifetimeMax);
+
+
+
+            // Wpisz dane do cz¹steczek
+            for (int j = 0; j < 8; ++j) {
+                particles[i * 8 + j].position = glm::vec4(
+                    reinterpret_cast<float*>(&posX)[j],
+                    reinterpret_cast<float*>(&posY)[j],
+                    reinterpret_cast<float*>(&posZ)[j],
+                    1.0f
+                );
+
+                particles[i *8 + j].velocity = glm::vec4(
+                    reinterpret_cast<float*>(&velX)[j],
+                    reinterpret_cast<float*>(&velY)[j],
+                    reinterpret_cast<float*>(&velZ)[j],
+                    1.0f
+                );
+
+                particles[i * 8 + j].color = glm::vec4(
+                    reinterpret_cast<float*>(&colR)[j],
+                    reinterpret_cast<float*>(&colG)[j],
+                    reinterpret_cast<float*>(&colB)[j],
+                    1.0f
+                );
+            }
+        }
+
+        // Obs³uga pozosta³ych cz¹steczek (jeœli liczba cz¹steczek nie jest podzielna przez 4)
+        for (size_t i = simdCount * 8; i < count; ++i) {
+            particles[i].position = glm::vec4(
+                Random(positionMin.x, positionMax.x),
+                Random(positionMin.y, positionMax.y),
+                Random(positionMin.z, positionMax.z),
+                1.0f
+            );
+            particles[i].position = glm::vec4(
+                Random(positionMin.x, positionMax.x),
+                Random(positionMin.y, positionMax.y),
+                Random(positionMin.z, positionMax.z),
+                1.0f
+            );
+        }
         
     }
-}
+    */
+    auto end = std::chrono::high_resolution_clock::now();
 
+    // Obliczenie czasu w milisekundach
+    std::chrono::duration<double, std::milli> elapsed = end - start;
+
+    std::cout << "Czas wykonania: " << elapsed.count() << " ms\n";
+}
 std::vector<vkParticle::Particle>& vkParticle::ParticleGenerator::GetParticles()
 {
     return particles;

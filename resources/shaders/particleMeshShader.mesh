@@ -7,7 +7,9 @@ layout(triangles) out;
 layout(max_vertices = 192, max_primitives=64) out;
 
 layout(location = 0) out VertexOutput {
-    vec4 color;
+   // vec4 color;
+	vec2 uv;
+	flat uint textureId;
 } vertexOutput[];
 
 
@@ -33,9 +35,9 @@ struct Particle {
 
 
 const vec4 positions[3] = {
-    vec4(-0.25, -0.4, 0.0, 1.0),
-    vec4(0.25, -0.4, 0.0, 1.0),
-    vec4(0.0, 0.0, 0.0, 1.0)
+    vec4(-1.0, 1.0, 0.0, 1.0),
+    vec4(-1.0, -3.0, 0.0, 1.0),
+    vec4(2.0, 1.0, 0.0, 1.0)
 };
 
 const vec4 colors[3] = {
@@ -124,9 +126,14 @@ void main() {
     gl_MeshVerticesEXT[iid * 3 + 2].gl_Position = mvp * (particles[IN.i[iid]].position + positions[2] + offset);
 
     // Kolory
-    vertexOutput[iid * 3 + 0].color = col1;
-    vertexOutput[iid * 3 + 1].color = col2;
-    vertexOutput[iid * 3 + 2].color = col3;
+    vertexOutput[iid * 3 + 0].uv = vec2(0.0,0);
+    vertexOutput[iid * 3 + 0].textureId = 1;
+    vertexOutput[iid * 3 + 1].uv = vec2(0.0,2.0);
+    vertexOutput[iid * 3 + 1].textureId = 1;
+    vertexOutput[iid * 3 + 2].uv = vec2(2.0,0);
+    vertexOutput[iid * 3 + 2].textureId = 1;
+	
+
 
     // Indeksy trójkąta
     gl_PrimitiveTriangleIndicesEXT[iid] = uvec3(iid * 3 + 0, iid * 3 + 1, iid * 3 + 2);

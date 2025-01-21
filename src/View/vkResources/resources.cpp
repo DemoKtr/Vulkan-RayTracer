@@ -5,6 +5,7 @@ namespace vkResources {
 
 	vkImage::Texture* atlasTextures;
 
+
 	vkUtil::PipelineCache* scenePipelines;
 	vkUtil::PipelineCache* editorPipelines;
 }

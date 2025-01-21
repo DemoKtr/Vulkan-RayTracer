@@ -13,7 +13,7 @@
 
 #include "View/Interface/ImGuiRenderer/sceneObjectsFunctions.h"
 #include "fileOperations/Resources.h"
-
+#include "Scene/sceneObjectFlagBits.h"
 
 void vkImGui::render_editor(vkThumbs::ThumbsManager* miniatureManager,
 	vkImGui::FilesExploresData& filesExploresData, 
@@ -334,7 +334,8 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 		ImGui::Text("Components:");
 		auto components = ecs->getAllComponents(selectedObject->id);
 		if (ImGui::Checkbox("Active: ", &selectedObject->isActive)){
-			selectedObject->renderingDirtyFlag = true;
+			//selectedObject->renderingDirtyFlag = true;
+			scene::setAllComponentsUpdated(selectedObject->dirtyFlagBits);
 			
 		}
 		for (const auto& componentPtr : components) {
@@ -423,7 +424,8 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 					TextureComponent* textureComponent = dynamic_cast<TextureComponent*>(comp);
 
 					if (ImGui::Checkbox("Is PBR Texture", textureComponent->isPBRTexture())) {
-						selectedObject->renderingDirtyFlag = true;
+						//selectedObject->renderingDirtyFlag = true;
+						scene::updateComponent(scene::SceneObjectFlagBits::rendering,selectedObject->dirtyFlagBits);
 					}
 					
 

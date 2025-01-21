@@ -3,7 +3,7 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <settings.h>
-
+#include "Scene/sceneObjectFlagBits.h"
 
 void vkImGui::AddComponent(ecs::ECS* ecs, SceneObject* selectedObject, ComponentType& selectedComponentType) {
 	// Wyœwietlenie przycisku do dodania komponentu
@@ -19,6 +19,10 @@ void vkImGui::AddComponent(ecs::ECS* ecs, SceneObject* selectedObject, Component
 			"Transform",
 			"Mesh",
 			"Texture",
+			"Render",
+			"Physics",
+			"Script",
+			"Particle",
 		};
 
 		// Tworzymy rozwijane menu do wyboru komponentu
@@ -35,26 +39,32 @@ void vkImGui::AddComponent(ecs::ECS* ecs, SceneObject* selectedObject, Component
 				switch (selectedComponentType) {
 				case ComponentType::Transform: {
 					std::shared_ptr<TransformComponent> createdComponent = std::make_unique<TransformComponent>();
-					ecs->addComponent(selectedObject->id, selectedObject->renderingDirtyFlag, createdComponent);
-					selectedObject->renderingDirtyFlag = true;
+					ecs->addComponent(selectedObject->id, createdComponent);
+					scene::updateComponent(scene::SceneObjectFlagBits::rendering, selectedObject->dirtyFlagBits);
+					//selectedObject->renderingDirtyFlag = true;
 					break;
 				}
 					
 				case ComponentType::Mesh: {
 					std::shared_ptr<MeshComponent> createdComponent = std::make_unique<MeshComponent>();
-					ecs->addComponent(selectedObject->id, selectedObject->renderingDirtyFlag,createdComponent);
+					ecs->addComponent(selectedObject->id,createdComponent);
 					//meshesManager->addMesh(selectedObject, ecs);
-					selectedObject->renderingDirtyFlag = true;
+					scene::updateComponent(scene::SceneObjectFlagBits::rendering, selectedObject->dirtyFlagBits);
 					break;
 				}
 					
 				case ComponentType::Texture: {
 					std::shared_ptr<TextureComponent> createdComponent = std::make_unique<TextureComponent>();
-					ecs->addComponent(selectedObject->id, selectedObject->renderingDirtyFlag, createdComponent);
-					selectedObject->renderingDirtyFlag = true;
+					ecs->addComponent(selectedObject->id, createdComponent);
+					scene::updateComponent(scene::SceneObjectFlagBits::rendering, selectedObject->dirtyFlagBits);
 					break;
 				}
-					
+				case ComponentType::Particle: {
+					std::shared_ptr<ParticleComponent> createdComponent = std::make_unique<ParticleComponent>();
+					ecs->addComponent(selectedObject->id, createdComponent);
+					scene::updateComponent(scene::SceneObjectFlagBits::particle, selectedObject->dirtyFlagBits);
+					break;
+				}
 				default:
 					std::cerr << "Undefined ComponentType" << std::endl;
 					;

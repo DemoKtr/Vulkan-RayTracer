@@ -19,10 +19,7 @@
 #include "vkParticle/ParticleManager.h"
 
 
-struct PushDataStructure {
-	
-	glm::vec4 frustumPlanes[6];
-};
+
 
 class GraphicsEngine {
 	glm::ivec2 screenSize;
@@ -55,7 +52,7 @@ class GraphicsEngine {
 
 
 
-	PushDataStructure frustum;
+	vkRenderStructs::PushDataStructure frustum;
 
 	//swapchain
 	vk::SwapchainKHR swapchain;
@@ -90,10 +87,14 @@ class GraphicsEngine {
 	vk::DescriptorSetLayout iconDescriptorSetLayout;
 
 	vk::DescriptorPool textureDescriptorPool;
+
 	vk::DescriptorSetLayout textureDescriptorSetLayout;
+
 
 	vk::DescriptorPool cubemapDescriptorPool;
 	vk::DescriptorSetLayout cubemapDescriptorSetLayout;
+
+	
 
 	vk::DescriptorPool particleDescriptorPool;
 	vk::DescriptorSetLayout particleDescriptorSetLayout;
@@ -112,6 +113,7 @@ class GraphicsEngine {
 
 	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
 	RenderObjects objects_to_rendering;
+
 
 
 	vkParticle::ParticleManager* particleManager;

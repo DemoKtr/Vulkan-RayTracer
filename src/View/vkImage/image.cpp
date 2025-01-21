@@ -28,7 +28,9 @@ vk::Image vkImage::make_image(ImageInputChunk input)
 
 	vk::ImageCreateInfo imageInfo;
 	imageInfo.flags = vk::ImageCreateFlagBits() | input.flags;
+	if(input.height >1)
 	imageInfo.imageType = vk::ImageType::e2D;
+	else imageInfo.imageType = vk::ImageType::e1D;
 	imageInfo.extent = vk::Extent3D(input.width, input.height, 1);
 	imageInfo.mipLevels = 1;
 	imageInfo.arrayLayers = input.arrayCount;

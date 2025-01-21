@@ -85,6 +85,7 @@ vkInit::GraphicsPipelineOutBundle vkInit::MeshPipelineBuilder::build(vk::Format 
 	//Make the Pipeline
 	std::cout << "Create Graphics Pipeline" << std::endl;
 	vk::Pipeline graphicsPipeline;
+	vk::Result resultInfo;
 	try {
 		graphicsPipeline = (device.createGraphicsPipeline(nullptr, pipelineInfo)).value;
 	}

@@ -43,6 +43,7 @@ namespace vkImage {
 		Texture(TextureDataInputChunk info);
 		~Texture();
 
+		void wrie_to_descriptor_set(vk::DescriptorSet& desc);
 		void useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout);
 		void useTexture(vk::CommandBuffer commandBuffer, vk::PipelineLayout pipelineLayout,int layoutIndex);
 		

@@ -1,16 +1,20 @@
 #include "Scene/ECS/components/particleComponent.h"
 
-ParticleComponent::ParticleComponent() {
+ParticleComponent::ParticleComponent()  {
 
-
+	emiter = new vkParticle::ParticleEmmiter();
 }
 
-vkParticle::ParticleEmmiter& ParticleComponent::getEmiter() {
+ParticleComponent::~ParticleComponent() {
+	delete emiter;
+}
+
+vkParticle::ParticleEmmiter* ParticleComponent::getEmiter() {
 	return emiter;
 }
 
 void ParticleComponent::update(float deltaTime) {
-	emiter.update();
+	emiter->update();
 }
 
 nlohmann::json ParticleComponent::serialize() const

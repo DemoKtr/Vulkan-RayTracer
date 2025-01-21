@@ -39,7 +39,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	}
 	
 
-	particleManager = new vkParticle::ParticleManager();
+	
 	auto& taskmanager = TaskManager::getInstance();
 	taskmanager.initialize();
 
@@ -94,6 +94,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
+	
 	delete particleManager;
 
 	//delete cubemap;
@@ -238,15 +239,17 @@ void GraphicsEngine::create_pipeline() {
 
 
 	vkInit::MeshPipelineBuilder meshPipelineBuilder(device);
+	meshPipelineBuilder.reset();
 	meshPipelineBuilder.set_overwrite_mode(true);
 	meshPipelineBuilder.specify_task_shader("resources/shaders/particleTask.spv");
 	meshPipelineBuilder.specify_mesh_shader("resources/shaders/particleMesh.spv");
 	meshPipelineBuilder.specify_fragment_shader("resources/shaders/particleFrag.spv");
 	meshPipelineBuilder.specify_swapchain_extent(swapchainExtent);
 	//meshPipelineBuilder.clear_depth_attachment();
-	meshPipelineBuilder.set_color_blending(false);
+	meshPipelineBuilder.set_color_blending(true);
 	meshPipelineBuilder.add_descriptor_set_layout(particleDescriptorSetLayout);
-	meshPipelineBuilder.setPushConstants(sizeof(PushDataStructure), 1, 0,vk::ShaderStageFlagBits::eTaskEXT);
+	meshPipelineBuilder.add_descriptor_set_layout(textureDescriptorSetLayout);
+	meshPipelineBuilder.setPushConstants(sizeof(vkRenderStructs::PushDataStructure), 1, 0,vk::ShaderStageFlagBits::eTaskEXT);
 	//meshPipelineBuilder.setPushConstants(sizeof(glm::uvec4), 1, sizeof(vkRenderStructs::ProjectionData), vk::ShaderStageFlagBits::eTaskEXT);
 
 
@@ -363,6 +366,7 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
 	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	cubemapDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
 	UIFontTextureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
@@ -552,62 +556,16 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 	);
 
 
-	vk::RenderingAttachmentInfoKHR colorAttachment = {};
-	colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
-	colorAttachment.imageView = swapchainFrames[imageIndex].mainimageView; // Widok obrazu.
-	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-	colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
-	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-
-
-
-
-	vk::RenderingAttachmentInfoKHR depthAttachment = {};
-	depthAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
-	depthAttachment.imageView = swapchainFrames[imageIndex].depthBufferView; // Widok obrazu dla g³êbi.
-	depthAttachment.imageLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-	depthAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
-	depthAttachment.storeOp = vk::AttachmentStoreOp::eStore;
-
-	// Debugging attachmentów g³êbi
-
-
-	vk::RenderingInfoKHR renderingInfo = {};
-	renderingInfo.sType = vk::StructureType::eRenderingInfoKHR;
-	renderingInfo.renderArea.extent.width = swapchainExtent.width;
-	renderingInfo.renderArea.extent.height = swapchainExtent.height;
-	renderingInfo.layerCount = 1;
-	renderingInfo.colorAttachmentCount = 1;
-	renderingInfo.pColorAttachments = &colorAttachment;
-	renderingInfo.pDepthAttachment = &depthAttachment;
-
-
-	// Pipeline i layout
-	vkUtil::PipelineCacheChunk pipelineInfo = vkResources::scenePipelines->getPipeline("mesh Pipeline");
 	
 
 
 	
-
-	// Rozpoczêcie renderowania
-	try {
-		commandBuffer.beginRendering(&renderingInfo);
-
-	}
-	catch (vk::SystemError err) {
-		std::cerr << "Failed to begin rendering: " << err.what() << std::endl;
-		return;
-	}
-
-	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipeline);
-	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipelineLayout, 0, swapchainFrames[imageIndex].particleSBODescriptorSet, nullptr);
-	commandBuffer.pushConstants(pipelineInfo.pipelineLayout,vk::ShaderStageFlagBits::eTaskEXT, 0, sizeof(PushDataStructure), &frustum);
-
-	commandBuffer.drawMeshTasksEXT(3, 1, 1, dldi);
+	
 
 
+	particleManager->Render(swapchainFrames[imageIndex],commandBuffer,swapchainExtent,dldi,frustum);
 
-	commandBuffer.endRendering();
+	
 	
 	
 	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, swapchainFrames[imageIndex].UIFontDescriptorSet, uiRenderingDrawData, fontManager);
@@ -706,6 +664,7 @@ void GraphicsEngine::record_unlit_draw_command(vk::CommandBuffer commandBuffer, 
 	
 	commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipeline);
 	commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipelineInfo.pipelineLayout, 0, swapchainFrames[imageIndex].postprocessDescriptorSet, nullptr);
+	vkResources::atlasTextures->useTexture(commandBuffer, pipelineInfo.pipelineLayout);
 	commandBuffer.pushConstants(pipelineInfo.pipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, sizeof(vkRenderStructs::ProjectionData), &projection);
 	prepare_scene(commandBuffer);
 	
@@ -858,7 +817,7 @@ void GraphicsEngine::render_objects(vk::CommandBuffer commandBuffer,vk::Pipeline
 	int indexCount = vkResources::meshes->indexCounts.find(objectType)->second;
 	
 	int firstIndex = vkResources::meshes->firstIndices.find(objectType)->second;
-	vkResources::atlasTextures->useTexture(commandBuffer, pipelineLayout);
+	
 	
 	
 	commandBuffer.drawIndexed(indexCount, instanceCount, firstIndex, 0, startInstance);
@@ -1020,7 +979,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	bindings.types.push_back(vk::DescriptorType::eCombinedImageSampler);
 
 	iconDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
-	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
+	textureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(2), bindings);
+
 	UIFontTextureDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(1), bindings);
 	cubemapDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(6) + 1, bindings);
 
@@ -1044,6 +1004,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 
 	info.texturesNames = filesManager.getTexturesNames();
 	vkResources::atlasTextures = new vkImage::Texture(info);
+
+	
 
 
 	std::vector<vkMesh::MeshLoader> test;
@@ -1090,6 +1052,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 	input.count = 1000000;
 
+	particleManager = new vkParticle::ParticleManager();
 	pDesc->make_descriptors_resources(input);
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
@@ -1104,6 +1067,7 @@ void GraphicsEngine::make_assets(Scene* scene) {
 void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float deltaTime, Camera::Camera camera) {
 	
 	scene->update_objects_to_rendering(objects_to_rendering, scene->root);
+	scene->update_particles_to_rendering(particleManager, scene->root);
 	
 	uiRenderingDrawData.reset();
 	
@@ -1200,7 +1164,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	_frame.dt = glm::vec4(deltaTime);
 	_frame.cameraData.camPos = glm::vec4(camera.Position, 1.0f);
 	//size_t particleCounter = 0;
-	
+	particleManager->Update(0.0f, _frame.particleDescriptor->dataWriteLocation, _frame.particleDescriptor->data);
 	memcpy(_frame.cameraDataWriteLocation, &(_frame.cameraData), sizeof(vkUtil::CameraUBO));
 	memcpy(_frame.particleUBODataWriteLocation, &(_frame.viewProjection), sizeof(glm::mat4));
 	//if (i > 0) 

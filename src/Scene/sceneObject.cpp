@@ -2,6 +2,7 @@
 #include "View/vkMesh/meshesManager.h"
 #include <Scene/ECS/components/components.h>
 #include <thread>
+#include "Scene/sceneObjectFlagBits.h"
 SceneObject::SceneObject(ecs::ECS* ecs, SceneObject* parent) {
 	id = ecs->createEntity();
 	
@@ -16,9 +17,9 @@ SceneObject::SceneObject(ecs::ECS* ecs, vkMesh::MeshesManager* meshesManager){
 	std::shared_ptr<TransformComponent> transformComponent = std::make_unique<TransformComponent>();
 	std::shared_ptr<MeshComponent> meshcomponent = std::make_unique<MeshComponent>();
 
-	ecs->addComponent(id, renderingDirtyFlag,transformComponent);
+	//ecs->addComponent(id, dirtyFlagBits,transformComponent);
 
-	ecs->addComponent(id,renderingDirtyFlag, meshcomponent);
+	//ecs->addComponent(id, dirtyFlagBits, meshcomponent);
 	ecs->getComponent<MeshComponent>(id).get()->setIndex(1600640060211770124);
 
 	meshesManager->addMesh(this,ecs);
@@ -32,7 +33,7 @@ SceneObject::SceneObject(ecs::ECS* ecs) {
 	std::shared_ptr<TransformComponent> transformComponent = std::make_unique<TransformComponent>();
 
 
-	ecs->addComponent(id, renderingDirtyFlag,transformComponent);
+	ecs->addComponent(id,transformComponent);
 
 	name = "SceneObject " + std::to_string(id);
 }
