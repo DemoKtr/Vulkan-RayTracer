@@ -46,13 +46,13 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	ParticleUBODescriptor.range = sizeof(glm::mat4);
 
 	
-	input.size = sizeof(glm::vec4);
+	input.size = sizeof(DtSBO);
 	DeltaTimeDataBuffer = createBuffer(input);
-	DeltaTimeDataWriteLocation = logicalDevice.mapMemory(DeltaTimeDataBuffer.bufferMemory, 0, sizeof(glm::vec4));
+	DeltaTimeDataWriteLocation = logicalDevice.mapMemory(DeltaTimeDataBuffer.bufferMemory, 0, sizeof(DtSBO));
 
 	DeltaTimeDescriptor.buffer = DeltaTimeDataBuffer.buffer;
 	DeltaTimeDescriptor.offset = 0;
-	DeltaTimeDescriptor.range = sizeof(glm::vec4);
+	DeltaTimeDescriptor.range = sizeof(DtSBO);
 	
 	int sbo_size = number_of_objects+2048;
 	input.size = sbo_size * sizeof(MeshSBO);
@@ -176,11 +176,23 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	writeInfo5.descriptorCount = 1;
 	writeInfo5.descriptorType = vk::DescriptorType::eUniformBuffer;
 	writeInfo5.pBufferInfo = &DeltaTimeDescriptor;
-	
+
+	vk::WriteDescriptorSet writeInfo6;
+	writeInfo6.dstSet = particleSBODescriptorSet;
+	writeInfo6.dstBinding = 3;
+	writeInfo6.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+	writeInfo6.descriptorCount = 1;
+	writeInfo6.descriptorType = vk::DescriptorType::eStorageBuffer;
+	if (isFirstSSBOParticleActive->load(std::memory_order_relaxed))
+		writeInfo6.pBufferInfo = &seccondParticleRandomSSBO->descriptorInfo;
+	else 
+		writeInfo6.pBufferInfo = &firstParticleRandomSSBO->descriptorInfo;
+
 	logicalDevice.updateDescriptorSets(writeInfo, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo2, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo4, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo5, nullptr);
+	logicalDevice.updateDescriptorSets(writeInfo6, nullptr);
 
 	if (!isParticleInit) {
 		isParticleInit = true;

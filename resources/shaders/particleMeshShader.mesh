@@ -18,7 +18,6 @@ struct Task {
    // uint particleCount[8];
   //  uint particleCountOffset[8];
 	uint i[8];
-	uint o[8];
 };
 
 struct Particle {
@@ -56,8 +55,60 @@ layout(set = 0, binding = 1) uniform UBO {
     mat4 vp;
 } UboData;
 
+layout(set = 0, binding = 2) uniform UBOTime {
+    vec4 deltaTime;
+	uvec4 number;
+} Ubodt;
 
 void main() {
+
+	
+	
+	uint iid = gl_LocalInvocationID.x; // Unikalny ID wątku
+	uint globalIndex = IN.i[iid];
+	//uint bar = gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+	//uint sizettt = Ubodt.number.x;
+	if(1500 <= globalIndex) return;
+	
+	
+	vec4 col1 = particles[IN.i[iid]].color;
+	vec4 col2 = particles[IN.i[iid]-1].color;
+	vec4 col3 = particles[IN.i[iid]+1].color;
+    // Oblicz offset na podstawie Task Shadera
+    vec4 offset = vec4(float(iid) * 0.5,  0.0, 0.0, 0.0);
+
+    // Oblicz wartość na podstawie indeksów
+    //float value = float(IN.i[iid]) / 255.0;
+
+    SetMeshOutputsEXT(48, 16); // 48 wierzchołków i 16 trójkątów
+
+    // MVP transformacja
+    mat4 mvp = UboData.vp;
+
+    // Wierzchołki trójkąta
+    gl_MeshVerticesEXT[iid * 3 + 0].gl_Position = mvp * (particles[IN.i[iid]].position + positions[0] + offset);
+    gl_MeshVerticesEXT[iid * 3 + 1].gl_Position = mvp * (particles[IN.i[iid]].position + positions[1] + offset);
+    gl_MeshVerticesEXT[iid * 3 + 2].gl_Position = mvp * (particles[IN.i[iid]].position + positions[2] + offset);
+
+    // Kolory
+    vertexOutput[iid * 3 + 0].uv = vec2(0.0,0);
+    vertexOutput[iid * 3 + 0].textureId = 1;
+    vertexOutput[iid * 3 + 1].uv = vec2(0.0,2.0);
+    vertexOutput[iid * 3 + 1].textureId = 1;
+    vertexOutput[iid * 3 + 2].uv = vec2(2.0,0);
+    vertexOutput[iid * 3 + 2].textureId = 1;
+	
+
+
+    // Indeksy trójkąta
+    gl_PrimitiveTriangleIndicesEXT[iid] = uvec3(iid * 3 + 0, iid * 3 + 1, iid * 3 + 2);
+   
+}
+
+
+
+
+
 /*
     uint threadIndex = gl_LocalInvocationID.x;
 	if(IN.particleCount[threadIndex]<=0) return;
@@ -103,39 +154,3 @@ void main() {
     }
 
   */
-  
-	uint iid = gl_LocalInvocationID.x; // Unikalny ID wątku
-
-	vec4 col1 = particles[IN.i[iid]].color;
-	vec4 col2 = particles[IN.i[iid]-1].color;
-	vec4 col3 = particles[IN.i[iid]+1].color;
-    // Oblicz offset na podstawie Task Shadera
-    vec4 offset = vec4(float(iid) * 0.5,  IN.o[iid], 0.0, 0.0);
-
-    // Oblicz wartość na podstawie indeksów
-    //float value = float(IN.i[iid]) / 255.0;
-
-    SetMeshOutputsEXT(48, 16); // 48 wierzchołków i 16 trójkątów
-
-    // MVP transformacja
-    mat4 mvp = UboData.vp;
-
-    // Wierzchołki trójkąta
-    gl_MeshVerticesEXT[iid * 3 + 0].gl_Position = mvp * (particles[IN.i[iid]].position + positions[0] + offset);
-    gl_MeshVerticesEXT[iid * 3 + 1].gl_Position = mvp * (particles[IN.i[iid]].position + positions[1] + offset);
-    gl_MeshVerticesEXT[iid * 3 + 2].gl_Position = mvp * (particles[IN.i[iid]].position + positions[2] + offset);
-
-    // Kolory
-    vertexOutput[iid * 3 + 0].uv = vec2(0.0,0);
-    vertexOutput[iid * 3 + 0].textureId = 1;
-    vertexOutput[iid * 3 + 1].uv = vec2(0.0,2.0);
-    vertexOutput[iid * 3 + 1].textureId = 1;
-    vertexOutput[iid * 3 + 2].uv = vec2(2.0,0);
-    vertexOutput[iid * 3 + 2].textureId = 1;
-	
-
-
-    // Indeksy trójkąta
-    gl_PrimitiveTriangleIndicesEXT[iid] = uvec3(iid * 3 + 0, iid * 3 + 1, iid * 3 + 2);
-   
-}

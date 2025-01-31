@@ -1,16 +1,24 @@
 #include "View/vkParticle/ParticleEmitter.h"
 
 vkParticle::ParticleEmmiter::ParticleEmmiter() {
-    dirtyflag = new bool(true);
-	AddGenerator(dirtyflag);
-	generators[0].update();
-	generators[0].GenerateParticles();
+   
+	
+	//generators[0].GenerateParticles();
 
 }
 
 vkParticle::ParticleEmmiter::~ParticleEmmiter() {
-    delete dirtyflag;
+  
 }
+
+void vkParticle::ParticleEmmiter::writeDirtyFlagAdress(bool* ptr) {
+	dirtyflag = ptr;
+	ParticleGenerator  gen(dirtyflag);
+	AddGenerator(gen);
+	generators[0].update();
+}
+
+
 
 std::vector<vkParticle::ParticleGenerator>& vkParticle::ParticleEmmiter::getGenerators()
 {
@@ -25,20 +33,20 @@ vkParticle::ParticleGenerator& vkParticle::ParticleEmmiter::getGenerator(int ind
 
 
 void vkParticle::ParticleEmmiter::update() {
-	if (dirtyflag) {
 
+	
 
-	}
 }
 
 void vkParticle::ParticleEmmiter::AddGenerator(const vkParticle::ParticleGenerator& generator) {
 	generators.push_back(generator);
-		*dirtyflag = true;
+	*dirtyflag = true;
 }
 
 bool vkParticle::ParticleEmmiter::RemoveGenerator(size_t index) {
 	if (index < generators.size()) {
 		generators.erase(generators.begin() + index);
+		*dirtyflag = true;
 		return true; // Sukces
 	}
 	else {

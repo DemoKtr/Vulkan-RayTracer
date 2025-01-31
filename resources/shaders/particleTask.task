@@ -10,12 +10,10 @@ struct Task {
    // uint particleCount[8];
   //  uint particleCountOffset[8];
 	uint i[8];
-	uint o[8];
 };
 
 struct Particle {
-    vec4 position;
-   
+    vec4 position;   
     vec4 velocity;           // Prędkość (vx, vy, vz, vw)
     vec4 acceleration;       // Przyspieszenie (ax, ay, az, aw)
     vec4 size;               // Rozmiar (scale_x, scale_y, scale_z, scale_w)
@@ -24,6 +22,18 @@ struct Particle {
     uvec4 textureIndex;      // Indeksy tekstur
 	
 };
+
+struct ParticleInit {
+    vec4 position;   
+    vec4 velocity;           // Prędkość (vx, vy, vz, vw)
+    vec4 acceleration;       // Przyspieszenie (ax, ay, az, aw)
+    vec4 size;               // Rozmiar (scale_x, scale_y, scale_z, scale_w)
+    vec4 color;              // Kolor (r, g, b, a)
+    vec4 lifeRotationRSpeed; // (life, rotation, rSpeed, ...)
+
+	
+};
+
 
 layout(std430,set=0 ,binding = 0)  buffer ParticleBuffer {
     Particle particles[];
@@ -37,9 +47,62 @@ taskPayloadSharedEXT Task OUT;
 
 layout(set = 0, binding = 2) uniform UBO {
     vec4 deltaTime;
+	uvec4 number;
 } Ubodt;
 
+
+layout(std430,set=0 ,binding = 3)readonly  buffer ParticleInitBuffer {
+    ParticleInit particlesInit[];
+};
+
 void main() {
+
+	//uint bar = gl_WorkGroupID.x * gl_WorkGroupSize.x + gl_LocalInvocationID.x;
+	if(1500 < gl_GlobalInvocationID.x) return;
+	float dt = Ubodt.deltaTime.x;
+	
+	if(gl_LocalInvocationID.x == 0){
+		s_outMeshletsCount = 0;
+		
+	}
+	memoryBarrierShared(); 
+    barrier();
+	uint globalThreadIndex = gl_GlobalInvocationID.x;
+	
+	if(particles[globalThreadIndex].lifeRotationRSpeed.x -dt <0) { 
+		particles[globalThreadIndex].position = particlesInit[globalThreadIndex].position;
+		particles[globalThreadIndex].velocity = particlesInit[globalThreadIndex].velocity;
+		particles[globalThreadIndex].lifeRotationRSpeed.x = particlesInit[globalThreadIndex].lifeRotationRSpeed.x;
+	}
+
+	
+	particles[globalThreadIndex].position += dt* particles[globalThreadIndex].velocity;
+	particles[globalThreadIndex].lifeRotationRSpeed.x -= dt;
+	//particles[globalThreadIndex].velocity += dt* particles[globalThreadIndex].acceleration;
+	
+	
+	
+	OUT.i[gl_LocalInvocationID.x] = globalThreadIndex;
+	atomicAdd(s_outMeshletsCount,1);
+	
+	memoryBarrierShared(); 
+    barrier();
+	if(gl_LocalInvocationID.x == 0){
+		EmitMeshTasksEXT(s_outMeshletsCount/8, 1, 1);
+		
+	}
+	
+}
+
+
+
+
+
+
+
+
+
+
 /*
     if (gl_LocalInvocationID.x == 0) {
         globalIndexOffset = 0;
@@ -105,28 +168,3 @@ void main() {
         }
     }
 	*/
-	
-	
-	if(gl_LocalInvocationID.x == 0){
-		s_outMeshletsCount = 0;
-		
-	}
-	memoryBarrierShared(); 
-    barrier();
-	
-	uint globalThreadIndex = gl_GlobalInvocationID.x;
-	particles[globalThreadIndex].position += Ubodt.deltaTime.x* particles[globalThreadIndex].velocity;
-	//particles[globalThreadIndex].velocity += Ubodt.deltaTime.x* particles[globalThreadIndex].acceleration;
-	
-	OUT.i[gl_LocalInvocationID.x] = globalThreadIndex;
-	OUT.o[gl_LocalInvocationID.x] = gl_WorkGroupID.x*2;
-	atomicAdd(s_outMeshletsCount,1);
-	
-	memoryBarrierShared(); 
-    barrier();
-	if(gl_LocalInvocationID.x == 0){
-		EmitMeshTasksEXT(s_outMeshletsCount/8, 1, 1);
-		
-	}
-	
-}

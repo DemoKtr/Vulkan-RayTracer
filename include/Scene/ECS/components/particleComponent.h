@@ -11,6 +11,7 @@ public:
     ~ParticleComponent();
     vkParticle::ParticleEmmiter* getEmiter();
     void update(float deltaTime);
+    void write_flag_pointer(bool* ptr);
 
     nlohmann::json serialize() const override;
 };

@@ -138,6 +138,7 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkVertexData/vertexMenagerie.cpp"
     "src/MultithreatedSystems/ThumbnailTask.cpp"
     "src/MultithreatedSystems/Console.cpp"
+    "src/MultithreatedSystems/mutexManager.cpp"
     "src/MultithreatedSystems/SimdInstructions/simdRandom.cpp"
     "src/View/Interface/Miniatures/miniatureRenderer.cpp"
     "src/View/vkInit/vkPipeline/meshPipelineBuilder.cpp"

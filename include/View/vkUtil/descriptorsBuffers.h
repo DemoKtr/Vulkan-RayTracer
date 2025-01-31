@@ -9,6 +9,7 @@ namespace vkUtil {
 	struct DescriptorDataInput {
 	
 		vk::BufferUsageFlagBits usage;
+		bool canTransfer = false;
 		size_t count;
 	};
 
@@ -34,7 +35,9 @@ namespace vkUtil {
 		void make_descriptors_resources(DescriptorDataInput inputChunk) {
 			BufferInputChunk input;
 			input.logicalDevice = logicalDevice;
-			input.usage = inputChunk.usage;
+			if (inputChunk.canTransfer)
+				input.usage = inputChunk.usage | vk::BufferUsageFlagBits::eTransferDst;
+			else input.usage = inputChunk.usage;
 			input.memoryProperties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
 			input.physicalDevice = physicalDevice;
 			input.size = inputChunk.count * sizeof(T);

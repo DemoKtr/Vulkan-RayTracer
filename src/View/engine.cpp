@@ -94,7 +94,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
-	
+
 	delete particleManager;
 
 	//delete cubemap;
@@ -151,9 +151,10 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
 	UIDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 	UIFontSBODescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
-	bindings.count = 3;
+	bindings.count = 4;
 	bindings.types[1] = vk::DescriptorType::eUniformBuffer;
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	particleDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
@@ -376,12 +377,16 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	bindings.stages[0] = vk::ShaderStageFlagBits::eVertex;
 	UIDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	UIFontSBODescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
-	bindings.count = 3;
+	bindings.count = 4;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eTaskEXT | vk::ShaderStageFlagBits::eMeshEXT;
 	bindings.stages[1] = vk::ShaderStageFlagBits::eMeshEXT;
 	bindings.types[1] = vk::DescriptorType::eUniformBuffer;
 	bindings.indices.push_back(2);
 	bindings.types.push_back(vk::DescriptorType::eUniformBuffer);
+	bindings.counts.push_back(1);
+	bindings.stages.push_back(vk::ShaderStageFlagBits::eTaskEXT | vk::ShaderStageFlagBits::eMeshEXT);
+	bindings.indices.push_back(3);
+	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	bindings.counts.push_back(1);
 	bindings.stages.push_back(vk::ShaderStageFlagBits::eTaskEXT);
 	particleDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
@@ -840,7 +845,17 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 			swapchain, UINT64_MAX,
 			swapchainFrames[frameNumber].imageAvailable, nullptr
 		);
-		imageIndex = acquire.value;
+		if (acquire.result == vk::Result::eSuccess) {
+			imageIndex = acquire.value;
+		}
+		else if (acquire.result == vk::Result::eSuboptimalKHR || acquire.result == vk::Result::eTimeout) {
+			std::cout << "timeout" << std::endl;
+			//recreate_swapchain(scene);
+			return;
+		}
+		else {
+			throw std::runtime_error("Failed to acquire next image!");
+		}
 	}
 	catch (vk::OutOfDateKHRError error) {
 		std::cout << "Recreate" << std::endl;
@@ -1052,11 +1067,12 @@ void GraphicsEngine::make_assets(Scene* scene) {
 	input.usage = vk::BufferUsageFlagBits::eStorageBuffer;
 	input.count = 1000000;
 
-	particleManager = new vkParticle::ParticleManager();
+	particleManager = new vkParticle::ParticleManager(physicalDevice,device,transferQueue,transferCommandBuffer);
 	pDesc->make_descriptors_resources(input);
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
 		frame.particleDescriptor = pDesc;
+		particleManager->setSwapchainPointers(frame);
 		particleManager->Update(0.0f, pDesc->dataWriteLocation, pDesc->data);
 		
 	}
@@ -1161,7 +1177,9 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	}
 
 	_frame.cameraData.view = view;//camera.GetViewMatrix();
-	_frame.dt = glm::vec4(deltaTime);
+	_frame.dt.dt = glm::vec4(deltaTime);
+	_frame.dt.numb = glm::uvec4(particleManager->particle_to_render);
+	
 	_frame.cameraData.camPos = glm::vec4(camera.Position, 1.0f);
 	//size_t particleCounter = 0;
 	particleManager->Update(0.0f, _frame.particleDescriptor->dataWriteLocation, _frame.particleDescriptor->data);
@@ -1174,7 +1192,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	memcpy(_frame.UIFontPositionSizeDataWriteLocation, _frame.UIFontPositionSize.data(), uiRenderingDrawData.UILettersinstanceCount * sizeof(vkUtil::FontSBO));
 
 	//memcpy(_frame.particleSBODataWriteLocation, _frame.particlesData.data(), particleCounter * sizeof(vkParticle::Particle));
-	memcpy(_frame.DeltaTimeDataWriteLocation, &_frame.dt, sizeof(glm::vec4));
+	memcpy(_frame.DeltaTimeDataWriteLocation, &_frame.dt, sizeof(vkUtil::DtSBO));
 	//std::cout << _frame.UIPositionSize[0].x << " " << _frame.UIPositionSize[0].y << " " << _frame.UIPositionSize[0].z << " " << _frame.UIPositionSize[0].w << std::endl;
 
 

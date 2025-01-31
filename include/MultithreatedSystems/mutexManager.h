@@ -1,3 +1,4 @@
+#pragma once
 #include <mutex>
 #include <unordered_map>
 #include <string>
@@ -51,3 +52,5 @@ private:
     std::mutex globalMutex; // Mutex chroni¹cy dostêp do mapy mutexów
     std::unordered_map<std::string, std::unique_ptr<std::mutex>> mutexMap; // Mapa mutexów
 };
+
+

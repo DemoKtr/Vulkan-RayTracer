@@ -43,6 +43,11 @@ namespace vkUtil {
 	};
 
 
+	struct alignas(16) DtSBO {
+		glm::vec4 dt;
+		glm::uvec4 numb;
+	};
+
 	class SwapChainFrame {
 
 	public:
@@ -73,7 +78,7 @@ namespace vkUtil {
 
 		//std::vector<vkParticle::Particle> particlesData;
 
-		glm::vec4 dt;
+		DtSBO dt;
 
 		//Buffer
 		Buffer cameraDataBuffer;
@@ -120,6 +125,11 @@ namespace vkUtil {
 		vk::Fence inFlight;
 
 		bool isParticleInit = false;
+
+		std::atomic<bool>* isFirstSSBOParticleActive;
+		DescriptorData<vkParticle::ParticleInit>* firstParticleRandomSSBO;
+		DescriptorData<vkParticle::ParticleInit>* seccondParticleRandomSSBO;
+
 
 		void make_depth_resources();
 		void make_descriptors_resources(int number_of_objects);

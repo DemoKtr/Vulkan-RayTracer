@@ -418,6 +418,85 @@ void vkImGui::display_scene_object(SceneObject* &selectedObject, ecs::ECS* ecs, 
 					//RemoveComponent(ecs, selectedObject->id, mesh);
 
 				}
+				else if (comp->getType() == ComponentType::Particle) {
+					ParticleComponent* particleComp = dynamic_cast<ParticleComponent*>(comp);
+					if (particleComp != nullptr) {
+						// Uzyskaj dostęp do emitera
+						vkParticle::ParticleEmmiter* emiter = particleComp->getEmiter();
+						if (emiter != nullptr) {
+							// Edycja liczby cząsteczek w emiterze
+							ImGui::Text("Particle Emitter Settings");
+						
+
+							// Edycja pozycji emitera
+							glm::vec4 emitterPosition = emiter->postion;
+							if (ImGui::DragFloat3("Emitter Position", &emitterPosition.x, 0.1f)) {
+								emiter->postion = emitterPosition;
+							}
+
+							// Wyświetlanie generatorów
+							ImGui::Separator();
+							ImGui::Text("Particle Generators:");
+							auto& generators = emiter->getGenerators();
+							for (size_t i = 0; i < generators.size(); ++i) {
+								ImGui::PushID(static_cast<int>(i)); // Unikalne ID dla generatora
+								if (ImGui::TreeNode(("Generator " + std::to_string(i)).c_str())) {
+									auto& generator = generators[i];
+
+									// Zakresy pozycji
+									glm::vec4 positionMin, positionMax;
+									generator.GetPositionRange(positionMin, positionMax);
+									if (ImGui::DragFloat3("Position Min", &positionMin.x, 0.1f) ||
+										ImGui::DragFloat3("Position Max", &positionMax.x, 0.1f)) {
+										generator.UpdateValue(generator.positionMin, positionMin, generator.dirty_flag);
+										generator.UpdateValue(generator.positionMax, positionMax, generator.dirty_flag);
+									}
+
+									// Zakresy prędkości
+									glm::vec4 velocityMin, velocityMax;
+									generator.GetVelocityRange(velocityMin, velocityMax);
+									if (ImGui::DragFloat3("Velocity Min", &velocityMin.x, 0.1f) ||
+										ImGui::DragFloat3("Velocity Max", &velocityMax.x, 0.1f)) {
+										generator.UpdateValue(generator.velocityMin, velocityMin, generator.dirty_flag);
+										generator.UpdateValue(generator.velocityMax, velocityMax, generator.dirty_flag);
+									}
+
+									// Zakresy kolorów
+									glm::vec4 colorMin, colorMax;
+									generator.GetColorRange(colorMin, colorMax);
+									if (ImGui::ColorEdit4("Color Min", &colorMin.x) ||
+										ImGui::ColorEdit4("Color Max", &colorMax.x)) {
+										generator.UpdateValue(generator.colorMin, colorMin, generator.dirty_flag);
+										generator.UpdateValue(generator.colorMax, colorMax, generator.dirty_flag);
+									}
+
+									// Inne właściwości (rozmiar, rotacja, czas życia itd.)
+									float lifetimeMin, lifetimeMax;
+									generator.GetLifetimeRange(lifetimeMin, lifetimeMax);
+									if (ImGui::DragFloat("Lifetime Min", &lifetimeMin, 0.1f) ||
+										ImGui::DragFloat("Lifetime Max", &lifetimeMax, 0.1f)) {
+										generator.UpdateValue(generator.lifetimeMin, lifetimeMin, generator.dirty_flag);
+										generator.UpdateValue(generator.lifetimeMax, lifetimeMax, generator.dirty_flag);
+									}
+
+									ImGui::TreePop();
+								}
+								ImGui::PopID();
+							}
+
+							// Dodawanie/usuwanie generatorów
+							if (ImGui::Button("Add Generator")) {
+								vkParticle::ParticleGenerator newGenerator(emiter->dirtyflag);
+								emiter->AddGenerator(newGenerator);
+							}
+							if (generators.size() > 0) {
+								if (ImGui::Button("Remove Last Generator")) {
+									emiter->RemoveGenerator(generators.size() - 1);
+								}
+							}
+						}
+					}
+				}
 				/**/
 				else if (comp->getType() == ComponentType::Texture) {
 					static char searchQuery[128] = "";

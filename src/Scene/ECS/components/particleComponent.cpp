@@ -3,6 +3,7 @@
 ParticleComponent::ParticleComponent()  {
 
 	emiter = new vkParticle::ParticleEmmiter();
+	type = ComponentType::Particle;
 }
 
 ParticleComponent::~ParticleComponent() {
@@ -15,6 +16,10 @@ vkParticle::ParticleEmmiter* ParticleComponent::getEmiter() {
 
 void ParticleComponent::update(float deltaTime) {
 	emiter->update();
+}
+
+void ParticleComponent::write_flag_pointer(bool* ptr) {
+	emiter->writeDirtyFlagAdress(ptr);
 }
 
 nlohmann::json ParticleComponent::serialize() const

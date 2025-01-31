@@ -3,13 +3,27 @@
 #include <vector>
 #include <random>
 #include <immintrin.h> // SIMD (SSE/AVX)
+#include <MultithreatedSystems/mutexManager.h>
 namespace vkParticle {
+
+    
+
 	class ParticleGenerator {
     private:
-        size_t particleCount =1500;
+        
         std::vector<Particle> particles;
-        bool* dirty_flag;
+        
 
+        // Random generator
+        std::mt19937 randomEngine;
+        std::uniform_real_distribution<float> randomDist;
+
+        // Helper function to generate random float in range [min, max]
+        float Random(float min, float max);
+
+    public:
+        
+        size_t particleCount = 1500;
         glm::vec4 positionMin;
         glm::vec4 positionMax;
         glm::vec4 velocityMin;
@@ -27,16 +41,8 @@ namespace vkParticle {
         float rotationSpeedMin;
         float rotationSpeedMax;
         uint32_t textureIndex;
-
-        // Random generator
-        std::mt19937 randomEngine;
-        std::uniform_real_distribution<float> randomDist;
-
-        // Helper function to generate random float in range [min, max]
-        float Random(float min, float max);
-
-    public:
-        ParticleGenerator(bool* dirtyFlag);
+        bool* dirty_flag;
+        ParticleGenerator(bool* ptr);
 
         // Setters and getters
 
@@ -68,18 +74,24 @@ namespace vkParticle {
 
         // Generate particles
         void GenerateParticles();
+       
 
         std::vector<Particle>& GetParticles();
-
+        void GenerateParticles(std::vector<ParticleInit>& data);
         void update();
 
 
         template <typename T>
-        bool UpdateValue(T& currentValue, const T& newValue, bool& flag) {
+        bool UpdateValue(T& currentValue, const T& newValue, bool* flag) {
             if (currentValue != newValue) {
+               // MutexManager& mutexManager = MutexManager::getInstance();
+                //mutexManager.lock("particle");
+                
                 currentValue = newValue;
-                flag = true;
+                *flag = true;
                 return true;
+                *dirty_flag = true;
+              //  mutexManager.unlock("particle");
             }
             return false;
         }
