@@ -99,6 +99,9 @@ class GraphicsEngine {
 	vk::DescriptorPool particleDescriptorPool;
 	vk::DescriptorSetLayout particleDescriptorSetLayout;
 
+	vk::DescriptorPool waterDescriptorPool;
+	vk::DescriptorSetLayout waterDescriptorSetLayout;
+
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
@@ -114,7 +117,7 @@ class GraphicsEngine {
 	vkPrefab::PrefabManager& prefabsManager = vkPrefab::PrefabManager::getInstance();
 	RenderObjects objects_to_rendering;
 
-
+	//math::FastFourierTransform *fft;
 
 	vkParticle::ParticleManager* particleManager;
 
@@ -136,7 +139,7 @@ class GraphicsEngine {
 	void load_scripts();
 	void load_fonts();
 
-	void record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene,uint32_t imageIndex);
+	void record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene,uint32_t imageIndex, float dt);
 	void record_unlit_draw_command(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
 	void record_pbr_draw_command(vk::CommandBuffer commandBuffer,uint32_t imageIndex);
 

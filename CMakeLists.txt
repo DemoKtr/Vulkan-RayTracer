@@ -81,6 +81,8 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(freetype)
 
+
+
 # Źródła projektu
 set(SOURCES
     src/main.cpp
@@ -207,6 +209,10 @@ add_executable(${PROJECT_NAME} ${SOURCES}
     "src/View/vkParticle/ParticleManager.cpp"
     "src/View/vkParticle/DynamicParticleManager.cpp"
     "src/View/vkParticle/StaticParticleManager.cpp"
+    "src/MathFunctions/FastFourierTransform.cpp"
+    "thirdParty/ImPlot/implot.cpp"
+    "thirdParty/ImPlot/implot_demo.cpp"
+    "thirdParty/ImPlot/implot_items.cpp"
 
     )
 
@@ -219,6 +225,7 @@ target_link_libraries(${PROJECT_NAME}
   assimp
   nlohmann_json::nlohmann_json
   freetype
+  
 )
 # Ustawienia dla kompilacji w systemie Linux
 if(UNIX)
@@ -230,6 +237,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${Vulkan_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/include
     PRIVATE ${imgui_SOURCE_DIR}
+    
      
 )
 

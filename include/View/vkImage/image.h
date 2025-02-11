@@ -28,6 +28,18 @@ namespace vkImage {
 		std::vector<unsigned char*> data;
 	};
 
+	struct TextureFloatDataInputChunk {
+		vk::Device logicalDevice;
+		vk::PhysicalDevice physicalDevice;
+		vk::CommandBuffer commandBuffer;
+		vk::Queue queue;
+		vk::DescriptorSetLayout layout;
+		vk::DescriptorPool descriptorPool;
+		int width;
+		int height;
+		std::vector<float> data;
+	};
+
 	struct skyBoxTextureInputChunk {
 		vk::Device logicalDevice;
 		vk::PhysicalDevice physicalDevice;

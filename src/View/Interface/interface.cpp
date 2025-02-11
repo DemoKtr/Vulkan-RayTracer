@@ -3,7 +3,7 @@
 
 #include <Scene/ECS/components/componentFabric.h>
 #include "Scene/ECS/scripts/scriptCompiler.h"
-
+#include "../thirdParty/ImPlot/implot.h"
 #include "fileOperations/resources.h"
 
 
@@ -45,24 +45,25 @@ editor::editor(Scene* scene,std::string path, vkImage::TextureInputChunk info,
 	this->filesExploresData.currentFolder = filesExploresData.baseFolder;
 
 	create_miniatures(info.physicalDevice,info.logicalDevice,info.commandBuffer,info.queue, pictureFormat, depthFormat);
-	
+	//fft = new math::FastFourierTransform();
 }
 editor::~editor() {
-
+	//delete fft;
 	delete miniatureManager;
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
+	ImPlot::DestroyContext();
 	ImGui::DestroyContext();
 
 
 }
-void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame>& swapchainFrames, RenderObjects* objects,vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode){
+void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame>& swapchainFrames, RenderObjects* objects, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode, float dt) {
 
 	// Renderowanie ImGui
 	ImGui_ImplGlfw_NewFrame();
 	ImGui_ImplVulkan_NewFrame();
 	ImGui::NewFrame();
-
+	//fft->update(dt);
 	/* ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	if (ImGui::Button("Click Me")) {
 		// Kod do wykonania po naciœniêciu przycisku
@@ -81,12 +82,12 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::
 	*/ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Wysokoœæ i szerokoœæ ekranu
-	
 
-	vkImGui::render_editor(miniatureManager, filesExploresData, scene->root,selectedObject,selectedComponentType,scene->ecs,objects);
-	
-	
-	
+
+	vkImGui::render_editor(miniatureManager, filesExploresData, scene->root, selectedObject, selectedComponentType, scene->ecs, objects);
+
+
+
 	vk::RenderingAttachmentInfoKHR colorAttachment = {};
 	colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfoKHR;
 	colorAttachment.imageView = swapchainFrames[numberOfFrame].mainimageView; // Widok obrazu.
@@ -108,7 +109,7 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::
 	renderingInfo.pDepthAttachment = nullptr;
 
 
-	
+
 
 	// Rozpoczêcie renderowania
 	try {
@@ -119,45 +120,62 @@ void editor::render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::
 		std::cerr << "Failed to begin rendering: " << err.what() << std::endl;
 		return;
 	}
+	// Inicjalizacja generatora liczb losowych
+	std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+	// Losowe dane dla wykresów
 	
+		// Kod do wyœwietlenia wykresów
+	/*
+	ImGui::Begin("Wave Simulation 3D");
 
-	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+	if (ImPlot::BeginPlot("3D Wave", ImVec2(-1, -1))) {
+		for (int x = 0; x < fft->gridSize; ++x) {
+			for (int y = 0; y < fft->gridSize; ++y) {
+				float fx = static_cast<float>(x);
+				float fy = static_cast<float>(y);
+				float fz = fft->heightMap[x][y];
 
-
-	commandBuffer.endRendering();
-
-	vk::ImageMemoryBarrier barrier = {};
-	barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal; // obecny layout obrazu, np. undefined po stworzeniu
-	barrier.newLayout = vk::ImageLayout::ePresentSrcKHR; // nowy layout
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = swapchainFrames[numberOfFrame].mainimage;
-	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-
-
-	barrier.srcAccessMask = {}; 
-	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eColorAttachmentRead;
-
-	// U¿yj vkCmdPipelineBarrier, aby zrealizowaæ barierê w command buffer
-	commandBuffer.pipelineBarrier(
-		vk::PipelineStageFlagBits::eTopOfPipe, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
-		vk::PipelineStageFlagBits::eColorAttachmentOutput, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
-		{}, // flagi bariery
-		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
-		barrier // wskaŸnik do bariery obrazu
-	);
+				ImPlot::PlotScatter("Wave", &fx, &fy, &fz, 1);
+			}
+		}
+		ImPlot::EndPlot();
+	}
+	ImGui::End();
+	*/
+		ImGui::Render();
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 
-}
+		commandBuffer.endRendering();
+
+		vk::ImageMemoryBarrier barrier = {};
+		barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal; // obecny layout obrazu, np. undefined po stworzeniu
+		barrier.newLayout = vk::ImageLayout::ePresentSrcKHR; // nowy layout
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = swapchainFrames[numberOfFrame].mainimage;
+		barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
 
 
+		barrier.srcAccessMask = {};
+		barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eColorAttachmentRead;
+
+		// U¿yj vkCmdPipelineBarrier, aby zrealizowaæ barierê w command buffer
+		commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
+			vk::PipelineStageFlagBits::eColorAttachmentOutput, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
+			{}, // flagi bariery
+			nullptr, nullptr, // brak barier pamiêciowych ani buforowych
+			barrier // wskaŸnik do bariery obrazu
+		);
 
 
+	}
 
 
 

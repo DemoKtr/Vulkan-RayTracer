@@ -8,7 +8,7 @@
 #include "fileOperations/filesFinding.h"
 #include "Scene/ECS/scripts/scriptCompiler.h"
 #include "View/Interface/ImGuiRenderer/EditorCommands.h"
-
+#include "MathFunctions/FastFourierTransform.h"
 
 
 
@@ -24,7 +24,7 @@ class editor {
 	bool resizingRight = false;
 	bool resizingBottom = false;
 
-
+	//math::FastFourierTransform* fft;
 	Scene* scene;
 	SceneObject* selectedObject = nullptr;
 	ComponentType selectedComponentType = ComponentType::None;
@@ -58,7 +58,7 @@ class editor {
 			vk::Format pictureFormat,
 			vk::Format depthFormat);
 		~editor();
-		void render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame>& swapchainFrames, RenderObjects* objects, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode);
+		void render_editor(vk::CommandBuffer commandBuffer, std::vector<vkUtil::SwapChainFrame>& swapchainFrames, RenderObjects* objects, vk::Extent2D swapchainExtent, int numberOfFrame, bool debugMode, float dt);
 		
 
 };

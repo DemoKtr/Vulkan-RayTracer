@@ -1,0 +1,25 @@
+#version 460
+#extension GL_EXT_mesh_shader : enable
+
+layout(local_size_x = 1) in;
+
+struct TaskData {
+    uint gridWidth;   // np. 2048
+    uint gridHeight;  // np. 2048
+    uint patchSize;   // Rozmiar patcha – tutaj 6
+};
+
+taskPayloadSharedEXT TaskData taskData;
+
+void main() {
+    taskData.gridWidth = 2048;
+    taskData.gridHeight = 2048;
+    taskData.patchSize = 4;  // mniejszy patch, aby nie przekroczyć limitów
+
+    // Obliczamy liczbę patchy w poziomie i pionie
+    uint patchesX = taskData.gridWidth / taskData.patchSize;
+    uint patchesY = taskData.gridHeight / taskData.patchSize;
+    uint numPatches = patchesX * patchesY;
+
+    EmitMeshTasksEXT(numPatches, 1, 1);
+}

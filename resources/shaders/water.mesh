@@ -1,0 +1,113 @@
+#version 460
+#extension GL_EXT_mesh_shader : enable
+
+// Ustawiamy jeden wątek – cały patch generowany jest w jednym mesh shaderze
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+// Generujemy trójkąty jako output
+layout(triangles) out;
+// Ustalamy stałe liczby wierzchołków i trójkątów – dla patchSize = 4 (czyli 5 wierzchołków na krawędzi)
+layout(max_vertices = 25, max_primitives = 32) out;
+
+struct VertexOutput {
+    vec2 uv;
+};
+
+layout(location = 0) out VertexOutput vertexOutput[];
+
+// Uniformy – przykładowo sampler z mapą wysokości oraz macierz widoku-projekcji
+layout(set = 0, binding = 0) uniform sampler2D heightMap;
+layout (push_constant) uniform constants {
+	mat4 vp;
+}ProjectionData;
+
+// Struktura danych przekazywanych z task shadera (zdefiniowaną także w task shaderze)
+struct TaskData {
+    uint gridWidth;   // np. 2048 – szerokość globalnej siatki
+    uint gridHeight;  // np. 2048 – wysokość globalnej siatki
+    uint patchSize;   // rozmiar patcha (ilość komórek); przyjmujemy patchSize = 4
+};
+
+// Dane z task shader’a – dostępne przez wspólny payload
+taskPayloadSharedEXT TaskData taskData;
+
+void main() {
+    // Używamy gl_DrawID jako indeksu patcha (każdy mesh shader odpowiada jednemu patchowi)
+    uint patchIndex = gl_DrawID;
+
+    // Obliczamy liczbę patchy w poziomie; taskData.gridWidth/patchSize zakłada, że gridWidth jest wielokrotnością patchSize.
+    uint patchesX = taskData.gridWidth / taskData.patchSize;
+    uint patchX = patchIndex % patchesX;
+    uint patchY = patchIndex / patchesX;
+
+    // Ustalmy, że dla patchSize = 4 (czyli 4 komórki) liczba wierzchołków na krawędzi wynosi patchSize + 1 = 5.
+    // (UWAGA: layout(max_vertices) musi być stałą kompilacyjną – tu 5*5=25).
+    uint verticesPerEdge = taskData.patchSize + 1;
+
+    // Przyjmujemy, że cała płaszczyzna globalnie rozciąga się od -1 do 1 zarówno w osi X, jak i Z.
+    // Obliczamy rozmiar pojedynczej komórki w przestrzeni świata.
+    float cellSizeX = 2.0 / float(taskData.gridWidth);
+    float cellSizeZ = 2.0 / float(taskData.gridHeight);
+
+    // Patch obejmuje taskData.patchSize komórek – wyznaczamy jego rozmiar w przestrzeni świata.
+    float patchWorldSizeX = float(taskData.patchSize) * cellSizeX;
+    float patchWorldSizeZ = float(taskData.patchSize) * cellSizeZ;
+
+    // Pozycja patcha – offset w przestrzeni świata; lewy dolny róg płaszczyzny to (-1,-1)
+    float patchOffsetX = -1.0 + patchWorldSizeX * float(patchX);
+    float patchOffsetZ = -1.0 + patchWorldSizeZ * float(patchY);
+
+    // (Opcjonalnie) Możesz jeszcze ponownie wywołać SetMeshOutputsEXT,
+    // ale ponieważ layouty są stałe, wystarczy wyżej zadeklarowany layout.
+    SetMeshOutputsEXT(25, 32);
+
+    // ============================================
+    // 1. Generacja wierzchołków dla patcha
+    // ============================================
+    // Dla każdego wierzchołka obliczamy współrzędne (u,v) lokalne w patchu,
+    // przeliczamy je na pozycję w przestrzeni świata oraz pobieramy wysokość z tekstury.
+    uint vtxIndex = 0;
+    for (uint y = 0; y < verticesPerEdge; y++) {
+        for (uint x = 0; x < verticesPerEdge; x++) {
+            // Współrzędne lokalne w patchu (od 0 do 1)
+            float u = float(x) / float(verticesPerEdge - 1);
+            float v = float(y) / float(verticesPerEdge - 1);
+            // Obliczamy pozycję w przestrzeni świata
+            float posX = patchOffsetX + u * patchWorldSizeX;
+            float posZ = patchOffsetZ + v * patchWorldSizeZ;
+            // Globalne współrzędne teksturowe – przeliczamy z [-1,1] na [0,1]
+            float globalU = (posX + 1.0) * 0.5;
+            float globalV = (posZ + 1.0) * 0.5;
+            // Pobieramy wartość wysokości (komponent R) z tekstury
+            float height = texture(heightMap, vec2(globalU, globalV)).r;
+            // (Opcjonalnie) Skalujemy wysokość – tutaj przyjmujemy scale = 1.0
+            float heightScale = 1.0;
+            float posY = height * heightScale;
+            vec4 worldPos = vec4(posX, posY - 2.0f, posZ, 1.0);
+            // Transformacja do przestrzeni klipu za pomocą macierzy vp
+            gl_MeshVerticesEXT[vtxIndex].gl_Position = ProjectionData.vp * worldPos;
+            // Przekazujemy UV do fragment shadera
+            vertexOutput[vtxIndex].uv = vec2(globalU, globalV);
+            
+            vtxIndex++;
+        }
+    }
+
+    // ============================================
+    // 2. Generacja indeksów trójkątów dla patcha
+    // ============================================
+    // Każdy kwadrat (komórka) patcha (liczba kwadratów: (verticesPerEdge-1)^2) dzielimy na dwa trójkąty:
+    uint primIndex = 0;
+    for (uint y = 0; y < verticesPerEdge - 1; y++) {
+        for (uint x = 0; x < verticesPerEdge - 1; x++) {
+            uint v0 = y * verticesPerEdge + x;
+            uint v1 = v0 + 1;
+            uint v2 = v0 + verticesPerEdge;
+            uint v3 = v2 + 1;
+            gl_PrimitiveTriangleIndicesEXT[primIndex] = uvec3(v0, v2, v1);
+            primIndex++;
+            gl_PrimitiveTriangleIndicesEXT[primIndex] = uvec3(v1, v2, v3);
+            primIndex++;
+        }
+    }
+}

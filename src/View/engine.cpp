@@ -29,6 +29,7 @@
 #include "fileOperations/filesTypes.h"
 #include <MultithreatedSystems/mutexManager.h>
 #include "View/vkInit/vkPipeline/meshPipelineBuilder.h"
+#include "../thirdParty/ImPlot/implot.h"
 
 GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene* scene, bool debugMode) {
 	this->screenSize = screenSize;
@@ -39,7 +40,8 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	}
 	
 
-	
+	//fft = new math::FastFourierTransform(2048, 10000.0f, 5.0f, glm::normalize(glm::vec2(1, 1)), 0.0005f, 9.81f);
+
 	auto& taskmanager = TaskManager::getInstance();
 	taskmanager.initialize();
 
@@ -76,7 +78,7 @@ GraphicsEngine::GraphicsEngine(glm::ivec2 screenSize, GLFWwindow* window, Scene*
 	vkPrefab::data.graphicsQueue = this->graphicsQueue;
 	vkPrefab::data.presentQueue = this->presentQueue;
 	vkPrefab::data.computeQueue = this->computeQueue;
-	
+	//fft->createTexture(physicalDevice,device,maincommandBuffer,graphicsQueue,waterDescriptorSetLayout,waterDescriptorPool);
 	
 }
 
@@ -94,7 +96,7 @@ GraphicsEngine::~GraphicsEngine() {
 	delete vkResources::meshes;
 	delete meshesManager;
 	delete vkResources::atlasTextures;
-
+	//delete fft;
 	delete particleManager;
 
 	//delete cubemap;
@@ -111,6 +113,7 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyDescriptorSetLayout(UIFontSBODescriptorSetLayout);
 	device.destroyDescriptorSetLayout(UIFontTextureDescriptorSetLayout);
 	device.destroyDescriptorSetLayout(particleDescriptorSetLayout);
+	device.destroyDescriptorSetLayout(waterDescriptorSetLayout);
 
 	
 
@@ -123,6 +126,7 @@ GraphicsEngine::~GraphicsEngine() {
 	device.destroyDescriptorPool(UIFontSBODescriptorPool);
 	device.destroyDescriptorPool(UIFontTextureDescriptorPool);
 	device.destroyDescriptorPool(particleDescriptorPool);
+	device.destroyDescriptorPool(waterDescriptorPool);
 	
 	
 	cleanup_swapchain();
@@ -157,6 +161,10 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 	bindings.types.push_back(vk::DescriptorType::eStorageBuffer);
 	particleDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 
+	bindings.count = 1;
+	bindings.types[0] = vk::DescriptorType::eSampledImage;
+	//bindings.types[1] = vk::DescriptorType::eUniformBuffer;
+	waterDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
@@ -260,6 +268,24 @@ void GraphicsEngine::create_pipeline() {
 	pipeline.pipeline = output.pipeline;
 
 	vkResources::scenePipelines->addPipeline("mesh Pipeline", pipeline);
+
+	meshPipelineBuilder.reset();
+	meshPipelineBuilder.set_overwrite_mode(true);
+	meshPipelineBuilder.specify_task_shader("resources/shaders/waterTask.spv");
+	meshPipelineBuilder.specify_mesh_shader("resources/shaders/waterMesh.spv");
+	meshPipelineBuilder.specify_fragment_shader("resources/shaders/waterFrag.spv");
+	meshPipelineBuilder.specify_swapchain_extent(swapchainExtent);
+	//meshPipelineBuilder.clear_depth_attachment();
+	meshPipelineBuilder.set_color_blending(false);
+	meshPipelineBuilder.add_descriptor_set_layout(waterDescriptorSetLayout);
+	meshPipelineBuilder.setPushConstants(sizeof(vkRenderStructs::ViewProjectionData), 1, 0, vk::ShaderStageFlagBits::eMeshEXT);
+
+	output = meshPipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
+
+	pipeline.pipelineLayout = output.layout;
+	pipeline.pipeline = output.pipeline;
+
+	vkResources::scenePipelines->addPipeline("Water Mesh Pipeline", pipeline);
 }
 
 void GraphicsEngine::make_instance() {
@@ -367,11 +393,17 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
 	textureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+	
 
 	iconDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	cubemapDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
 	UIFontTextureDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);;
-
+	bindings.count = 1;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eMeshEXT;
+	//bindings.types[1] = vk::DescriptorType::eUniformBuffer;
+	//bindings.stages[1] = vk::ShaderStageFlagBits::eMeshEXT;
+	
+	waterDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 	bindings.count = 1;
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eVertex;
@@ -417,6 +449,7 @@ void GraphicsEngine::InitImGui(GLFWwindow* window){
 	
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	ImPlot::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 	int windowWidth, windowHeight;
 	glfwGetFramebufferSize(window, &windowWidth, &windowHeight);
@@ -507,7 +540,7 @@ void GraphicsEngine::load_fonts() {
 	fileOperations::list_files_in_directory("\\core", filesManager.getFontNames(), ext);
 }
 
-void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene ,uint32_t imageIndex) {
+void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::CommandBuffer unlitCommandBuffer,Scene* scene ,uint32_t imageIndex, float dt) {
 	
 
 	vk::CommandBufferInheritanceInfo info;
@@ -559,24 +592,10 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
 		barrier // wskaŸnik do bariery obrazu
 	);
-
-
-	
-
-
-	
-	
-
-
-	particleManager->Render(swapchainFrames[imageIndex],commandBuffer,swapchainExtent,dldi,frustum);
-
-	
-	
-	
+	particleManager->Render(swapchainFrames[imageIndex],commandBuffer,swapchainExtent,dldi,frustum);	
+	//fft->Render(swapchainFrames[imageIndex],commandBuffer,swapchainExtent,dldi);	
 	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, swapchainFrames[imageIndex].UIFontDescriptorSet, uiRenderingDrawData, fontManager);
-	
-
-	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode);
+	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode,dt);
 
 	try {
 		commandBuffer.end();
@@ -900,7 +919,7 @@ void GraphicsEngine::render(Scene* scene, int& verticesCounter, float deltaTime,
 	taskmanager.waitForPriorityTasks(TaskPriority::RECORD_DRAW_COMMAND);
 	
 	
-	record_draw_command(MainCommandBuffer,unlitCommandBuffer,scene ,imageIndex);
+	record_draw_command(MainCommandBuffer,unlitCommandBuffer,scene ,imageIndex,deltaTime);
 
 	
 	//taskmanager.waitForPriorityTasks(TaskPriority::DESCRIPTORS);

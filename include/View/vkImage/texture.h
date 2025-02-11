@@ -10,6 +10,7 @@ namespace vkImage {
 		vk::PhysicalDevice physicalDevice;
 
 		std::vector<stbi_uc*> pixels;
+		std::vector<float> data;
 		fileOperations::filesPaths texturesNames;
 		//res
 		vk::Image image;
@@ -27,8 +28,10 @@ namespace vkImage {
 
 		void load();
 		void populate();
+		void send_data();
 		void make_view();
 		void make_gray_scale_view();
+		void make_view(vk::Format format, vk::ImageViewType type);
 		void make_sampler();
 		void make_descriptor_set();
 
@@ -41,6 +44,7 @@ namespace vkImage {
 
 		Texture(TextureInputChunk info);
 		Texture(TextureDataInputChunk info);
+		Texture(vkImage::TextureFloatDataInputChunk& info);
 		~Texture();
 
 		void wrie_to_descriptor_set(vk::DescriptorSet& desc);
