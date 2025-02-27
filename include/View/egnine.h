@@ -28,6 +28,9 @@ class GraphicsEngine {
 	vkRenderStructs::ProjectionData projection;
 	//synchronizers 
 	int maxFramesInFlight, frameNumber;
+
+	float fullTime = 0.0f;
+
 	GLFWwindow* mainWindow;
 	bool debugMode{true};
 	vk::Instance instance{ nullptr }; //instancja
@@ -102,6 +105,14 @@ class GraphicsEngine {
 	vk::DescriptorPool waterDescriptorPool;
 	vk::DescriptorSetLayout waterDescriptorSetLayout;
 
+	vk::DescriptorPool fogDescriptorPool;
+	vk::DescriptorSetLayout fogDescriptorSetLayout;
+
+
+	vk::DescriptorPool fogDataDescriptorPool;
+	vk::DescriptorSetLayout fogDataDescriptorSetLayout;
+
+	postprocess::Fog *fog;
 
 	editor* sceneEditor;
 	vkMesh::MeshesManager* meshesManager;
@@ -133,7 +144,7 @@ class GraphicsEngine {
 	void create_frame_command_buffer();
 	void create_frame_resources(int number_of_models);
 
-
+	
 	void load_meshes_files();
 	void load_textures_files();
 	void load_scripts();

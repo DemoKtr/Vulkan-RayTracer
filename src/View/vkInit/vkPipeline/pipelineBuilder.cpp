@@ -101,15 +101,19 @@ vkInit::GraphicsPipelineOutBundle vkInit::PipelineBuilder::build(vk::Format swap
 
 
 	if (dynamicRendering) {
-		vk::PipelineRenderingCreateInfoKHR pipeline_rendering_create_info; 
-		pipeline_rendering_create_info.sType = vk::StructureType::ePipelineRenderingCreateInfoKHR,
-		pipeline_rendering_create_info.colorAttachmentCount = 1,
+		vk::PipelineRenderingCreateInfoKHR pipeline_rendering_create_info = {};
+		pipeline_rendering_create_info.sType = vk::StructureType::ePipelineRenderingCreateInfoKHR;
+		pipeline_rendering_create_info.colorAttachmentCount = 1;
 		pipeline_rendering_create_info.pColorAttachmentFormats = &swapchainFormat;
-		if (useDepthTest)
-			pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eD32Sfloat;
-		else
+
+		if (useDepthTest) {
+			pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eD32Sfloat;  // Upewnij siê, ¿e format pasuje do twojej tekstury g³êbi
+		}
+		else {
 			pipeline_rendering_create_info.depthAttachmentFormat = vk::Format::eUndefined;
-		pipelineInfo.renderPass = nullptr;
+		}
+
+		pipelineInfo.renderPass = nullptr;  // W dynamic rendering render pass jest niepotrzebny
 		pipelineInfo.pNext = &pipeline_rendering_create_info;
 	}
 		
@@ -230,6 +234,17 @@ void vkInit::PipelineBuilder::make_rasterizer_info() {
 	rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
 	rasterizer.depthBiasEnable = VK_FALSE; //Depth bias can be useful in shadow maps.
 
+}
+
+void vkInit::PipelineBuilder::make_rasterizer_info(vk::CullModeFlagBits bit) {
+	rasterizer.flags = vk::PipelineRasterizationStateCreateFlags();
+	rasterizer.depthClampEnable = VK_FALSE; //discard out of bounds fragments, don't clamp them
+	rasterizer.rasterizerDiscardEnable = VK_FALSE; //This flag would disable fragment output
+	rasterizer.polygonMode = vk::PolygonMode::eFill;
+	rasterizer.lineWidth = 1.0f;
+	rasterizer.cullMode = bit;
+	rasterizer.frontFace = vk::FrontFace::eCounterClockwise;
+	rasterizer.depthBiasEnable = VK_FALSE; //Depth bias can be useful in shadow maps.
 }
 
 void vkInit::PipelineBuilder::configure_multisampling() {

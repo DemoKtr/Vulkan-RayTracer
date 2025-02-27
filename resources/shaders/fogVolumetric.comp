@@ -1,0 +1,82 @@
+#version 450
+
+// Ustawiamy rozmiar grup roboczych (local work group) – tutaj 8x8 pikseli
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+// Trójwymiarowa tekstura mgły (set 1, binding 0)
+layout(set = 1, binding = 0) uniform sampler3D FogVolume;
+
+// Tekstura wyjściowa – zapisujemy do niej wynik (set 0, binding 0)
+layout(set = 0, binding = 0, rgba32f) uniform writeonly image2D OutputTexture;
+
+// Uniform block z danymi kamery i mgły (set 0, binding 1)
+layout(set = 0, binding = 1) uniform UBO {
+    vec3 cameraPos;    // Pozycja kamery w przestrzeni świata
+    vec3 lightDir;     // Kierunek światła (np. słońca)
+    float fogDensity;  // Skalowanie gęstości mgły
+    float scattering;  // Intensywność rozproszenia światła
+    float nearPlane;   // Początek ray marchingu
+    float farPlane;    // Koniec ray marchingu
+    vec2 resolution;   // Rozdzielczość obrazu (szerokość, wysokość)
+    float time;        // Czas (opcjonalnie, np. do animacji mgły)
+} cameraData;
+
+// Uniform block z macierzami odwrotnymi (set 0, binding 3)
+layout(set = 0, binding = 2) uniform Matrices {
+    mat4 inverseProjection; // Macierz odwrotna projekcji
+    mat4 inverseView;       // Macierz odwrotna widoku
+};
+
+void main() {
+    // Pobieramy współrzędne piksela na podstawie globalnego identyfikatora wątku
+    ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+    
+    // Sprawdzamy, czy piksel mieści się w zadanej rozdzielczości
+    if (pixelCoord.x >= int(cameraData.resolution.x) || pixelCoord.y >= int(cameraData.resolution.y))
+        return;
+    
+    // Przeliczamy współrzędne piksela na NDC (Normalized Device Coordinates) w zakresie [-1, 1]
+    vec2 ndc = (vec2(pixelCoord) / cameraData.resolution) * 2.0 - 1.0;
+    
+    // Tworzymy wektor pozycji w przestrzeni klipu
+    vec4 clipPos = vec4(ndc, 0.0, 1.0);
+    // Transformujemy do przestrzeni widoku za pomocą macierzy odwrotnej projekcji
+    vec4 viewPos = inverseProjection * clipPos;
+    viewPos /= viewPos.w;
+    
+    // Obliczamy kierunek promienia w przestrzeni świata
+    vec3 rayDir = normalize((inverseView * vec4(viewPos.xyz, 0.0)).xyz);
+    
+    // Parametry ray marchingu
+    float t = cameraData.nearPlane;  // Początek marchingu
+    float dt = 0.1;                  // Krok – mniejsza wartość zwiększa dokładność, ale wpływa na wydajność
+    
+    float fogAccum = 0.0; // Akumulator mgły
+    
+    // Główna pętla ray marchingu
+    for (; t < cameraData.farPlane; t += dt) {
+        // Obliczamy pozycję na promieniu
+        vec3 pos = cameraData.cameraPos + rayDir * t;
+        
+        // Przekształcamy pozycję w przestrzeni świata na współrzędne tekstury [0, 1]
+        // UWAGA: Zakładamy, że objętość mgły mieści się w jednostkowym sześcianie.
+        vec3 texCoord = pos;
+        
+        // Pobieramy gęstość mgły z tekstury (używamy tylko składowej .r)
+        float density = texture(FogVolume, texCoord).r;
+        
+        // Akumulujemy efekt mgły – im większa gęstość, tym silniejszy efekt
+        fogAccum += density * cameraData.fogDensity * dt;
+        
+        // Opcjonalnie: przerywamy pętlę, jeśli efekt mgły osiągnie wartość maksymalną
+        if (fogAccum > 1.0)
+            break;
+    }
+    
+    // Obliczamy finalny współczynnik mgły i kolor (tutaj szary – możesz modyfikować wg potrzeb)
+    float fogFactor = clamp(fogAccum * cameraData.scattering, 0.0, 1.0);
+    vec4 fogColor = vec4(fogFactor, fogFactor, fogFactor, 1.0);
+    
+    // Zapisujemy wynik do tekstury wyjściowej
+    imageStore(OutputTexture, pixelCoord, fogColor);
+}

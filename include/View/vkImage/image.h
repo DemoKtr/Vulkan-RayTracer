@@ -62,6 +62,18 @@ namespace vkImage {
 		vk::ImageCreateFlags flags;
 	};
 
+	struct Image3DInputChunk {
+		vk::Device logicalDevice;
+		vk::PhysicalDevice physicalDevice;
+		int width, height,depth;
+		vk::ImageTiling tiling;
+		vk::ImageUsageFlags usage;
+		vk::MemoryPropertyFlags memoryProperties;
+		vk::Format format;
+		uint32_t arrayCount;
+		vk::ImageCreateFlags flags;
+	};
+
 
 
 	struct BufferImageCopyJob {
@@ -69,7 +81,8 @@ namespace vkImage {
 		vk::Queue queue;
 		vk::Buffer srcBuffer;
 		vk::Image dstImage;
-		int width, height;
+		int width, height; 
+		int depth = 1.0f;
 		uint32_t arrayCount;
 
 	};
@@ -83,8 +96,10 @@ namespace vkImage {
 	};
 
 	vk::Image make_image(ImageInputChunk input);
+	vk::Image make_image(Image3DInputChunk input);
 
 	vk::DeviceMemory make_image_memory(ImageInputChunk input, vk::Image image);
+	vk::DeviceMemory make_image_memory(Image3DInputChunk input, vk::Image image);
 	void transition_image_layout(ImageLayoutTransitionJob job);
 	void copy_buffer_to_image(BufferImageCopyJob job);
 	vk::ImageView make_image_view(vk::Device logicalDevice, vk::Image image, vk::Format format, vk::ImageAspectFlags aspect, vk::ImageViewType type, uint32_t arrayCount);

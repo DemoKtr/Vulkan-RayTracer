@@ -88,7 +88,7 @@ void vkParticle::ParticleManager::Render(vkUtil::SwapChainFrame& frame, vk::Comm
     if (particle_to_render <= 0) return;
     vk::RenderingAttachmentInfoKHR colorAttachment = {};
     colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
-    colorAttachment.imageView = frame.mainimageView; // Widok obrazu.
+    colorAttachment.imageView = frame.postProcessImageView; // Widok obrazu.
     colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
     colorAttachment.loadOp = vk::AttachmentLoadOp::eLoad;
     colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;

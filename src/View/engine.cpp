@@ -165,6 +165,12 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 	bindings.types[0] = vk::DescriptorType::eSampledImage;
 	//bindings.types[1] = vk::DescriptorType::eUniformBuffer;
 	waterDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+	fogDataDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+	bindings.count = 2;
+	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
+	bindings.types[1] = vk::DescriptorType::eUniformBuffer;
+	fogDescriptorPool = vkInit::make_descriptor_pool(device, static_cast<uint32_t>(swapchainFrames.size()), bindings);
+
 	for (vkUtil::SwapChainFrame& frame : swapchainFrames) //referencja 
 	{
 		frame.imageAvailable = vkInit::make_semaphore(device, debugMode);
@@ -176,6 +182,7 @@ void GraphicsEngine::create_frame_resources(int number_of_models) {
 		frame.UIDescriptorSet = vkInit::allocate_descriptor_set(device, UIDescriptorPool, UIDescriptorSetLayout);
 		frame.UIFontDescriptorSet = vkInit::allocate_descriptor_set(device, UIFontSBODescriptorPool, UIFontSBODescriptorSetLayout);
 		frame.particleSBODescriptorSet = vkInit::allocate_descriptor_set(device, particleDescriptorPool, particleDescriptorSetLayout);
+		frame.fogUBODescriptorSet = vkInit::allocate_descriptor_set(device, fogDescriptorPool, fogDescriptorSetLayout);
 		
 	}
 }
@@ -202,7 +209,7 @@ void GraphicsEngine::create_pipeline() {
 	pipelineBuilder.use_depth_test(true);
 	pipelineBuilder.setPushConstants(sizeof(vkRenderStructs::ProjectionData),1);
 	pipelineBuilder.dynamicRendering = true;
-	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(swapchainFormat,swapchainFrames[0].depthFormat);
+	vkInit::GraphicsPipelineOutBundle output = pipelineBuilder.build(vk::Format::eR32G32B32A32Sfloat,swapchainFrames[0].depthFormat);
 
 	pipeline.pipelineLayout = output.layout;
 	pipeline.pipeline = output.pipeline;
@@ -244,6 +251,25 @@ void GraphicsEngine::create_pipeline() {
 	pipeline.pipeline = output.pipeline;
 	vkResources::scenePipelines->addPipeline("UIFont Pipeline", pipeline);
 	pipelineBuilder.reset();
+
+
+	pipelineBuilder.set_overwrite_mode(true);
+	pipelineBuilder.specify_vertex_shader("resources/shaders/postprocessVert.spv");
+	pipelineBuilder.specify_fragment_shader("resources/shaders/fogPostprocessFrag.spv");
+	pipelineBuilder.specify_swapchain_extent(swapchainExtent);
+	pipelineBuilder.clear_depth_attachment();
+
+	pipelineBuilder.use_depth_test(false);
+	pipelineBuilder.dynamicRendering = true;
+	pipelineBuilder.make_rasterizer_info(vk::CullModeFlagBits::eFront);
+	pipelineBuilder.set_color_blending(true);
+	pipelineBuilder.add_descriptor_set_layout(fogDescriptorSetLayout);
+	pipelineBuilder.add_descriptor_set_layout(fogDataDescriptorSetLayout);
+	output = pipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
+	pipeline.pipelineLayout = output.layout;
+	pipeline.pipeline = output.pipeline;
+	vkResources::scenePipelines->addPipeline("Fog", pipeline);
+	pipelineBuilder.reset();
 	//pipelineInfo = vkResources::scenePipelines->getPipeline("UIFont Pipeline");
 
 
@@ -262,7 +288,7 @@ void GraphicsEngine::create_pipeline() {
 	//meshPipelineBuilder.setPushConstants(sizeof(glm::uvec4), 1, sizeof(vkRenderStructs::ProjectionData), vk::ShaderStageFlagBits::eTaskEXT);
 
 
-	output = meshPipelineBuilder.build(swapchainFormat, swapchainFrames[0].depthFormat);
+	output = meshPipelineBuilder.build(vk::Format::eR32G32B32A32Sfloat, swapchainFrames[0].depthFormat);
 
 	pipeline.pipelineLayout = output.layout;
 	pipeline.pipeline = output.pipeline;
@@ -389,6 +415,13 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 
 	postprocessDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
 
+	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
+	bindings.types[1] = vk::DescriptorType::eUniformBuffer;
+	bindings.stages[1] = vk::ShaderStageFlagBits::eFragment;
+
+	fogDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
 	bindings.count = 1;
 	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
@@ -404,6 +437,12 @@ void GraphicsEngine::create_descriptor_set_layouts() {
 	//bindings.stages[1] = vk::ShaderStageFlagBits::eMeshEXT;
 	
 	waterDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
+	
+	bindings.types[0] = vk::DescriptorType::eCombinedImageSampler;
+	bindings.stages[0] = vk::ShaderStageFlagBits::eFragment;
+	fogDataDescriptorSetLayout = vkInit::make_descriptor_set_layout(device, bindings);
+
 	bindings.count = 1;
 	bindings.types[0] = vk::DescriptorType::eStorageBuffer;
 	bindings.stages[0] = vk::ShaderStageFlagBits::eVertex;
@@ -593,9 +632,58 @@ void GraphicsEngine::record_draw_command(vk::CommandBuffer commandBuffer, vk::Co
 		barrier // wskaŸnik do bariery obrazu
 	);
 	particleManager->Render(swapchainFrames[imageIndex],commandBuffer,swapchainExtent,dldi,frustum);	
+
+	barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal; // obecny layout obrazu, np. undefined po stworzeniu
+	barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal; // nowy layout
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = swapchainFrames[imageIndex].postProcessImage;
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	// Okreœl dostêp pamiêci, aby przejœæ z poprzedniego do nowego layoutu
+	barrier.srcAccessMask = {}; // Brak poprzednich operacji do synchronizacji
+	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead; // Docelowy dostêp, np. pisanie do attachmentu koloru
+
+	// U¿yj vkCmdPipelineBarrier, aby zrealizowaæ barierê w command buffer
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTopOfPipe, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
+		vk::PipelineStageFlagBits::eFragmentShader, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
+		{}, // flagi bariery
+		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
+		barrier // wskaŸnik do bariery obrazu
+	);
 	//fft->Render(swapchainFrames[imageIndex],commandBuffer,swapchainExtent,dldi);	
+	fog->render(commandBuffer, swapchainExtent, swapchainFrames[imageIndex].mainimageView,swapchainFrames[imageIndex].fogUBODescriptorSet);
 	UImanager.render_ui(commandBuffer,swapchainExtent, swapchainFrames[imageIndex].mainimageView, swapchainFrames[imageIndex].UIDescriptorSet, swapchainFrames[imageIndex].UIFontDescriptorSet, uiRenderingDrawData, fontManager);
 	sceneEditor->render_editor(commandBuffer, swapchainFrames, &objects_to_rendering,swapchainExtent, imageIndex, debugMode,dt);
+
+	barrier.oldLayout = vk::ImageLayout::eShaderReadOnlyOptimal; // obecny layout obrazu, np. undefined po stworzeniu
+	barrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal; // nowy layout
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = swapchainFrames[imageIndex].postProcessImage;
+	barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor; // zakres aspektu obrazu (kolor)
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	// Okreœl dostêp pamiêci, aby przejœæ z poprzedniego do nowego layoutu
+	barrier.srcAccessMask = {}; // Brak poprzednich operacji do synchronizacji
+	barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite; // Docelowy dostêp, np. pisanie do attachmentu koloru
+
+	// U¿yj vkCmdPipelineBarrier, aby zrealizowaæ barierê w command buffer
+	commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eFragmentShader, // srcStageMask: najwczeœniejszy etap, brak poprzedniego u¿ycia
+		vk::PipelineStageFlagBits::eColorAttachmentOutput, // dstStageMask: docelowy etap, w którym obraz bêdzie u¿ywany
+		{}, // flagi bariery
+		nullptr, nullptr, // brak barier pamiêciowych ani buforowych
+		barrier // wskaŸnik do bariery obrazu
+	);
 
 	try {
 		commandBuffer.end();
@@ -634,10 +722,10 @@ void GraphicsEngine::record_unlit_draw_command(vk::CommandBuffer commandBuffer, 
 
 
 	// Debugging dla kolorów i za³¹czników
-	std::array<float, 4> color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	std::array<float, 4> color = { 0.0f,0.0f, 0.0f, 1.0f };
 	vk::RenderingAttachmentInfoKHR colorAttachment = {};
 	colorAttachment.sType = vk::StructureType::eRenderingAttachmentInfo;
-	colorAttachment.imageView = swapchainFrames[imageIndex].mainimageView; // Widok obrazu.
+	colorAttachment.imageView = swapchainFrames[imageIndex].postProcessImageView; // Widok obrazu.
 	colorAttachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
 	colorAttachment.loadOp = vk::AttachmentLoadOp::eClear;
 	colorAttachment.storeOp = vk::AttachmentStoreOp::eStore;
@@ -1095,6 +1183,8 @@ void GraphicsEngine::make_assets(Scene* scene) {
 		particleManager->Update(0.0f, pDesc->dataWriteLocation, pDesc->data);
 		
 	}
+
+	fog = new postprocess::Fog(physicalDevice, device, graphicsQueue, maincommandBuffer, fogDataDescriptorSetLayout, fogDataDescriptorPool, 128, 128, 128);
 	
 }
 
@@ -1108,7 +1198,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	
 
 	
-	glm::vec3 eye = { 0.0f, 0.0f, -20.0f };
+	glm::vec3 eye = { 0.0f, 0.0f, -10.0f };
 	glm::vec3 center = { 0.0f, 0.0f, 0.0f };
 	glm::vec3 up = { 0.0f, 1.0f, 0.0f };
 	glm::mat4 view = glm::lookAt(eye, center, up);
@@ -1198,7 +1288,17 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 	_frame.cameraData.view = view;//camera.GetViewMatrix();
 	_frame.dt.dt = glm::vec4(deltaTime);
 	_frame.dt.numb = glm::uvec4(particleManager->particle_to_render);
+	fullTime += deltaTime;
 	
+	_frame.fogData.uInvViewProjection = glm::inverse(_frame.viewProjection);
+	_frame.fogData.uCameraPos = glm::vec4(eye, 1.0f);
+	_frame.fogData.uBoxMin = glm::vec4(-1.f, -1.f, -1.f,1.0f);
+	_frame.fogData.uBoxMax = glm::vec4(1.f, 1.f, 1.f, 1.0f);
+	_frame.fogData.uTime = fullTime;
+	_frame.fogData.padding[0] = 1.0f;
+	_frame.fogData.padding[1] = 1.0f;
+	_frame.fogData.padding[2] = 1.0f;
+
 	_frame.cameraData.camPos = glm::vec4(camera.Position, 1.0f);
 	//size_t particleCounter = 0;
 	particleManager->Update(0.0f, _frame.particleDescriptor->dataWriteLocation, _frame.particleDescriptor->data);
@@ -1212,6 +1312,7 @@ void GraphicsEngine::prepare_frame(uint32_t imageIndex, Scene* scene, float delt
 
 	//memcpy(_frame.particleSBODataWriteLocation, _frame.particlesData.data(), particleCounter * sizeof(vkParticle::Particle));
 	memcpy(_frame.DeltaTimeDataWriteLocation, &_frame.dt, sizeof(vkUtil::DtSBO));
+	memcpy(_frame.fogUBODataWriteLocation, &_frame.fogData, sizeof(postprocess::FogUBO));
 	//std::cout << _frame.UIPositionSize[0].x << " " << _frame.UIPositionSize[0].y << " " << _frame.UIPositionSize[0].z << " " << _frame.UIPositionSize[0].w << std::endl;
 
 

@@ -48,7 +48,49 @@ vk::Image vkImage::make_image(ImageInputChunk input)
 	}
 }
 
+vk::Image vkImage::make_image(Image3DInputChunk input)
+{
+	vk::ImageCreateInfo imageInfo;
+	imageInfo.flags = vk::ImageCreateFlagBits() | input.flags;
+	imageInfo.imageType = vk::ImageType::e3D;
+	imageInfo.extent = vk::Extent3D(input.width, input.height, input.depth);
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = input.arrayCount;
+	imageInfo.format = input.format;
+	imageInfo.tiling = input.tiling;
+	imageInfo.initialLayout = vk::ImageLayout::eUndefined;
+	imageInfo.usage = input.usage;
+	imageInfo.sharingMode = vk::SharingMode::eExclusive;
+	imageInfo.samples = vk::SampleCountFlagBits::e1;
+	try {
+		return input.logicalDevice.createImage(imageInfo);
+	}
+	catch (vk::SystemError err) {
+		std::cout << "Unable to make image" << std::endl;
+	}
+}
+
 vk::DeviceMemory vkImage::make_image_memory(ImageInputChunk input, vk::Image image)
+{
+	vk::MemoryRequirements requirements = input.logicalDevice.getImageMemoryRequirements(image);
+
+	vk::MemoryAllocateInfo allocation;
+	allocation.allocationSize = requirements.size;
+	allocation.memoryTypeIndex = vkUtil::findMemoryTypeIndex(
+		input.physicalDevice, requirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal
+	);
+
+	try {
+		vk::DeviceMemory imageMemory = input.logicalDevice.allocateMemory(allocation);
+		input.logicalDevice.bindImageMemory(image, imageMemory, 0);
+		return imageMemory;
+	}
+	catch (vk::SystemError err) {
+		std::cout << "Unable to allocate memory for image" << std::endl;
+	}
+}
+
+vk::DeviceMemory vkImage::make_image_memory(Image3DInputChunk input, vk::Image image)
 {
 	vk::MemoryRequirements requirements = input.logicalDevice.getImageMemoryRequirements(image);
 
@@ -165,7 +207,7 @@ void vkImage::copy_buffer_to_image(BufferImageCopyJob job)
 	copy.imageExtent = vk::Extent3D(
 		job.width,
 		job.height,
-		1.0f
+		job.depth
 	);
 
 	job.commandBuffer.copyBufferToImage(

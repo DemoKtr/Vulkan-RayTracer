@@ -51,7 +51,7 @@ namespace vkInit {
 
 		void setPushConstants(size_t size, int count);
 		void set_color_blending(bool is);
-
+		void make_rasterizer_info(vk::CullModeFlagBits bit);
 	private:
 		vk::Device device;
 		vk::GraphicsPipelineCreateInfo pipelineInfo = {};
@@ -140,6 +140,7 @@ namespace vkInit {
 			sets the creation info for the configured rasterizer stage
 		*/
 		void make_rasterizer_info();
+		
 
 		/**
 			configures the multisampling stage

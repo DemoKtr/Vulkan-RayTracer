@@ -3,6 +3,7 @@
 #include <mutex>
 #include "View/vkParticle/Particle.h"
 #include "descriptorsBuffers.h"
+#include "View/vkPostProcess/Fog.h"
 namespace vkUtil {
 
 
@@ -57,6 +58,10 @@ namespace vkUtil {
 		//Swapchain-type stuff
 		vk::Image mainimage;
 		vk::ImageView mainimageView;
+
+		vk::Image postProcessImage;
+		vk::ImageView postProcessImageView;
+		vk::DeviceMemory postProcessImageBufferMemory;
 		//vk::Framebuffer mainframebuffer;
 
 		//zBuffer
@@ -78,8 +83,10 @@ namespace vkUtil {
 
 		//std::vector<vkParticle::Particle> particlesData;
 
-		DtSBO dt;
+		postprocess::FogUBO fogUBO;
 
+		DtSBO dt;
+		vk::Sampler sampler;
 		//Buffer
 		Buffer cameraDataBuffer;
 		Buffer modelsDataBuffer;
@@ -88,6 +95,7 @@ namespace vkUtil {
 		Buffer UIPositionSizeDataBuffer;
 		Buffer UIFontPositionSizeDataBuffer;
 		Buffer DeltaTimeDataBuffer;
+		Buffer fogUBODataBuffer;
 		//Data Write Location
 		void* cameraDataWriteLocation;
 		void* modelsDataWriteLocation;
@@ -96,6 +104,7 @@ namespace vkUtil {
 		void* DeltaTimeDataWriteLocation;
 		void* UIPositionSizeDataWriteLocation;
 		void* UIFontPositionSizeDataWriteLocation;
+		void* fogUBODataWriteLocation;
 		//DESCRIPTOR BUFFER INFO
 		vk::DescriptorBufferInfo cameraUBODescriptor;
 		//vk::DescriptorBufferInfo ParticleSBODescriptor;
@@ -104,13 +113,15 @@ namespace vkUtil {
 		vk::DescriptorBufferInfo modelsSBODescriptor;
 		vk::DescriptorBufferInfo UIPositionSizeDescriptor;
 		vk::DescriptorBufferInfo UIFontPositionSizeDescriptor;
+		vk::DescriptorBufferInfo fogUBODescriptor;
 		//DESCRIPTOR SET
 		vk::DescriptorSet postprocessDescriptorSet;
 		vk::DescriptorSet particleSBODescriptorSet;
 		vk::DescriptorSet UIDescriptorSet;
 		vk::DescriptorSet UIFontDescriptorSet;
+		vk::DescriptorSet fogUBODescriptorSet;
 
-
+		
 		vk::CommandBuffer mainCommandBuffer;
 		vk::CommandBuffer unlitCommandBuffer;
 		vk::CommandBuffer pbrCommandBuffer;
@@ -130,6 +141,7 @@ namespace vkUtil {
 		DescriptorData<vkParticle::ParticleInit>* firstParticleRandomSSBO;
 		DescriptorData<vkParticle::ParticleInit>* seccondParticleRandomSSBO;
 
+		postprocess::FogUBO fogData;
 
 		void make_depth_resources();
 		void make_descriptors_resources(int number_of_objects);

@@ -1,6 +1,6 @@
 #include <iostream>
 
-extern "C" void onStart() {
+extern "C" __declspec(dllexport) void onStart() {
     std::cout << "Script started!" << std::endl;
 }
 

@@ -3,7 +3,7 @@
 #include <View/vkUtil/queues.h>
 #include <View/vkImage/image.h>
 #include <settings.h>
-
+#include "View/vkInit/attachment.h"
 vkInit::SwapChainSupportDetails vkInit::query_swapchain_support(vk::PhysicalDevice device, vk::SurfaceKHR surface, bool debugMode) {
 SwapChainSupportDetails support;
 	/*
@@ -184,7 +184,7 @@ vkInit::SwapChainBundle vkInit::create_swapchain(vk::PhysicalDevice physicalDevi
 		bundle.frames[i].mainimage = images[i];
 
 		bundle.frames[i].mainimageView = vkImage::make_image_view(logicalDevice, images[i], format.format, vk::ImageAspectFlagBits::eColor, vk::ImageViewType::e2D, 1);
-
+		create_attachment(physicalDevice, logicalDevice, vk::Format::eR32G32B32A32Sfloat, vk::ImageUsageFlagBits::eColorAttachment, extent, bundle.frames[i].postProcessImage, bundle.frames[i].postProcessImageBufferMemory, bundle.frames[i].postProcessImageView);
 
 	}
 	bundle.format = format.format;

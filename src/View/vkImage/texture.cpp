@@ -355,11 +355,8 @@ vkImage::Texture::Texture(vkImage::TextureFloatDataInputChunk& info) {
 	
 
 	make_view(vk::Format::eR32Sfloat,vk::ImageViewType::e2D);
-
 	make_sampler();
-	std::cout << "rku" << std::endl;
 	make_descriptor_set();
-	std::cout << "wq" << std::endl;
 }
 
 vkImage::Texture::~Texture() {

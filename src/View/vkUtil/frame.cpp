@@ -20,6 +20,35 @@ void vkUtil::SwapChainFrame::make_depth_resources() {
 	depthBufferView = vkImage::make_image_view(
 		logicalDevice, depthBuffer, depthFormat, vk::ImageAspectFlagBits::eDepth, vk::ImageViewType::e2D, 1
 	);
+
+
+	vk::SamplerCreateInfo samplerInfo;
+	samplerInfo.flags = vk::SamplerCreateFlags();
+	samplerInfo.minFilter = vk::Filter::eLinear;
+	samplerInfo.magFilter = vk::Filter::eLinear;
+	samplerInfo.addressModeU = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.addressModeV = vk::SamplerAddressMode::eClampToEdge;
+	samplerInfo.addressModeW = vk::SamplerAddressMode::eClampToEdge;
+
+	samplerInfo.anisotropyEnable = false;
+	samplerInfo.maxAnisotropy = 1.0f;
+
+	samplerInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+	samplerInfo.unnormalizedCoordinates = false;
+	samplerInfo.compareEnable = false;
+	samplerInfo.compareOp = vk::CompareOp::eAlways;
+
+	samplerInfo.mipmapMode = vk::SamplerMipmapMode::eLinear;
+	samplerInfo.mipLodBias = 0.0f;
+	samplerInfo.minLod = 0.0f;
+	samplerInfo.maxLod = 0.0f;
+
+	try {
+		sampler = logicalDevice.createSampler(samplerInfo);
+	}
+	catch (vk::SystemError err) {
+		std::cout << "Failed to make sampler." << std::endl;
+	}
 }
 
 void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
@@ -53,6 +82,14 @@ void vkUtil::SwapChainFrame::make_descriptors_resources(int number_of_objects) {
 	DeltaTimeDescriptor.buffer = DeltaTimeDataBuffer.buffer;
 	DeltaTimeDescriptor.offset = 0;
 	DeltaTimeDescriptor.range = sizeof(DtSBO);
+
+	input.size = sizeof(postprocess::FogUBO);
+	fogUBODataBuffer = createBuffer(input);
+	fogUBODataWriteLocation = logicalDevice.mapMemory(fogUBODataBuffer.bufferMemory, 0, sizeof(postprocess::FogUBO));
+
+	fogUBODescriptor.buffer = fogUBODataBuffer.buffer;
+	fogUBODescriptor.offset = 0;
+	fogUBODescriptor.range = sizeof(postprocess::FogUBO);
 	
 	int sbo_size = number_of_objects+2048;
 	input.size = sbo_size * sizeof(MeshSBO);
@@ -183,6 +220,8 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	writeInfo6.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
 	writeInfo6.descriptorCount = 1;
 	writeInfo6.descriptorType = vk::DescriptorType::eStorageBuffer;
+
+
 	if (isFirstSSBOParticleActive->load(std::memory_order_relaxed))
 		writeInfo6.pBufferInfo = &seccondParticleRandomSSBO->descriptorInfo;
 	else 
@@ -193,6 +232,36 @@ void vkUtil::SwapChainFrame::write_postprocess_descriptors() {
 	logicalDevice.updateDescriptorSets(writeInfo4, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo5, nullptr);
 	logicalDevice.updateDescriptorSets(writeInfo6, nullptr);
+
+
+
+
+
+
+
+	vk::DescriptorImageInfo imageDescriptor;
+	imageDescriptor.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+	imageDescriptor.imageView = postProcessImageView;
+	imageDescriptor.sampler = sampler;
+
+	vk::WriteDescriptorSet writeInfo7;
+	writeInfo7.dstSet = fogUBODescriptorSet;
+	writeInfo7.dstBinding = 0;
+	writeInfo7.dstArrayElement = 0;
+	writeInfo7.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+	writeInfo7.descriptorCount = 1;
+	writeInfo7.pImageInfo = &imageDescriptor;
+
+	vk::WriteDescriptorSet writeInfo8;
+	writeInfo8.dstSet = fogUBODescriptorSet;
+	writeInfo8.dstBinding = 1;
+	writeInfo8.dstArrayElement = 0; //byte offset within binding for inline uniform blocks
+	writeInfo8.descriptorCount = 1;
+	writeInfo8.descriptorType = vk::DescriptorType::eUniformBuffer;
+	writeInfo8.pBufferInfo = &fogUBODescriptor;
+	logicalDevice.updateDescriptorSets(writeInfo7, nullptr);
+	logicalDevice.updateDescriptorSets(writeInfo8, nullptr);
+
 
 	if (!isParticleInit) {
 		isParticleInit = true;
